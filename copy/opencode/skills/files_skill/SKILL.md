@@ -10,15 +10,15 @@ description: 综合文件识别与文档处理统一接口技能（全局 skill�
 | 工具 | 用途 | 本机位置/版本 | 检查命令 | 缺失时安装 |
 |---|---|---|---|---|
 | Python 3.12 | 一切脚本基础 | `python` | `python --version` | python.org 安装（勾选 PATH） |
-| Pix2Text (p2t) | 公式/版面 OCR（核心） | `C:\Users\job_p\AppData\Local\Programs\Python\Python312\Scripts\p2t.exe` | `p2t.exe predict -h` | `pip install pix2text -i 清华源`（首次跑自动下模型 ~1GB 到 %APPDATA%\pix2text 等） |
+| Pix2Text (p2t) | 公式/版面 OCR（核心） | `C:\Users\job_p\AppData\Roaming\Python\Python312\Scripts\p2t.exe` | `p2t.exe predict -h` | `pip install pix2text -i 清华源`（首次跑自动下模型 ~1GB 到 %APPDATA%\pix2text 等） |
 | pandoc | md⇄docx/公式转 OMML | pypandoc_binary 内嵌 | `python -c "import pypandoc; print(pypandoc.get_pandoc_path())"` | `pip install pypandoc_binary -i 清华源` |
-| LibreOffice | 批量 doc/docx/pptx→PDF | `D:\Program Files\LibreOffice\LibreOfficePortable\App\libreoffice\program\soffice.com`（26.2.4 便携版） | `soffice.com --headless -env:UserInstallation=file:///C:/Temp/LO --version` | 便携版已装于 D:\Program Files\LibreOffice\LibreOfficePortable；离线包见 D:\opencode\copy\tool |
+| LibreOffice | 批量 doc/docx/pptx→PDF | `C:\Program Files\LibreOffice\program\soffice.com`（26.2.5） | `soffice.com --headless -env:UserInstallation=file:///C:/Temp/LO --version` | winget `TheDocumentFoundation.LibreOffice`（离线包放 E:\software\wls 同法） |
 | MS Office | Word/PPT COM 生成 docx/pptx | Office 16 | `New-Object -ComObject Word.Application` | — |
 | Python 文档库 | docx/pptx/xlsx/pdf 处理 | python-docx/python-pptx/openpyxl/pypdf/pdfplumber/PyMuPDF/matplotlib/PIL/chardet/pyzbar/opencv/imageio-ffmpeg | `python -c "import docx, pptx, openpyxl, pypdf, pdfplumber, pymupdf, matplotlib, PIL, chardet, pyzbar, cv2, imageio_ffmpeg"` | `pip install python-docx python-pptx openpyxl pypdf pdfplumber pymupdf matplotlib pillow chardet pyzbar opencv-python imageio-ffmpeg -i 清华源` |
 | Chrome | headless 校验 HTML/JS | `C:\Program Files\Google\Chrome\Application\chrome.exe` | `Test-Path` | — |
 | 本机 PS 脚本 | doc/docx 提取、OCR、页面校验 | `C:\Users\job_p\AppData\Local\Temp\opencode\*.ps1`（extract-docx/doc、ocr、check-*） | `Test-Path <脚本>` | 从原机复制整套 Temp\opencode |
 | node+npx | LobeHub market-cli | npx 缓存 `06aaad52133b3ed7` 下 cli.js | `& node <cli.js> --help` | `npx -y @lobehub/market-cli`（首次拉取） |
-| Mermaid CLI (mmdc) | 流程图/时序图/状态图 → SVG（示意图绘制主力） | `C:\Users\job_p\AppData\Local\Programs\nodejs\mmdc.cmd`（node v24 + 全局包） | `mmdc.cmd --version` | `npm.cmd install -g @mermaid-js/mermaid-cli`（渲染用系统 Chrome：设环境变量 `PUPPETEER_EXECUTABLE_PATH=C:\Program Files\Google\Chrome\Application\chrome.exe`；PowerShell 下须调 `mmdc.cmd` 而非 `mmdc`，因 ps1 被执行策略禁） |
+| Mermaid CLI (mmdc) | 流程图/时序图/状态图 → SVG（示意图绘制主力） | `C:\Users\job_p\AppData\Roaming\npm\mmdc.cmd`（node v24 + 全局包） | `mmdc.cmd --version` | `npm.cmd install -g @mermaid-js/mermaid-cli`（渲染用系统 Chrome：设环境变量 `PUPPETEER_EXECUTABLE_PATH=C:\Program Files\Google\Chrome\Application\chrome.exe`；PowerShell 下须调 `mmdc.cmd` 而非 `mmdc`，因 ps1 被执行策略禁） |
 | 未装（大件） | LaTeX 引擎 / tesseract / whisper | — | — | 超 200M 需用户同意 |
 
 **移植检查脚本**（一键探测）：把上表「检查命令」列逐条跑一遍，缺什么装什么；p2t 与 pandoc 是本技能的两大核心依赖，缺一不可。
@@ -136,7 +136,7 @@ description: 综合文件识别与文档处理统一接口技能（全局 skill�
 1. **多模态视觉直接读取**：用 read 工具直接查看图片，转录文字、表格、结构。无需任何外部依赖，最可靠。
 2. **Pix2Text（p2t，本机已装，免费无限次）**：文字+公式+版面一体识别，公式直接输出 LaTeX
    ```
-   & "C:\Users\job_p\AppData\Local\Programs\Python\Python312\Scripts\p2t.exe" predict -i 图片路径 -o 输出目录 [--file-type text_formula|text|formula|page]
+   & "C:\Users\job_p\AppData\Roaming\Python\Python312\Scripts\p2t.exe" predict -i 图片路径 -o 输出目录 [--file-type text_formula|text|formula|page]
    ```
    - p2t 不在 PATH，必须用全路径调用；纯公式截图用 `--file-type formula`；含文字+公式的整页用 `page` 或 `text_formula`；同一张图建议跑 2 种模式交叉验证，分歧字符对照原图
    - Python 3.12 已装；模型缓存在 `C:\Users\job_p\AppData\Roaming\pix2text\1.1\`、`cnocr\2.3\`、`cnstd\1.2\`（首次运行自动下载，约 1GB）
@@ -154,7 +154,7 @@ description: 综合文件识别与文档处理统一接口技能（全局 skill�
 2. **docx/doc 中的公式（OLE 对象，纯文本提取不出字符）**——公式核实流程（本机已跑通）：
    - 转 PDF：批量首选 **soffice.com**（快、无人值守，调用规范见「环境注意」）；单文件亦可用 Word COM `$doc.SaveAs2(pdf路径, 17)`
    - PyMuPDF 定位章节页并渲染 PNG：`import pymupdf; doc[i].get_text()` 找关键词 → `get_pixmap(dpi=300)` 保存
-   - `& "C:\Users\job_p\AppData\Local\Programs\Python\Python312\Scripts\p2t.exe" predict --file-type page/formula` 识别 → 与规范知识核对 → 标注【公式已核实】
+   - `& "C:\Users\job_p\AppData\Roaming\Python\Python312\Scripts\p2t.exe" predict --file-type page/formula` 识别 → 与规范知识核对 → 标注【公式已核实】
 3. **docx 中的 OMML 公式**：`pandoc -t markdown` 可自动转 LaTeX（见 `modules/anthropics-skills-docx`）。
 4. **PDF 中的公式**：先 `modules/anthropics-skills-pdf` 提取文本；矢量公式可转图后用视觉识别。
 5. 输出 LaTeX 时校验可编译性（括号配对、环境闭合）。
@@ -204,7 +204,7 @@ description: 综合文件识别与文档处理统一接口技能（全局 skill�
 | 走势图/曲线/波形 | **matplotlib** | `plot`/`barh`/`axvspan`/`fill_between` | 波束扫描时间轴、门限曲线、时序排布 |
 | 精细标注空间图 | matplotlib `annotate`（xytext 错行）优先；手写 SVG 仅兜底 | — | 带多引线标注的示意图 |
 
-**工作流**：① Mermaid：写 `.mmd` 源码 → 设 `$env:PUPPETEER_EXECUTABLE_PATH`（指向系统 Chrome）→ `& "C:\Users\job_p\AppData\Local\Programs\nodejs\mmdc.cmd" -i in.mmd -o out.svg -b white`（注意用 mmdc.cmd 而非 mmdc，ps1 被执行策略禁）；② matplotlib：脚本 `savefig(out.svg, format='svg')`；③ 两种产出 SVG 后嵌入 HTML 的 `<figure>`，与手写 SVG 同跑重叠检测兜底；④ 图内变量用 Mermaid/matplotlib 原生上下标（matplotlib 用 LaTeX mathtext 如 `$k_{SSB}$`；Mermaid 支持 HTML 实体 `<sub>`）。
+**工作流**：① Mermaid：写 `.mmd` 源码 → 设 `$env:PUPPETEER_EXECUTABLE_PATH`（指向系统 Chrome）→ `& "C:\Users\job_p\AppData\Roaming\npm\mmdc.cmd" -i in.mmd -o out.svg -b white`（注意用 mmdc.cmd 而非 mmdc，ps1 被执行策略禁）；② matplotlib：脚本 `savefig(out.svg, format='svg')`；③ 两种产出 SVG 后嵌入 HTML 的 `<figure>`，与手写 SVG 同跑重叠检测兜底；④ 图内变量用 Mermaid/matplotlib 原生上下标（matplotlib 用 LaTeX mathtext 如 `$k_{SSB}$`；Mermaid 支持 HTML 实体 `<sub>`）。
 
 **质量要点**：文字/图标不重叠（重叠检测归零）；超宽文字缩小字号适配而非硬挤；图内与图注统一用正式符号（正文 MathJax `\(...\)`、图内 mathtext/HTML 下标）；禁止自造比喻词汇。
 
@@ -268,12 +268,12 @@ description: 综合文件识别与文档处理统一接口技能（全局 skill�
   - jupyter（IPython + ipykernel，.ipynb 可本机运行）
   - Chrome（headless 校验用）：`C:\Program Files\Google\Chrome\Application\chrome.exe`
   - Office 16（Word/PPT COM 转 PDF、生成 docx/pptx 用）
-  - LibreOffice 26.2.4 便携版（批量无头转换，soffice 调用规范见下）
+  - LibreOffice 26.2.5（批量无头转换，soffice 调用规范见下）
   - 未装（需询问用户后再装）：LaTeX 引擎（MiKTeX/TeX Live，>1GB）、whisper 语音转写（含模型 >500MB）、tesseract（备选 OCR，p2t 已覆盖）
 - **LibreOffice soffice 调用规范（本机已验证）**：
   - 必须用 `soffice.com`（非 .exe，命令行输出正常）且带独立 profile 防首次初始化卡死：
     ```
-    & "D:\Program Files\LibreOffice\LibreOfficePortable\App\libreoffice\program\soffice.com" --headless "-env:UserInstallation=file:///C:/Users/job_p/AppData/Local/Temp/LO-profile" --convert-to pdf --outdir 输出目录 源文件
+    & "C:\Program Files\LibreOffice\program\soffice.com" --headless "-env:UserInstallation=file:///C:/Users/job_p/AppData/Local/Temp/LO-profile" --convert-to pdf --outdir 输出目录 源文件
     ```
   - 批量：`--convert-to pdf --outdir 目录 *.docx`（支持 doc/docx/pptx/xlsx→pdf；过滤器可用 `writer_pdf_Export`、`impress_pdf_Export` 等）
   - stderr 的 "Could not find platform independent libraries" 为无害噪音，看输出目录是否生成文件即可

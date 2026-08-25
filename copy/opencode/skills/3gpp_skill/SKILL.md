@@ -9,11 +9,11 @@ description: 3GPP 移动通信标准专家技能（全局 skill，仅显式触�
 
 | 工具 | 用途 | 本机位置/版本 | 检查命令 | 缺失时安装 |
 |---|---|---|---|---|
-| Pix2Text (p2t) | 公式/符号图片识别（双轨提取必备） | `C:\Users\job_p\AppData\Local\Programs\Python\Python312\Scripts\p2t.exe` | `p2t.exe predict -h` | `pip install pix2text -i 清华源` |
-| LibreOffice soffice | 文档批量转 PDF（公式核实链路） | `D:\Program Files\LibreOffice\LibreOfficePortable\App\libreoffice\program\soffice.com` | 见 files_skill 检查命令 | 便携版已装（路径见左） |
+| Pix2Text (p2t) | 公式/符号图片识别（双轨提取必备） | `C:\Users\job_p\AppData\Roaming\Python\Python312\Scripts\p2t.exe` | `p2t.exe predict -h` | `pip install pix2text -i 清华源` |
+| LibreOffice soffice | 文档批量转 PDF（公式核实链路） | `C:\Program Files\LibreOffice\program\soffice.com` | 见 files_skill 检查命令 | winget LibreOffice |
 | Python + PyMuPDF | 页面渲染 PNG、文本搜索 | `python` + `pymupdf` | `python -c "import pymupdf, docx"` | `pip install pymupdf python-docx -i 清华源` |
 | matplotlib | 结构图/走势图 SVG 生成（配图主力之一） | `python -c "import matplotlib"`（3.11+） | 同上 | `pip install matplotlib -i 清华源` |
-| Mermaid CLI (mmdc) | 流程图/时序图/状态图 → SVG（配图主力之一） | `C:\Users\job_p\AppData\Local\Programs\nodejs\mmdc.cmd`（node v24 + 全局包） | `mmdc.cmd --version` | `npm.cmd install -g @mermaid-js/mermaid-cli`；渲染设 `$env:PUPPETEER_EXECUTABLE_PATH` 指向系统 Chrome；PowerShell 下用 `mmdc.cmd` 非 `mmdc`（ps1 被执行策略禁） |
+| Mermaid CLI (mmdc) | 流程图/时序图/状态图 → SVG（配图主力之一） | `C:\Users\job_p\AppData\Roaming\npm\mmdc.cmd`（node v24 + 全局包） | `mmdc.cmd --version` | `npm.cmd install -g @mermaid-js/mermaid-cli`；渲染设 `$env:PUPPETEER_EXECUTABLE_PATH` 指向系统 Chrome；PowerShell 下用 `mmdc.cmd` 非 `mmdc`（ps1 被执行策略禁） |
 | PS 提取脚本 | doc/docx 文本提取 | `C:\Users\job_p\AppData\Local\Temp\opencode\extract-docx.ps1` / `extract-doc.ps1` | `Test-Path <脚本>` | 从原机复制 Temp\opencode |
 | 网络抓取 | FTP 目录/下载（需 UA 头） | PowerShell `Invoke-WebRequest` / `curl.exe -A` | `curl.exe --version` | Windows 自带 |
 | 本机文档库 | 本地规范（仅用户明确要求时用） | `C:\Users\job_p\Desktop\NR-f40\` | `Test-Path` | 从 3GPP FTP 重新下载（流程见官网权威信息章节） |
@@ -314,7 +314,7 @@ ASN.1 一律放 `<pre>` 内用 span 着色；禁止自创伪 ASN.1 结构，全�
 - **3GPP 文档中公式、符号、记号大量为图片式（OLE 对象/截图）**：纯文本提取必然不完整，任何资料读取任务**必须同步用图片识别工具（p2t）核实**，不得只用文本提取结果
 - 双轨流程：
   1. 文本轨：docx/doc 提取文本（extract-docx.ps1 / extract-doc.ps1 或 python-docx）→ 得正文框架
-  2. 图片轨：**同步** soffice 转 PDF → PyMuPDF 定位并渲染页面/公式区域 PNG（`get_pixmap(dpi=300)`）→ `& "C:\Users\job_p\AppData\Local\Programs\Python\Python312\Scripts\p2t.exe" predict --file-type formula/page` 识别公式、符号、记号 → 与文本轨合并核对
+  2. 图片轨：**同步** soffice 转 PDF → PyMuPDF 定位并渲染页面/公式区域 PNG（`get_pixmap(dpi=300)`）→ `& "C:\Users\job_p\AppData\Roaming\Python\Python312\Scripts\p2t.exe" predict --file-type formula/page` 识别公式、符号、记号 → 与文本轨合并核对
   3. 两轨结果有差异时以图片识别结果为准（图片是原文原貌）
 - 公式识别后与规范知识核对（交叉验证，多模式跑 p2t），已核实的标注【公式已核实】；未核实的标注【待核实】，不得无标注使用
 - 输出公式一律 MathJax/LaTeX 标准排版（禁止 ⌈⌉、N_RB^、log2( 等纯文本伪公式）
