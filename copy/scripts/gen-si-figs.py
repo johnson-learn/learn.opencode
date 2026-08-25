@@ -2,7 +2,7 @@
 """生成系统消息专题 SVG 示意图（9 张，v2：错位修复 + tspan 上下标 + 字号适配）"""
 import os
 
-OUT = r"C:\Users\job_p\AppData\Local\Temp\opencode\si-figs"
+OUT = r"<用户临时目录>\opencode\si-figs"
 os.makedirs(OUT, exist_ok=True)
 
 def txt(x, y, s, size=13, color="#1a1a1a", anchor="start", bold=False, rot=None):

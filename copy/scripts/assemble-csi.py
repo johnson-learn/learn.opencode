@@ -2,8 +2,8 @@
 """合并 CSI 片段 + 插入 5 图"""
 import os
 
-base = r'C:\Users\job_p\AppData\Local\Temp\opencode'
-target = r'C:\Users\job_p\Desktop\NR-f40\CSI-01-信道状态信息全梳理.html'
+base = r'<用户临时目录>\opencode'
+target = r'<用户桌面目录>\NR-f40\CSI-01-信道状态信息全梳理.html'
 
 h = ''
 for f in ('csi-r1.html', 'csi-r2.html', 'csi-r3.html', 'csi-r4.html'):

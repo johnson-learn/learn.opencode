@@ -1,8 +1,8 @@
 ﻿# 用 CDP 模拟点击计算器并读取输出，真正验证交互是否工作
-param([string]$urlFile = "C:\Users\job_p\Desktop\NR-f40\BWP-08-练习册与计算器.html")
-$chrome = "C:\Program Files\Google\Chrome\Application\chrome.exe"
+param([string]$urlFile = "<用户桌面目录>\NR-f40\BWP-08-练习册与计算器.html")
+$chrome = "<Chrome目录>\chrome.exe"
 $port = 9233
-$tmp = "C:\Users\job_p\AppData\Local\Temp\opencode\chrome-tmp"
+$tmp = "<用户临时目录>\opencode\chrome-tmp"
 if (Test-Path $tmp) { Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue }
 $proc = Start-Process $chrome -ArgumentList "--headless=new","--disable-gpu","--remote-debugging-port=$port","--user-data-dir=$tmp","about:blank" -PassThru
 Start-Sleep -Seconds 2

@@ -2,7 +2,7 @@
 """ASN.1 pre 块规则化着色：结构名紫/字段名红/类型蓝/行尾注释绿/省略号灰"""
 import re
 
-d = r'C:\Users\job_p\Desktop\NR-f40'
+d = r'<用户桌面目录>\NR-f40'
 
 def color_pre(pre):
     m = re.match(r'(<pre[^>]*>)([\s\S]*?)</pre>', pre)

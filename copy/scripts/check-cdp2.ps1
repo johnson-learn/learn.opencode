@@ -1,7 +1,7 @@
 ﻿# 校验 BWP-02 与 BWP-05 的计算器（CDP 模拟点击）
-$chrome = "C:\Program Files\Google\Chrome\Application\chrome.exe"
+$chrome = "<Chrome目录>\chrome.exe"
 $port = 9234
-$tmp = "C:\Users\job_p\AppData\Local\Temp\opencode\chrome-tmp2"
+$tmp = "<用户临时目录>\opencode\chrome-tmp2"
 if (Test-Path $tmp) { Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue }
 $proc = Start-Process $chrome -ArgumentList "--headless=new","--disable-gpu","--remote-debugging-port=$port","--user-data-dir=$tmp","about:blank" -PassThru
 Start-Sleep -Seconds 2
@@ -26,8 +26,8 @@ function Eval([string]$expr) {
   if ($r.result.result.value) { return $r.result.result.value.ToString() } else { return "(no value)" }
 }
 
-$f2 = "file:///C:/Users/job_p/Desktop/NR-f40/BWP-02-物理层定义与资源网格.html"
-$f5 = "file:///C:/Users/job_p/Desktop/NR-f40/BWP-05-DCI切换.html"
+$f2 = "file:///<3GPP文档库目录>/BWP-02-物理层定义与资源网格.html"
+$f5 = "file:///<3GPP文档库目录>/BWP-05-DCI切换.html"
 
 foreach ($f in @($f2,$f5)) {
   $t = New-Tab $f

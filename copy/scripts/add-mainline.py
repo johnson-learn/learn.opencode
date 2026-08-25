@@ -2,7 +2,7 @@
 """BWP/PDCCH 补主线串联 v2：用每讲第二个 h2 精确定位讲次开头"""
 import re
 
-d = r'C:\Users\job_p\Desktop\NR-f40'
+d = r'<用户桌面目录>\NR-f40'
 BRIDGE_CSS = '.bridge { background:#f3f6fa; border:1px dashed #9db8d2; padding:10px 14px; margin:12px 0; font-size:14.5px; }'
 LINE_CSS = '.mainline { background:#fff8e6; border:2px solid #c55a11; padding:12px 16px; margin:16px 0; font-size:14.5px; }'
 

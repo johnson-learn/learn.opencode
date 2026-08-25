@@ -2,7 +2,7 @@
 """BWP/PDCCH/CSI/SRS 四专题：补四问定位 + 双视角落地讲次"""
 import re, sys
 sys.stdout.reconfigure(encoding='utf-8')
-d = r'C:\Users\job_p\Desktop\NR-f40'
+d = r'<用户桌面目录>\NR-f40'
 
 # ================= BWP =================
 f = d + r'\BWP-带宽部分全梳理.html'

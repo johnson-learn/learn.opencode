@@ -9,11 +9,11 @@ description: 网络资源获取与 GitHub 镜像加速技能（全局 skill，�
 
 | 工具 | 用途 | 本机位置/版本 | 检查命令 | 缺失时安装 |
 |---|---|---|---|---|
-| curl.exe | 下载/探测（-L 重定向、-A UA 头、-m 超时、-o 输出） | Windows 自带 `C:\Windows\System32\curl.exe` | `curl.exe --version` | Windows 10+ 自带 |
-| node + market-cli | LobeHub 市场搜索/安装 | npx 缓存 `C:\Users\job_p\AppData\Local\npm-cache\_npx\06aaad52133b3ed7\node_modules\@lobehub\market-cli\dist\cli.js`（含凭证 `~\.lobehub-market\credentials.json`） | `& node <cli.js> --help` | `npx -y @lobehub/market-cli register --name xxx --description xxx --source open-claw`（凭证需重新注册） |
+| curl.exe | 下载/探测（-L 重定向、-A UA 头、-m 超时、-o 输出） | Windows 自带 `<工具目录>Windows\System32\curl.exe` | `curl.exe --version` | Windows 10+ 自带 |
+| node + market-cli | LobeHub 市场搜索/安装 | npx 缓存 `<用户目录>\AppData\Local\npm-cache\_npx\06aaad52133b3ed7\node_modules\@lobehub\market-cli\dist\cli.js`（含凭证 `~\.lobehub-market\credentials.json`） | `& node <cli.js> --help` | `npx -y @lobehub/market-cli register --name xxx --description xxx --source open-claw`（凭证需重新注册） |
 | Python 3.12 | 下载脚本（fetch_skills.py）、MSI 校验（msilib） | `python` | `python --version` | python.org |
 | tar / Expand-Archive | 解压 tarball/zip | Windows 自带 | `tar --version` | 自带 |
-| 批量安装脚本 | GitHub skill 仓库批量抓取 | `E:\openCodeDefault\temp\fetch_skills.py` | `Test-Path` | 从原机复制（含 PLAN 映射表） |
+| 批量安装脚本 | GitHub skill 仓库批量抓取 | `<项目目录>\temp\fetch_skills.py` | `Test-Path` | 从原机复制（含 PLAN 映射表） |
 | pip 清华源 | Python 包装 | `https://pypi.tuna.tsinghua.edu.cn/simple` | — | 无需装 |
 | GitHub 镜像 | 直连不通时的替代渠道 | ghproxy.net（截断风险）/ gh-proxy.com（大文件首选） | `curl -sL -m 20 -o NUL -w %{http_code} https://gh-proxy.com/` | 无需装（渠道失效换下一个） |
 | winget | Windows 包安装（不稳，GitHub 源常失败） | 自带 | `winget --version` | 自带 |
@@ -52,9 +52,9 @@ description: 网络资源获取与 GitHub 镜像加速技能（全局 skill，�
 
 ### LobeHub CLI 用法（本机凭证已注册）
 ```
-& node "C:\Users\job_p\AppData\Local\npm-cache\_npx\06aaad52133b3ed7\node_modules\@lobehub\market-cli\dist\cli.js" skills search --q "关键词"
+& node "<用户目录>\AppData\Local\npm-cache\_npx\06aaad52133b3ed7\node_modules\@lobehub\market-cli\dist\cli.js" skills search --q "关键词"
 （同上）skills install <identifier> --dir <目录>
-（npx 方式：& "C:\Program Files\nodejs\npx.cmd" -y @lobehub/market-cli ...；token 失效时先 auth refresh）
+（npx 方式：& "<Node目录>\npx.cmd" -y @lobehub/market-cli ...；token 失效时先 auth refresh）
 ```
 - search/view/install 对 token 要求不同；view 报 invalid_token 时直接 install 通常可行
 
@@ -70,7 +70,7 @@ description: 网络资源获取与 GitHub 镜像加速技能（全局 skill，�
 - 多详情页并行抓取时用 general 子代理批量处理（每页 SKILL.md 完整，直接落盘 GUIDE.md）
 
 ### GitHub skill 仓库批量安装脚本
-- 批量脚本：`python E:\openCodeDefault\temp\fetch_skills.py [仓库名过滤]`（ghproxy 下载 tarball → 递归找 SKILL.md → 按 PLAN 映射装入目标 skill 的 modules/ → SKILL.md 改名 GUIDE.md）
+- 批量脚本：`python <项目目录>\temp\fetch_skills.py [仓库名过滤]`（ghproxy 下载 tarball → 递归找 SKILL.md → 按 PLAN 映射装入目标 skill 的 modules/ → SKILL.md 改名 GUIDE.md）
 - 大仓库（如 claude-office-skills 140+ 技能）装完后按白名单清理非目标模块
 - 已知失败：超大仓库下载超时（pdf-converter-mineru）、超长路径（imbad0202，Windows 路径限制）、部分仓库 tarball 截断（改走 skillsmp 详情页抓取）
 
@@ -133,6 +133,6 @@ description: 网络资源获取与 GitHub 镜像加速技能（全局 skill，�
 ## 环境注意
 
 - 中文输出优先；文件编码 UTF-8
-- 临时文件放 `C:\Users\job_p\AppData\Local\Temp\opencode` 或项目 temp，用完清理
+- 临时文件放 `<用户临时目录>\opencode` 或项目 temp，用完清理
 - 下载一律带 `-L`（跟随重定向）和超时 `-m`；tar 解压前先 `tar -tzf` 验证
 - 与 files_skill / 3gpp_skill 联动：`find_skill&files_skill：任务` 获取资源后立即处理

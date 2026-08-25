@@ -2,8 +2,8 @@
 """组装 PDSCH/PUSCH 两个文件 + 插图 + 校验"""
 import re, os
 
-base = r'C:\Users\job_p\AppData\Local\Temp\opencode'
-outdir = r'C:\Users\job_p\Desktop\NR-f40'
+base = r'<用户临时目录>\opencode'
+outdir = r'<用户桌面目录>\NR-f40'
 
 def build(parts, figs, target):
     h = ''

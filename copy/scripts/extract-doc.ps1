@@ -1,7 +1,7 @@
 ﻿# 3GPP 文档文本提取脚本（.doc 二进制格式，通过 Word COM 提取）
 param(
-  [string]$src = "C:\Users\job_p\Desktop\NR-f40",
-  [string]$out = "C:\Users\job_p\AppData\Local\Temp\opencode\specs"
+  [string]$src = "<用户桌面目录>\NR-f40",
+  [string]$out = "<用户临时目录>\opencode\specs"
 )
 $ErrorActionPreference = "Continue"
 New-Item -ItemType Directory -Force -Path $out | Out-Null

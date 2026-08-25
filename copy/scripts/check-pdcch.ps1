@@ -1,7 +1,7 @@
 ﻿# PDCCH 计算器 CDP 校验：模拟点击并核对数值
-$chrome = "C:\Program Files\Google\Chrome\Application\chrome.exe"
+$chrome = "<Chrome目录>\chrome.exe"
 $port = 9245
-$tmp = "C:\Users\job_p\AppData\Local\Temp\opencode\chrome-pdcch"
+$tmp = "<用户临时目录>\opencode\chrome-pdcch"
 if (Test-Path $tmp) { Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue }
 $proc = Start-Process $chrome -ArgumentList "--headless=new","--disable-gpu","--remote-debugging-port=$port","--user-data-dir=$tmp","about:blank" -PassThru
 Start-Sleep -Seconds 2
@@ -24,9 +24,9 @@ function Eval([string]$expr) {
 }
 
 $files = @(
-  "file:///C:/Users/job_p/Desktop/NR-f40/PDCCH-02-CORESET资源结构.html",
-  "file:///C:/Users/job_p/Desktop/NR-f40/PDCCH-04-盲检与哈希公式.html",
-  "file:///C:/Users/job_p/Desktop/NR-f40/PDCCH-08-练习册与计算器.html"
+  "file:///<3GPP文档库目录>/PDCCH-02-CORESET资源结构.html",
+  "file:///<3GPP文档库目录>/PDCCH-04-盲检与哈希公式.html",
+  "file:///<3GPP文档库目录>/PDCCH-08-练习册与计算器.html"
 )
 foreach ($f in $files) {
   $t = Invoke-RestMethod -Method Put "http://127.0.0.1:$port/json/new?$([uri]::EscapeDataString($f))"

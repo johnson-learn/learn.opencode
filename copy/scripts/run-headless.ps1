@@ -1,3 +1,3 @@
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$files = [System.IO.File]::ReadAllLines("C:\Users\job_p\AppData\Local\Temp\opencode\files-to-check.txt", [System.Text.Encoding]::UTF8)
-& "C:\Users\job_p\AppData\Local\Temp\opencode\check-headless.ps1" -Files $files
+$files = [System.IO.File]::ReadAllLines("<用户临时目录>\opencode\files-to-check.txt", [System.Text.Encoding]::UTF8)
+& "<用户临时目录>\opencode\check-headless.ps1" -Files $files

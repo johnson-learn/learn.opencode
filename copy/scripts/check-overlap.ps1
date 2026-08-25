@@ -1,8 +1,8 @@
 # SVG 文字重叠检测：真实浏览器渲染后用 getBBox 检测所有 text 元素两两重叠
 param([string[]]$Files)
-$chrome = "C:\Program Files\Google\Chrome\Application\chrome.exe"
+$chrome = "<Chrome目录>\chrome.exe"
 $port = 9241
-$tmp = "C:\Users\job_p\AppData\Local\Temp\opencode\chrome-ov"
+$tmp = "<用户临时目录>\opencode\chrome-ov"
 if (Test-Path $tmp) { Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue }
 $proc = Start-Process $chrome -ArgumentList "--headless=new","--disable-gpu","--remote-debugging-port=$port","--user-data-dir=$tmp","about:blank" -PassThru
 Start-Sleep -Seconds 2

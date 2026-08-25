@@ -2,7 +2,7 @@
 """排查各文件 ASN.1 pre 块的着色情况"""
 import re
 
-d = r'C:\Users\job_p\Desktop\NR-f40'
+d = r'<用户桌面目录>\NR-f40'
 for f in ['BWP-带宽部分全梳理.html', 'PDCCH-物理下行控制信道全梳理.html',
           '系统消息-01-SSB-MIB-SIB1与OSI.html', 'CSI-信道状态信息全梳理.html']:
     h = open(d + '\\' + f, encoding='utf-8').read()

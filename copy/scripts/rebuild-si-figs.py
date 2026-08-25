@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
 
-f = r'C:\Users\job_p\Desktop\NR-f40\系统消息-01-SSB-MIB-SIB1与OSI.html'
+f = r'<用户桌面目录>\NR-f40\系统消息-01-SSB-MIB-SIB1与OSI.html'
 html = open(f, encoding='utf-8').read()
 
 # 1) 清空所有 figure（当前 6 个）
@@ -9,7 +9,7 @@ html, n_del = re.subn(r'<figure[\s\S]*?</figure>', '', html)
 print('清除 figure:', n_del)
 
 # 2) 恢复 1.3~2.8 节正文（插到 <h3>2.9 本讲小结 之前）
-restore = open(r'C:\Users\job_p\AppData\Local\Temp\opencode\si-restore.html', encoding='utf-8').read()
+restore = open(r'<用户临时目录>\opencode\si-restore.html', encoding='utf-8').read()
 i = html.find('<h3>2.9 本讲小结')
 assert i > 0, '2.9 锚点缺失'
 html = html[:i] + restore + '\n' + html[i:]
@@ -28,7 +28,7 @@ anchors = [
     ('fig9', '<h2>7. 第 7 讲', 'after'),
 ]
 for key, anchor, pos in anchors:
-    seg = open(rf'C:\Users\job_p\AppData\Local\Temp\opencode\si-figs\{key}.html', encoding='utf-8').read()
+    seg = open(rf'<用户临时目录>\opencode\si-figs\{key}.html', encoding='utf-8').read()
     i = html.find(anchor)
     if i < 0:
         print('锚点缺失:', key, '->', anchor[:50])

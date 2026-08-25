@@ -9,7 +9,7 @@ def text_wh(s, size):
     return w, size * 1.25
 
 def main():
-    files = glob.glob(r"C:\Users\job_p\Desktop\NR-f40\系统消息*.html")
+    files = glob.glob(r"<用户桌面目录>\NR-f40\系统消息*.html")
     total = 0
     for f in files:
         html = open(f, encoding='utf-8').read()

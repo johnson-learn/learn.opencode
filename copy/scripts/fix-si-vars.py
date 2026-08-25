@@ -3,7 +3,7 @@
 import re
 
 # ---------- 1) gen-si-figs.py 内 SVG 文字 tspan 化 ----------
-gp = r'C:\Users\job_p\AppData\Local\Temp\opencode\gen-si-figs.py'
+gp = r'<用户临时目录>\opencode\gen-si-figs.py'
 g = open(gp, encoding='utf-8').read()
 SUB = lambda w: f'<tspan baseline-shift="sub">{w}</tspan>'
 SUP = lambda w: f'<tspan baseline-shift="super">{w}</tspan>'
@@ -40,7 +40,7 @@ for a, b in reps:
 open(gp, 'w', encoding='utf-8').write(g)
 
 # ---------- 2) HTML 正文变量 MathJax 化（跳过 svg） ----------
-hf = r'C:\Users\job_p\Desktop\NR-f40\系统消息-01-SSB-MIB-SIB1与OSI.html'
+hf = r'<用户桌面目录>\NR-f40\系统消息-01-SSB-MIB-SIB1与OSI.html'
 h = open(hf, encoding='utf-8').read()
 parts = re.split(r'(<svg\b[\s\S]*?</svg>)', h)
 body_reps = [

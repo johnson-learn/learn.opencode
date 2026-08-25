@@ -2,7 +2,7 @@
 """系统消息：补四问定位 + 双视角落地讲次"""
 import re, sys
 sys.stdout.reconfigure(encoding='utf-8')
-d = r'C:\Users\job_p\Desktop\NR-f40'
+d = r'<用户桌面目录>\NR-f40'
 f = d + r'\系统消息-01-SSB-MIB-SIB1与OSI.html'
 h = open(f, encoding='utf-8').read()
 

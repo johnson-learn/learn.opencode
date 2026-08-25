@@ -38,7 +38,7 @@ for ax, ti, ns, nr in zip(axes, titles, syms, prbs):
     ax.set_xlabel("时域符号 →", fontsize=9)
 fig.suptitle("PUCCH 五种格式的时频资源示意（色块=RE，深色=DM-RS 位置、浅色=UCI）", fontsize=12.5, y=1.02)
 fig.tight_layout()
-fig.savefig(r"C:\Users\job_p\AppData\Local\Temp\opencode\pucch-formats.svg", bbox_inches="tight")
+fig.savefig(r"<用户临时目录>\opencode\pucch-formats.svg", bbox_inches="tight")
 plt.close(fig)
 
 # ---------- 图2：ZC 根序列循环移位滚出多个前导 ----------
@@ -57,7 +57,7 @@ ax.set_title("ZC 根序列经循环移位 C_v = v·N_CS 生成多个前导（示
 ax.legend(fontsize=9.5, loc="upper right")
 ax.set_ylim(-0.85, 1.8)
 fig.tight_layout()
-fig.savefig(r"C:\Users\job_p\AppData\Local\Temp\opencode\ra-zc.svg", bbox_inches="tight")
+fig.savefig(r"<用户临时目录>\opencode\ra-zc.svg", bbox_inches="tight")
 plt.close(fig)
 
 # ---------- 图3：SSB → RO → 前导 映射网格 ----------
@@ -82,7 +82,7 @@ ax.set_ylim(-1.6, 3.6)
 ax.axis("off")
 ax.set_title("SSB 到 PRACH 时机（RO）与前导段的映射示意：ssb-perRO=oneFourth、每 SSB 16 个 CB 前导、msg1-FDM=2", fontsize=12.5)
 fig.tight_layout()
-fig.savefig(r"C:\Users\job_p\AppData\Local\Temp\opencode\ra-map.svg", bbox_inches="tight")
+fig.savefig(r"<用户临时目录>\opencode\ra-map.svg", bbox_inches="tight")
 plt.close(fig)
 
 print("3 matplotlib SVGs done")

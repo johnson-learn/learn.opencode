@@ -2,7 +2,7 @@
 """修复 BIT/OCTET STRING 拆分着色"""
 import sys
 sys.stdout.reconfigure(encoding='utf-8')
-d = r'C:\Users\job_p\Desktop\NR-f40'
+d = r'<用户桌面目录>\NR-f40'
 for f in ['系统消息-01-SSB-MIB-SIB1与OSI.html', 'PDCCH-物理下行控制信道全梳理.html']:
     h = open(d + '\\' + f, encoding='utf-8').read()
     n1 = h.count('<span class="rt">BIT</span> STRING')

@@ -3,7 +3,7 @@
 # 用法：python inject_skills.py <目标项目目录>
 import os, re, shutil, sys
 
-GLOBAL_SKILLS = r"C:\Users\job_p\.config\opencode\skills"
+GLOBAL_SKILLS = r"<opencode配置目录>\skills"
 
 def rewrite_description(text, name):
     """把'仅显式触发'的全局 description 改写为项目级默认触发"""

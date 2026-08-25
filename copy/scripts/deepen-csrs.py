@@ -2,7 +2,7 @@
 """CSI/SRS 两专题：补四问定位 + 双视角落地讲次（编号顺延）"""
 import re, sys
 sys.stdout.reconfigure(encoding='utf-8')
-d = r'C:\Users\job_p\Desktop\NR-f40'
+d = r'<用户桌面目录>\NR-f40'
 
 # ================= CSI =================
 f = d + r'\CSI-信道状态信息全梳理.html'

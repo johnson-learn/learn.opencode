@@ -2,7 +2,7 @@
 """SRS 双视角插入（锚点修正）+ 伪公式修复"""
 import re, sys
 sys.stdout.reconfigure(encoding='utf-8')
-d = r'C:\Users\job_p\Desktop\NR-f40'
+d = r'<用户桌面目录>\NR-f40'
 f = d + r'\SRS-探测参考信号全梳理.html'
 h = open(f, encoding='utf-8').read()
 

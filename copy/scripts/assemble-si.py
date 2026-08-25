@@ -2,8 +2,8 @@
 """合并重建片段 + 插入 9 图（fig2=matplotlib、fig8=Mermaid、其余 si-figs v2）"""
 import os
 
-base = r'C:\Users\job_p\AppData\Local\Temp\opencode'
-target = r'C:\Users\job_p\Desktop\NR-f40\系统消息-01-SSB-MIB-SIB1与OSI.html'
+base = r'<用户临时目录>\opencode'
+target = r'<用户桌面目录>\NR-f40\系统消息-01-SSB-MIB-SIB1与OSI.html'
 
 h = ''
 for f in ('si-r1.html', 'si-r2.html', 'si-r3.html', 'si-r4.html'):

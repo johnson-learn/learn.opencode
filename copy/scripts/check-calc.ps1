@@ -1,8 +1,8 @@
 # 通用计算器点击校验：点击每个 .calc 中的 button，检查 out 输出无 NaN/undefined/输入有误
 param([string[]]$Files)
-$chrome = "C:\Program Files\Google\Chrome\Application\chrome.exe"
+$chrome = "<Chrome目录>\chrome.exe"
 $port = 9234
-$tmp = "C:\Users\job_p\AppData\Local\Temp\opencode\chrome-tmp2"
+$tmp = "<用户临时目录>\opencode\chrome-tmp2"
 if (Test-Path $tmp) { Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue }
 $proc = Start-Process $chrome -ArgumentList "--headless=new","--disable-gpu","--remote-debugging-port=$port","--user-data-dir=$tmp","about:blank" -PassThru
 Start-Sleep -Seconds 2

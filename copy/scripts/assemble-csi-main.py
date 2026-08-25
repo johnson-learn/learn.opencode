@@ -2,8 +2,8 @@
 """CSI 主线单文件：合并 4 片段 + 练习册段 + 插图"""
 import os, re
 
-base = r'C:\Users\job_p\AppData\Local\Temp\opencode'
-outdir = r'C:\Users\job_p\Desktop\NR-f40'
+base = r'<用户临时目录>\opencode'
+outdir = r'<用户桌面目录>\NR-f40'
 
 h = ''
 for f in ('csi-main-r1.html', 'csi-main-r2.html', 'csi-main-r3.html', 'csi-main-r4.html'):

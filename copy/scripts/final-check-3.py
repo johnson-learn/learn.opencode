@@ -2,7 +2,7 @@
 """三个文件校验 + 删除旧分文件"""
 import re, os, glob
 
-d = r'C:\Users\job_p\Desktop\NR-f40'
+d = r'<用户桌面目录>\NR-f40'
 files = ['系统消息-01-SSB-MIB-SIB1与OSI.html', 'BWP-带宽部分全梳理.html', 'PDCCH-物理下行控制信道全梳理.html']
 bad = 0
 for name in files:

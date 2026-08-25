@@ -2,8 +2,8 @@
 """插入补充图（PDSCH ×4 + PUSCH ×3）+ 校验"""
 import re, sys, os
 sys.stdout.reconfigure(encoding='utf-8')
-base = r'C:\Users\job_p\AppData\Local\Temp\opencode'
-d = r'C:\Users\job_p\Desktop\NR-f40'
+base = r'<用户临时目录>\opencode'
+d = r'<用户桌面目录>\NR-f40'
 
 def insert(fname, figs):
     f = d + '\\' + fname

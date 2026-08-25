@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import io, re
 
-p = r'C:\Users\job_p\Desktop\NR-f40\PUCCH-物理上行控制信道全梳理.html'
+p = r'<用户桌面目录>\NR-f40\PUCCH-物理上行控制信道全梳理.html'
 t = io.open(p, encoding='utf-8').read()
 a = 'var ms=1000/(scs/15)*0.5;'
 b = 'var ms=0.5*15/scs;'
@@ -10,7 +10,7 @@ t = t.replace(a, b)
 io.open(p, 'w', encoding='utf-8').write(t)
 print('PUCCH calc fixed:', n)
 
-p2 = r'C:\Users\job_p\Desktop\NR-f40\随机接入-SSB到RRC全流程.html'
+p2 = r'<用户桌面目录>\NR-f40\随机接入-SSB到RRC全流程.html'
 t = io.open(p2, encoding='utf-8').read()
 m = re.search(r'<li>非限制集下一根 L=839.{0,220}?</li>', t)
 if m:
