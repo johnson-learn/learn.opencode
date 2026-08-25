@@ -1,6 +1,6 @@
 ﻿# 3GPP 文档文本提取脚本（.doc 二进制格式，通过 Word COM 提取）
 param(
-  [string]$src = "<用户桌面目录>\NR-f40",
+  [string]$src = "<3GPP文档库目录>",
   [string]$out = "<用户临时目录>\opencode\specs"
 )
 $ErrorActionPreference = "Continue"

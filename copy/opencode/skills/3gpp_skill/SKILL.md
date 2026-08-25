@@ -16,7 +16,7 @@ description: 3GPP 移动通信标准专家技能（全局 skill，仅显式触�
 | Mermaid CLI (mmdc) | 流程图/时序图/状态图 → SVG（配图主力之一） | `<用户AppData目录>\npm\mmdc.cmd`（node v24 + 全局包） | `mmdc.cmd --version` | `npm.cmd install -g @mermaid-js/mermaid-cli`；渲染设 `$env:PUPPETEER_EXECUTABLE_PATH` 指向系统 Chrome；PowerShell 下用 `mmdc.cmd` 非 `mmdc`（ps1 被执行策略禁） |
 | PS 提取脚本 | doc/docx 文本提取 | `<用户临时目录>\opencode\extract-docx.ps1` / `extract-doc.ps1` | `Test-Path <脚本>` | 从原机复制 Temp\opencode |
 | 网络抓取 | FTP 目录/下载（需 UA 头） | PowerShell `Invoke-WebRequest` / `curl.exe -A` | `curl.exe --version` | Windows 自带 |
-| 本机文档库 | 本地规范（仅用户明确要求时用） | `<用户桌面目录>\NR-f40\` | `Test-Path` | 从 3GPP FTP 重新下载（流程见官网权威信息章节） |
+| 本机文档库 | 本地规范（仅用户明确要求时用） | `<3GPP文档库目录>\` | `Test-Path` | 从 3GPP FTP 重新下载（流程见官网权威信息章节） |
 | 本机 6G 文档 | TR 22.870/38.914 存档 | `<项目目录>\temp\6G\` | `Test-Path` | 按「FTP 访问技巧」重下 |
 
 **移植说明**：本技能核心链路 = 文本提取 + p2t 图片识别 + soffice 转 PDF + PyMuPDF 渲染，四件套缺一不可；网络抓取与本地文档库为可选项（缺时全部走官网实时获取）。
@@ -323,7 +323,7 @@ ASN.1 一律放 `<pre>` 内用 span 着色；禁止自创伪 ASN.1 结构，全�
 
 > 默认分析走官网/FTP（覆盖各版本与最新版本）；本目录文档多为 V15.4.0（f40）版本，**非默认依据**。
 
-- **3GPP 文档库**：`<用户桌面目录>\NR-f40\`（PHY 38.104/133/201/202/211/212/213/214/215；L2/L3 38.300/304/321/322/323/331/37.324；接口/架构 38.401/410/413/415/425/473；系统/核心网 21.900/23.501/502/24.501/29.274/281/295.002/295.018/33.501/29.060/38.533）
+- **3GPP 文档库**：`<3GPP文档库目录>\`（PHY 38.104/133/201/202/211/212/213/214/215；L2/L3 38.300/304/321/322/323/331/37.324；接口/架构 38.401/410/413/415/425/473；系统/核心网 21.900/23.501/502/24.501/29.274/281/295.002/295.018/33.501/29.060/38.533）
 - **纯文本索引**：`<用户临时目录>\opencode\specs\*.txt`（全文搜索用；公式字符缺失需 p2t 核实）
 - **3GPP 权威下载**：官网 FTP `https://www.3gpp.org/ftp/Specs/archive/`（38 系列=5G NR，36 系列=4G LTE，23 系列=核心网；完整目录地图与代际划分见「官网权威信息 → 存档 FTP 结构」章节；直链模板 `https://www.3gpp.org/ftp/Specs/archive/38_series/38211/38211-h40.zip`）
 - **官网权威查询入口**：DynaReport（`https://www.3gpp.org/dynareport/<规范号>.htm`，最新版本信息）与 3GU Portal（portal.3gpp.org，含各 Release 规格清单）

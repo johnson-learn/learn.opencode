@@ -2,7 +2,7 @@
 """① 系统消息补节：寻呼时机 PF/PO 公式（38.304 §7.1）"""
 import re
 
-f = r'<用户桌面目录>\NR-f40\系统消息-01-SSB-MIB-SIB1与OSI.html'
+f = r'<3GPP文档库目录>\系统消息-01-SSB-MIB-SIB1与OSI.html'
 h = open(f, encoding='utf-8').read()
 
 sec = '''<h3>6.3+ 补遗：寻呼时机 PF/PO——Short Message 的监听载体（38.304 §7.1）</h3>

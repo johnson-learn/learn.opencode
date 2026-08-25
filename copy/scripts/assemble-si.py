@@ -3,7 +3,7 @@
 import os
 
 base = r'<用户临时目录>\opencode'
-target = r'<用户桌面目录>\NR-f40\系统消息-01-SSB-MIB-SIB1与OSI.html'
+target = r'<3GPP文档库目录>\系统消息-01-SSB-MIB-SIB1与OSI.html'
 
 h = ''
 for f in ('si-r1.html', 'si-r2.html', 'si-r3.html', 'si-r4.html'):

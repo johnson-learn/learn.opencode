@@ -2,7 +2,7 @@
 """CSI 主线最终校验：重叠 + 结构"""
 import re
 
-f = r'<用户桌面目录>\NR-f40\CSI-信道状态信息全梳理.html'
+f = r'<3GPP文档库目录>\CSI-信道状态信息全梳理.html'
 h = open(f, encoding='utf-8').read()
 svgs = re.findall(r'<svg\b.*?</svg>', h, re.S)
 total = 0
