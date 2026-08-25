@@ -15,3 +15,4 @@ opencode/skills/*/modules/*/assets/fonts/
 # 编译产物
 **/bin/
 **/obj/
+opencode/skills/update_skill/sync_target.txt
