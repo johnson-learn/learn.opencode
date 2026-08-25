@@ -93,8 +93,8 @@ def convert(text, pairs):
             text = text.replace(real_slash, ph)
     return text
 
-# 状态文件保护：这些本机特定文件不参与任何转换（防止 path_map 自我指涉）
-STATE_FILES = {"path_map.txt", "sync_target.txt"}
+# 状态文件保护：这些本机特定文件不参与任何转换（防止 path_map 自我指涉；path_convert.py 自身含占位符键，转换会自毁）
+STATE_FILES = {"path_map.txt", "sync_target.txt", "path_convert.py"}
 
 def walk_convert(root, pairs, suffix):
     count = 0
