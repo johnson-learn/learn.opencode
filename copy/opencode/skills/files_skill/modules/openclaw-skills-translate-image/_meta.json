@@ -1,0 +1,17 @@
+{
+  "owner": "cottom",
+  "slug": "translate-image",
+  "displayName": "Translate Image",
+  "latest": {
+    "version": "1.0.3",
+    "publishedAt": 1773129249947,
+    "commit": "https://github.com/openclaw/skills/commit/cf7cf65bf00886e653fac30d6abffbb71bcce167"
+  },
+  "history": [
+    {
+      "version": "1.0.2",
+      "publishedAt": 1772354055398,
+      "commit": "https://github.com/openclaw/skills/commit/467dc894d19ad1104830d86e69b6c960ac45a1d0"
+    }
+  ]
+}

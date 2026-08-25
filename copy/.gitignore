@@ -1,0 +1,17 @@
+# 排除本地大文件与生成物
+data/
+node_modules/
+__pycache__/
+*.pyc
+*.log
+*.tmp
+~*
+.DS_Store
+Thumbs.db
+
+# 本地临时产物（不排除 skill 内嵌资源）
+opencode/skills/*/modules/*/assets/fonts/
+
+# 编译产物
+**/bin/
+**/obj/
