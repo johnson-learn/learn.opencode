@@ -2,7 +2,7 @@
 """PUSCH 深化：① 第1讲补含义/作用/目的/场景 ② 新增双视角讲次 ③ 编号顺延"""
 import re, sys
 sys.stdout.reconfigure(encoding='utf-8')
-d = r'<用户桌面目录>\NR-f40'
+d = r'<3GPP文档库目录>'
 f = d + r'\PUSCH-物理上行共享信道全梳理.html'
 h = open(f, encoding='utf-8').read()
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """修复 BWP 两处 SVG 重叠"""
-d = r'<用户桌面目录>\NR-f40'
+d = r'<3GPP文档库目录>'
 f = d + r'\BWP-带宽部分全梳理.html'
 h = open(f, encoding='utf-8').read()
 h = h.replace('<text x="45" y="37" font-size="14" fill="#555">小区载波带宽（例如 100 MHz）</text>',

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
 
-d = r'<用户桌面目录>\NR-f40'
+d = r'<3GPP文档库目录>'
 for f in ['BWP-带宽部分全梳理.html', 'PDCCH-物理下行控制信道全梳理.html']:
     h = open(d + '\\' + f, encoding='utf-8').read()
     print(f, '| mainline:', h.count('mainline'), '| bridge:', h.count('class="bridge"'), '| 大小:', len(h))

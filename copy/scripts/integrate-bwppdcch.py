@@ -2,7 +2,7 @@
 """②③ BWP / PDCCH 整合为单文件（按讲次顺序拼接 body，练习册放最后）"""
 import re, os
 
-d = r'<用户桌面目录>\NR-f40'
+d = r'<3GPP文档库目录>'
 
 def integrate(series, order, outname, main_title):
     files = [os.path.join(d, f'{series}-{n:02d}-*.html') for n in range(10)]
