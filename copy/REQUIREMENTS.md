@@ -66,6 +66,7 @@
 |---|---|---|
 | `opencode\skills\*` | `%USERPROFILE%\.config\opencode\skills\*` | 4 个全局 skill |
 | `opencode\opencode.jsonc`、`instructions.md`、`evolution.md`、`package.json` | `%USERPROFILE%\.config\opencode\` | 全局配置与规则 |
+| `opencode\plugins\*` | `%USERPROFILE%\.config\opencode\plugins\*` | opencode 插件（skill-banner.js） |
 | `scripts\*.ps1 / *.py` | `%LOCALAPPDATA%\Temp\opencode\` | skill 引用的辅助脚本（extract/ocr/check/inject 等） |
 
 **路径自动改写**：skill 与脚本中写死的旧机路径（`C:\Users\<旧用户名>\...`、`E:\openCodeDefault\temp`）会在部署时被 setup 脚本自动替换为新电脑的实际用户路径（`%USERPROFILE%` 与 `%TEMP%\opencode`），无需手工修改任何文件。

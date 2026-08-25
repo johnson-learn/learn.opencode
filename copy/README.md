@@ -16,6 +16,7 @@ copy\
 │   ├── instructions.md           全局技能触发规则与进化协议
 │   ├── evolution.md              技能进化记录
 │   ├── package.json              skill-banner 插件依赖
+│   ├── plugins\skill-banner.js   opencode 插件（会话创建时 toast 展示全局技能清单）
 │   └── skills\                   4 个全局 skill（SKILL.md + modules 子技能库）
 │       ├── 3gpp_skill\           3GPP 移动通信标准专家
 │       ├── files_skill\          文件识别/OCR/公式/文档处理
