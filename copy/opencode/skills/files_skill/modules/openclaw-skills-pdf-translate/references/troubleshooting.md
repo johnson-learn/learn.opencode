@@ -59,7 +59,7 @@ story.append(Paragraph(raw_toc_text, body_style))
    ls /System/Library/Fonts/STHeiti*.ttc
 
    # Windows
-   ls C:/Windows/Fonts/msyh.ttc
+   ls <工具目录>Windows/Fonts/msyh.ttc
 
    # Linux
    ls /usr/share/fonts/truetype/droid/
