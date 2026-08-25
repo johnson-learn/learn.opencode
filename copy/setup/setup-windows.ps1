@@ -282,11 +282,33 @@ if (-not $SkipDeploy) {
     if ($wslDir) { break }
   }
 
-  # 生成 path_map.txt：工具类自动探测；数据类交互选择（默认目录 / 用户定制）
+  # 生成 path_map.txt：工具类自动探测；数据类交互选择（幂等：已配置过则直接复用，不重复询问）
+  # 幂等检查：path_map.txt 已存在且数据类 5 项目录完整（非 FILL_ME 非空）→ 跳过交互
+  $dataKeys = @("<资料目录>", "<3GPP文档库目录>", "<项目目录>", "<源码目录>", "<离线安装包目录>")
+  $existingMap = @{}
+  if (Test-Path $pathMapFile) {
+    Get-Content $pathMapFile | ForEach-Object {
+      if ($_ -match "^([^#=]+)=(.*)$") { $existingMap[$matches[1].Trim()] = $matches[2].Trim() }
+    }
+  }
+  $dataComplete = $true
+  foreach ($k in $dataKeys) {
+    $v = $existingMap[$k]
+    if (-not $v -or $v -eq "FILL_ME") { $dataComplete = $false; break }
+  }
+  if ($dataComplete) {
+    Ok "检测到已配置的数据目录（path_map.txt 完整），跳过目录选择直接复用"
+  } else {
   Write-Host ""
-  Write-Host "  —— 数据目录配置（每项：直接回车=使用默认目录；输入路径=定制）——" -ForegroundColor Cyan
+  Write-Host "  —— 数据目录配置（每项：直接回车=使用默认目录；输入路径=定制；已配置项回车保留原值）——" -ForegroundColor Cyan
   function Ask-Dir {
     param([string]$Label, [string]$DefaultDir)
+    $existingVal = $existingMap[$Label]
+    if ($existingVal -and $existingVal -ne "FILL_ME") {
+      $ans = Read-Host "    $Label`n    已配置: $existingVal （回车保留，输入新路径=修改）"
+      if ([string]::IsNullOrWhiteSpace($ans)) { return $existingVal }
+      return $ans.Trim().TrimEnd("\")
+    }
     $ans = Read-Host "    $Label`n    默认: $DefaultDir （回车使用默认）"
     if ([string]::IsNullOrWhiteSpace($ans)) {
       New-Item -ItemType Directory -Path $DefaultDir -Force | Out-Null
@@ -316,6 +338,7 @@ if (-not $SkipDeploy) {
 
   Ok "工具类目录已自动探测（LibreOffice/Chrome/Node/工具/WSL）"
   Ok "数据类目录已配置（默认或定制）并写入 $pathMapFile"
+  }
 
   # ---------- 7. 路径改写（占位符 → 新机真实路径，path_convert 体系） ----------
   if (-not $NoPathRewrite) {
