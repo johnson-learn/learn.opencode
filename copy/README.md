@@ -1,6 +1,6 @@
 # opencode 工作环境迁移包
 
-> 本仓库 = 4 个全局 skill（3gpp_skill / files_skill / find_skill / program_skill）+ 全局配置 + 辅助脚本 + 一键安装脚本。
+> 本仓库 = 5 个全局 skill（3gpp_skill / files_skill / find_skill / program_skill / update_skill）+ 全局配置 + 辅助脚本 + 一键安装脚本。
 > 目标：任何一台新的 Windows 办公电脑，克隆本仓库后运行一个脚本，即可复现完整工作环境。
 
 ## 目录结构
@@ -17,11 +17,12 @@ copy\
 │   ├── evolution.md              技能进化记录
 │   ├── package.json              skill-banner 插件依赖
 │   ├── plugins\skill-banner.js   opencode 插件（会话创建时 toast 展示全局技能清单）
-│   └── skills\                   4 个全局 skill（SKILL.md + modules 子技能库）
+│   └── skills\                   5 个全局 skill（SKILL.md + modules 子技能库）
 │       ├── 3gpp_skill\           3GPP 移动通信标准专家
 │       ├── files_skill\          文件识别/OCR/公式/文档处理
 │       ├── find_skill\           网络资源获取与镜像加速
-│       └── program_skill\        编程开发（默认 WSL Linux）
+│       ├── program_skill\        编程开发（默认 WSL Linux）
+│       └── update_skill\         技能同步更新（本机进化→GitHub→其它机器移植闭环）
 ├── scripts\                   ← 部署到 %LOCALAPPDATA%\Temp\opencode\ 的辅助脚本
 │   ├── extract-docx.ps1          提取 docx 文本
 │   ├── extract-doc.ps1           提取 doc 文本
@@ -49,7 +50,7 @@ cd copy/setup
 # 2. 一键安装（按需加开关：-SkipWsl -SkipPip 等；国内网络加 -UseChinaMirror）
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File setup\setup-windows.ps1 -UseChinaMirror
 
-# 3. 重启终端，opencode 启动即带 4 个全局 skill
+# 3. 重启终端，opencode 启动即带 5 个全局 skill
 ```
 
 详细步骤与手动安装备查：见 `INSTALL.md`；依赖清单与下载途径：见 `REQUIREMENTS.md`。
