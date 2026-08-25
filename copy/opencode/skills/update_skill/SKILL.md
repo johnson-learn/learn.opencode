@@ -1,6 +1,6 @@
 ---
 name: update_skill
-description: 技能同步更新技能（全局 skill，仅显式触发，不靠关键词自动调用）。Use ONLY when 用户消息显式包含 "update_skill：" 或 "update_skill:"，或以 "update_skill&"、"update_skill " 与其他技能名并列后跟冒号——冒号后为用户任务。加载后执行任务：自动检查本机全局 opencode 配置（skills/instructions.md/evolution.md/opencode.jsonc/plugins/scripts）的新改动，同步到 Git 仓库目录 /home/github/learn.opencode/copy，并 git add/commit/push 到 GitHub（git@github.com:johnson-learn/learn.opencode.git），保证其它机器可下载移植。普通消息仅提及同步/git 但无 "update_skill：" 前缀时，不调用本技能。
+description: 技能同步更新技能（全局 skill，仅显式触发，不靠关键词自动调用）。Use ONLY when 用户消息显式包含 "update_skill：" 或 "update_skill:"，或以 "update_skill&"、"update_skill " 与其他技能名并列后跟冒号——冒号后为用户任务或同步目标目录。加载后执行任务：自动检查本机全局 opencode 配置（skills/instructions.md/evolution.md/opencode.jsonc/plugins/scripts）的新改动，以差异合入模式同步到 Git 仓库目录（首次调用必须由用户指出目标目录，格式 update_skill：<目录>；后续默认用最近指定目录），并 git add/commit/push 到 GitHub，保证其它机器可下载移植。普通消息仅提及同步/git 但无 "update_skill：" 前缀时，不调用本技能。
 ---
 
 # update_skill —— 技能同步更新技能
@@ -17,30 +17,41 @@ description: 技能同步更新技能（全局 skill，仅显式触发，不靠�
 | 同步源（本机脚本） | 配套 PS/Python 脚本 | `<用户目录>\AppData\Local\Temp\opencode\*.ps1`、项目 temp 的 inject_skills.py/fetch_skills.py | `Test-Path` | — |
 | 目标 Git 仓库 | 云端同步落点 | `/home/github/learn.opencode/copy`（WSL 内；Windows 访问 `\\wsl.localhost\Ubuntu\home\github\learn.opencode\copy`） | `wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git remote -v"` | 从 GitHub clone：`git clone git@github.com:johnson-learn/learn.opencode.git copy` |
 
-## 处理流程（git 五步 + 同步三环节，按序执行）
+## 处理流程（目标目录确定 → git 五步 + 同步三环节，按序执行）
+
+### 目标目录确定（记忆机制，第一步必做）
+- **首次调用必须指出同步目标目录**，格式：`update_skill：<目标目录路径>`（Windows UNC 如 `\\wsl.localhost\Ubuntu\home\github\learn.opencode\copy`，或 WSL 路径如 `/home/github/learn.opencode/copy`）
+- 首次调用未指出目录 → **提示用户**："请指出同步目标目录，格式：update_skill：<目录路径>"，等待用户给出后再继续
+- 目录记忆：本机状态文件 `<用户目录>\.config\opencode\skills\update_skill\sync_target.txt` 保存最近指定的目录；每次用户显式给出新目录 → 更新该文件
+- 后续调用未指出目录 → 读取状态文件用最近目录；状态文件不存在或内容无效 → 按首次调用处理（提示用户）
+- Windows UNC 与 WSL 路径互转：UNC `\\wsl.localhost\Ubuntu\...` ↔ WSL `/...`；git 操作一律在 WSL 路径下执行
 
 ### 第 0 步：先 git pull（强制，防止覆盖他人更新）
 ```
 wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --rebase origin main"
 ```
-- pull 成功 → 继续；**pull 冲突** → 停止同步并报告冲突文件，由用户裁决，不得强行 push
+- pull 成功 → 继续；**pull 冲突** → 停止同步并报告冲突文件，由用户裁决，不得强行 push；冲突文件逐个 diff 对比，按"信息完整性优先"合并两边有效内容
 - 工作树非干净（有未提交改动）→ 先 stash（`git stash`），pull 后 `git stash pop`；冲突同上处理
 - 网络失败（无法连 GitHub）→ 报告"无法 pull"，询问是否仅本地 commit（不 push）
 
-### 同步三环节
-1. **同步全局配置** → 仓库 `opencode/` 子目录（全量一致：先删后拷，防止本地已删除文件残留）：
+### 同步三环节（差异合入模式，禁止简单删除替换）
+
+> ⚠ 该 git 仓库可能被其它电脑同时更新修改，**必须对比差异、优化整合合入，不得 rm -rf 删除替换**；仓库中本机没有的文件一律保留（可能是别的电脑的新增），同名文件以内容差异为准逐文件裁决。
+
+1. **合入全局配置** → 仓库 `opencode/` 子目录（覆盖式合入：cp -r 覆盖同名、保留仓库多出文件）：
    ```
-   wsl -d Ubuntu -e bash -c "rm -rf /home/github/learn.opencode/copy/opencode/skills && cp -r /mnt/c/Users/<用户名>/.config/opencode/skills /home/github/learn.opencode/copy/opencode/ && cp /mnt/c/Users/<用户名>/.config/opencode/{instructions.md,evolution.md,opencode.jsonc} /home/github/learn.opencode/copy/opencode/ && rm -rf /home/github/learn.opencode/copy/opencode/plugins && cp -r /mnt/c/Users/<用户名>/.config/opencode/plugins /home/github/learn.opencode/copy/opencode/"
+   wsl -d Ubuntu -e bash -c "cp -r /mnt/c/Users/<用户名>/.config/opencode/skills/* /home/github/learn.opencode/copy/opencode/skills/ && cp /mnt/c/Users/<用户名>/.config/opencode/{instructions.md,evolution.md,opencode.jsonc} /home/github/learn.opencode/copy/opencode/ && mkdir -p /home/github/learn.opencode/copy/opencode/plugins && cp -r /mnt/c/Users/<用户名>/.config/opencode/plugins/* /home/github/learn.opencode/copy/opencode/plugins/"
    ```
-2. **同步本机脚本** → 仓库 `scripts/`（同样先删后拷）：
+2. **合入本机脚本** → 仓库 `scripts/`（同样覆盖式合入）：
    ```
-   复制 <用户目录>\AppData\Local\Temp\opencode\*.ps1、*.py 与 <项目目录>\temp\inject_skills.py、fetch_skills.py → copy/scripts/
+   cp <用户目录>\AppData\Local\Temp\opencode\*.ps1、*.py 与 <项目目录>\temp\inject_skills.py、fetch_skills.py → copy/scripts/
    ```
-3. **检查与校验**：
-   - `git status --short` 列出全部变更
-   - **敏感信息扫描**：检查变更中无密钥/token/凭证（如 `credentials.json`、`id_rsa`、`API_KEY=`）；`.gitignore` 应包含凭证类文件名
-   - **一致性校验**：同步后 skill 数量与源一致（`ls skills | wc -l` 对比）、关键文件非空
-   - 无任何变更 → 报告"无新改动，无需提交"并结束
+3. **差异对比与裁决**：
+   - `git status --short` 列出全部差异：`A`（本机新增→直接接受）、`M`（同文件两边可能都改）、`D`（仓库有本机无→**不删除，恢复保留**，除非确认已废弃）
+   - 对 `M` 文件逐个 `git diff <文件> | head` 查看变化，确认本机内容合理即接受；**同文件两边都改过**（git pull 后与 HEAD 差异 + 远端新提交）时，逐文件对比内容并按"信息完整性优先"合并（保留两边独有的有效内容，冲突点报告用户裁决）
+   - **敏感信息扫描**：检查变更中无密钥/token/凭证；`.gitignore` 覆盖凭证类
+   - 一致性校验：skill 数量 ≥ 源数量（合入后只增不减）、关键文件非空
+   - 无任何差异 → 报告"无新改动"并结束
 
 ### git 三步骤
 1. `git add -A`
@@ -58,6 +69,7 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 ## 环境注意
 
 - 目标仓库在 WSL 内（`/home/github/learn.opencode/copy`），本机 Windows 源经 `/mnt/c/` 访问；WSL 未运行时先 `wsl -d Ubuntu` 拉起
+- **目录记忆状态文件**：`<用户目录>\.config\opencode\skills\update_skill\sync_target.txt`（记录最近目标目录；首次调用必须由用户指出目录，后续默认用最近目录）
 - 推送认证走 SSH（git@github.com）；若换 HTTPS 需配 token
 - 仓库内 `setup/`（install-wsl.ps1 等）、`README.md`、`INSTALL.md`、`REQUIREMENTS.md` 为移植配套文档，同步时保留不动
 - **风险规避**：同步前检查不包含任何密钥/token；`~/.lobehub-market/credentials.json` 等凭证一律不进入仓库
