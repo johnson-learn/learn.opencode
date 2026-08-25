@@ -27,7 +27,7 @@
 - 与既有内容矛盾时，以新验证结果为准并同步修订旧条目
 
 ### 应用范围
-- 5 个全局 skill（按领域归档，含 update_skill 同步工具）+ instructions.md（全局规则）+ 后续新增 skill（自动适用编写规范与本协议）
+- 4 个全局 skill（按领域归档）+ instructions.md（全局规则）+ 后续新增 skill（自动适用编写规范与本协议）
 - 新项目注入的项目级副本随全局源同步（重新执行 inject_skills.py 即更新）
 - 项目/文件夹 md（AGENTS.md 等）：项目特定经验写入该项目的 AGENTS.md
 
@@ -65,7 +65,6 @@
 | `3gpp_skill` | 3GPP/5G NR/LTE 通信标准专家 |
 | `find_skill` | 网络资源获取与镜像加速 |
 | `program_skill` | 编程开发（默认 WSL Linux 环境） |
-| `update_skill` | 技能同步更新（本机进化 → GitHub → 其它机器移植闭环） |
 
 ## 项目 skill（默认触发）
 
