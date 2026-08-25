@@ -28,8 +28,8 @@ description: 技能双向同步更新技能（全局 skill，仅显式触发，�
 
 ### 占位符体系
 - **自动类**（转换时自动推导，无需用户填写）：`<用户目录>`、`<opencode配置目录>`、`<opencode数据目录>`、`<用户临时目录>`、`<用户AppData目录>`、`<用户桌面目录>`、`<WSL用户映射>`、`<Python脚本目录>`
-- **工具类**（安装脚本自动探测本机实际安装目录并写入 path_map.txt，无需用户填写）：`C:\Program Files\LibreOffice`（找 soffice.com）、`C:\Program Files\Google\Chrome\Application`（找 chrome.exe）、`C:\Program Files\nodejs`（PATH 中 node 位置）、`C:\`（找 w64devkit\bin\gcc.exe）、`E:\WSL`（注册表 Lxss BasePath）
-- **数据类**（安装脚本交互选择：直接回车=默认目录，输入路径=用户定制；存于 path_map.txt）：`E:\openCodeDefault\doc`（默认 `D:\opencode\doc\default`）、`<用户桌面目录>\NR-f40`（默认 `D:\opencode\doc\3gpp`）、`E:\openCodeDefault`（默认 `D:\opencode\project\default`）、`E:\opencode_code`（默认 `D:\opencode\code\default`）、`E:\software\wls`（默认 `D:\opencode\tool\default`）
+- **工具类**（安装脚本自动探测本机实际安装目录并写入 path_map.txt，无需用户填写）：`<LibreOffice目录>`（找 soffice.com）、`<Chrome目录>`（找 chrome.exe）、`<Node目录>`（PATH 中 node 位置）、`<工具目录>`（找 w64devkit\bin\gcc.exe）、`<WSL安装目录>`（注册表 Lxss BasePath）
+- **数据类**（安装脚本交互选择：直接回车=默认目录，输入路径=用户定制；存于 path_map.txt）：`<资料目录>`（默认 `D:\opencode\doc\default`）、`<3GPP文档库目录>`（默认 `D:\opencode\doc\3gpp`）、`<项目目录>`（默认 `D:\opencode\project\default`）、`<源码目录>`（默认 `D:\opencode\code\default`）、`<离线安装包目录>`（默认 `D:\opencode\tool\default`）
 
 ### 转换流程（集成进同步三环节）
 1. **本机 → 仓库**：合入前先对仓库文件跑 `python3 <仓库>/copy/scripts/path_convert.py to_portable --home="<本机用户目录正斜杠>" <仓库>/copy/opencode`（及 scripts 目录）——把本机合入内容中的真实路径转为占位符
@@ -37,7 +37,7 @@ description: 技能双向同步更新技能（全局 skill，仅显式触发，�
 3. **远端路径技巧的防御（关键）**：远端文件全部是占位符形式，反向合入到本机时**必须经 to_local 转换**，否则本机 skill 出现占位符导致工具路径失效；to_local 结束自动输出"残留未转换占位符"清单——**出现未知占位符（远端新定义的填写类）时，提示用户补充本机 path_map.txt 后重跑 to_local，不得带着占位符继续使用**
 4. 转换前后各跑一次 `grep -rl "<本机用户名>" <目录>`（正向）与占位符残留扫描（反向）残留检查，为 0 才可提交/合入
 5. 本机状态文件：`<opencode配置目录>\skills\update_skill\path_map.txt`（填写类占位符→本机真实路径映射，**不进仓库**，同步排除）；远端新增占位符时同步更新该文件
-6. **状态文件保护（✓ 本机实测踩坑）**：path_map.txt/sync_target.txt 位于 opencode 配置目录内，to_local 全目录扫描会**把 path_map.txt 自身的占位符键转换毁掉**（`E:\openCodeDefault=D:\...` → `D:\...=D:\...`），导致后续转换全部失效——path_convert.py 已内置跳过这两个文件名，**勿删该跳过逻辑**；同理会话内先跑 to_local 再核对 path_map.txt 键是否原样
+6. **状态文件保护（✓ 本机实测踩坑）**：path_map.txt/sync_target.txt 位于 opencode 配置目录内，to_local 全目录扫描会**把 path_map.txt 自身的占位符键转换毁掉**（`<项目目录>=D:\...` → `D:\...=D:\...`），导致后续转换全部失效——path_convert.py 已内置跳过这两个文件名，**勿删该跳过逻辑**；同理会话内先跑 to_local 再核对 path_map.txt 键是否原样
 7. **教学列表保护（✓ 本机实测踩坑）**：本技能「占位符体系」章节中列举占位符名的三行（自动类/工具类/数据类枚举）会被 to_local 转换为本机真实路径，使教学文档失真——反向合入后**按仓库版本恢复这三行**（占位符名必须保持原样，不能变成本机路径）
 
 ## 处理流程（目标目录确定 → git 五步 + 同步三环节，按序执行）
@@ -79,7 +79,7 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
    ```
 2. **合入本机脚本** → 仓库 `scripts/`（同样覆盖式合入）：
    ```
-   cp <用户临时目录>\opencode\*.ps1、*.py 与 E:\openCodeDefault\temp\inject_skills.py、fetch_skills.py → copy/scripts/
+   cp <用户临时目录>\opencode\*.ps1、*.py 与 <项目目录>\temp\inject_skills.py、fetch_skills.py → copy/scripts/
    ```
 3. **差异对比与裁决**：
    - `git status --short` 列出全部差异：`A`（本机新增→直接接受）、`M`（同文件两边可能都改）、`D`（仓库有本机无→**不删除，恢复保留**，除非确认已废弃）

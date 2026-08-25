@@ -9,14 +9,14 @@ description: 编程开发综合技能（全局 skill，仅显式触发，不靠�
 
 | 工具 | 用途 | 本机位置/版本 | 检查命令 | 缺失时安装 |
 |---|---|---|---|---|
-| WSL2 + Ubuntu 22.04 | 默认编程环境（编译/运行/调试） | 注册名 `Ubuntu`，vhdx 在 `E:\WSL\Ubuntu2`（旧 E:\WSL\Ubuntu 为残留） | `wsl -l -v`（应显示 Ubuntu Running/Stopped, VERSION 2） | 见 `E:\software\wls\WSL安装步骤说明书.html`（MSI 247MB + rootfs 325MB 离线包） |
+| WSL2 + Ubuntu 22.04 | 默认编程环境（编译/运行/调试） | 注册名 `Ubuntu`，vhdx 在 `<WSL安装目录>\Ubuntu2`（旧 <WSL安装目录>\Ubuntu 为残留） | `wsl -l -v`（应显示 Ubuntu Running/Stopped, VERSION 2） | 见 `<离线安装包目录>\WSL安装步骤说明书.html`（MSI 247MB + rootfs 325MB 离线包） |
 | Linux 工具链 | C/C++/脚本开发 | gcc/g++ 11.4、make、cmake 3.22、ninja、gdb 12.1、valgrind、strace、python3.10+pip、perl、jq、git、openssh | `wsl -d Ubuntu -e bash -c "gcc --version && g++ --version && gdb --version && python3 --version"` | `wsl -d Ubuntu -e bash -c "apt-get install -y build-essential gdb valgrind cmake ninja-build python3 python3-pip perl jq git openssh-client"`（apt 已换清华源） |
-| w64devkit | Windows 原生编译备选（winpthreads） | `C:\w64devkit\w64devkit\bin\gcc.exe`（GCC 16.2.0） | `& "C:\w64devkit\w64devkit\bin\gcc.exe" --version` | gh-proxy.com 下载 `w64devkit-x64-2.9.1.7z.exe` 自解压 |
+| w64devkit | Windows 原生编译备选（winpthreads） | `<工具目录>w64devkit\w64devkit\bin\gcc.exe`（GCC 16.2.0） | `& "<工具目录>w64devkit\w64devkit\bin\gcc.exe" --version` | gh-proxy.com 下载 `w64devkit-x64-2.9.1.7z.exe` 自解压 |
 | core dump 配置 | C 崩溃调试 | `sysctl kernel.core_pattern=/root/cores/core.%e.%p` + `ulimit -c unlimited` | `wsl -d Ubuntu -e bash -c "cat /proc/sys/kernel/core_pattern"`（应非 wsl-capture-crash） | WSL 内执行配置命令（重启后需重配或写入 /etc/sysctl.d/） |
 | WSL 开机自启 | 保持实例运行（防 60s idle 停止） | 计划任务 `WSL-AutoStart`（sleep 常驻） | `schtasks /query /tn "WSL-AutoStart"` | 管理员：`schtasks /create /tn "WSL-AutoStart" /tr "wsl.exe -d Ubuntu -e bash -c 'sleep 2000000000'" /sc onlogon` |
-| MinGW 6.3 | ⚠ 无 pthread，禁用 | `C:\MinGW` | — | 不安装，多线程用 w64devkit/WSL |
+| MinGW 6.3 | ⚠ 无 pthread，禁用 | `<工具目录>MinGW` | — | 不安装，多线程用 w64devkit/WSL |
 
-**移植说明**：核心 = WSL2（离线安装包在 E:\software\wls，含两本说明书）+ Linux 工具链（apt 一条命令重建）；w64devkit 是备选；源码目录约定 `E:\opencode_code\`（新机器自行创建）。
+**移植说明**：核心 = WSL2（离线安装包在 <离线安装包目录>，含两本说明书）+ Linux 工具链（apt 一条命令重建）；w64devkit 是备选；源码目录约定 `<源码目录>\`（新机器自行创建）。
 
 本技能是**唯一注册入口**，按语言/功能分类聚合编程子技能（位于 `modules/`，资源库不独立注册）。
 
@@ -42,7 +42,7 @@ description: 编程开发综合技能（全局 skill，仅显式触发，不靠�
 ## 处理流程
 
 1. 确认任务语言/类别 → 路由到对应前缀的子技能，**先读 `modules/<目录>/GUIDE.md` 再按其说明执行**
-2. **编程任务默认使用 WSL Linux 环境**（用户已确认）：编译、运行、调试一律走 `wsl -d Ubuntu -e bash -c "..."`，**源码固定放 `E:\opencode_code\`**（Windows 盘，Linux 内经 `/mnt/e/opencode_code/` 访问）
+2. **编程任务默认使用 WSL Linux 环境**（用户已确认）：编译、运行、调试一律走 `wsl -d Ubuntu -e bash -c "..."`，**源码固定放 `<源码目录>\`**（Windows 盘，Linux 内经 `/mnt/e/opencode_code/` 访问）
 3. 未命中任何子技能时，按通用编程实践直接作答
 4. 需要联网获取依赖/镜像/资料时联动 find_skill；需要文档处理时联动 files_skill
 
@@ -71,7 +71,7 @@ description: 编程开发综合技能（全局 skill，仅显式触发，不靠�
 
 ## 环境注意
 
-- **编程默认环境：WSL Linux（用户已确认）**。本机 WSL2 + Ubuntu 22.04.5 LTS @ E:\WSL\Ubuntu（实际 vhdx 在 E:\WSL\Ubuntu2 的注册实例）
+- **编程默认环境：WSL Linux（用户已确认）**。本机 WSL2 + Ubuntu 22.04.5 LTS @ <WSL安装目录>\Ubuntu（实际 vhdx 在 <WSL安装目录>\Ubuntu2 的注册实例）
   - 已装工具链（全量）：
     - 编译器：gcc/g++ 11.4
     - 构建：make 4.3 / cmake 3.22 / ninja 1.10 / pkg-config / autoconf / automake / libtool
@@ -86,7 +86,7 @@ description: 编程开发综合技能（全局 skill，仅显式触发，不靠�
   - **开机自启**：计划任务 `WSL-AutoStart`（登录时运行 `wsl -d Ubuntu -e bash -c "sleep 2000000000"` 保持实例，防止 60s idle 自动停止）。删除：`schtasks /delete /tn "WSL-AutoStart" /f`（管理员）
   - WSL 离线安装链路（已验证）：gh-proxy.com 下 WSL MSI（需 msilib 校验完整性）→ 提权 msiexec → 清华镜像 wsl rootfs（列目录找真实文件名，带 `-ubuntuXX.XXlts` 后缀）→ `wsl --import`；官方 wsl --install 慢是因为发行版清单在 raw.githubusercontent.com
   - WSLg 图形：本机不可用（向日葵 OrayIddDriver + Intel 集显 vGPU 冲突，dxg ioctl -22，RemoteApp 窗口 visible=False）；GUI 需求改用 Windows 侧编辑器
-- 备选 Windows 原生编译：**w64devkit 2.9.1**（便携 GCC 16.2.0 + winpthreads，路径 `C:\w64devkit\w64devkit\bin`，用时 `$env:PATH = "C:\w64devkit\w64devkit\bin;" + $env:PATH`；链接 winmm 需 `-lwinmm`）；MinGW 6.3.0（C:\MinGW）无 pthread 勿用
+- 备选 Windows 原生编译：**w64devkit 2.9.1**（便携 GCC 16.2.0 + winpthreads，路径 `<工具目录>w64devkit\w64devkit\bin`，用时 `$env:PATH = "<工具目录>w64devkit\w64devkit\bin;" + $env:PATH`；链接 winmm 需 `-lwinmm`）；MinGW 6.3.0（<工具目录>MinGW）无 pthread 勿用
 - Linux C 验证套路：代码加 `#ifdef _WIN32` 适配层（localtime_r→localtime_s、clock_nanosleep→Sleep(timeBeginPeriod)），w64devkit 编译通过即逻辑正确；Windows Sleep 粒度极限 ~1ms，0.5ms 级精确节拍仅 Linux 上 clock_nanosleep(TIMER_ABSTIME) 可达
 - 中文输出优先；文件编码 UTF-8
 - 安装新工具遵循用户规则：200M 以内直接装，超过先询问；Linux 内装包走 `apt install`（非 yum，Ubuntu 是 Debian 系）

@@ -1,5 +1,5 @@
 # PDCCH-06 校验 v2：CDP 加载页面，检查关键内容
-$chrome = "C:\Program Files\Google\Chrome\Application\chrome.exe"
+$chrome = "<Chrome目录>\chrome.exe"
 $port = 9252
 $tmp = "<用户临时目录>\opencode\chrome-pdcch06b"
 if (Test-Path $tmp) { Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue }
