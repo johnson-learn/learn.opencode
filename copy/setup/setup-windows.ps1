@@ -305,16 +305,26 @@ if (-not $SkipDeploy) {
     param([string]$Label, [string]$DefaultDir)
     $existingVal = $existingMap[$Label]
     if ($existingVal -and $existingVal -ne "FILL_ME") {
-      $ans = Read-Host "    $Label`n    已配置: $existingVal （回车保留，输入新路径=修改）"
-      if ([string]::IsNullOrWhiteSpace($ans)) { return $existingVal }
-      return $ans.Trim().TrimEnd("\")
+      Write-Host "    $Label" -ForegroundColor White
+      Write-Host "      已配置: $existingVal"
+      $ans = Read-Host "      [1] 保留已配置目录   [2] 修改为自定义路径   (直接回车=1)"
+      if ($ans -eq "2") {
+        $newPath = Read-Host "      请输入自定义路径"
+        if (-not [string]::IsNullOrWhiteSpace($newPath)) { return $newPath.Trim().TrimEnd("\") }
+      }
+      return $existingVal
     }
-    $ans = Read-Host "    $Label`n    默认: $DefaultDir （回车使用默认）"
-    if ([string]::IsNullOrWhiteSpace($ans)) {
-      New-Item -ItemType Directory -Path $DefaultDir -Force | Out-Null
-      return $DefaultDir
+    Write-Host "    $Label" -ForegroundColor White
+    Write-Host "      [1] 默认目录: $DefaultDir"
+    Write-Host "      [2] 自定义路径（自己填写）"
+    $ans = Read-Host "      请选择 (1/2，直接回车=1)"
+    if ($ans -eq "2") {
+      $newPath = Read-Host "      请输入自定义路径"
+      if (-not [string]::IsNullOrWhiteSpace($newPath)) { return $newPath.Trim().TrimEnd("\") }
+      # 选了 2 但没填 → 回退默认
     }
-    return $ans.Trim().TrimEnd("\")
+    New-Item -ItemType Directory -Path $DefaultDir -Force | Out-Null
+    return $DefaultDir
   }
   $dBase = "D:\opencode"
   $docDir  = Ask-Dir "<资料目录>"          "$dBase\doc\default"
