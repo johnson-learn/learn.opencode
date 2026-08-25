@@ -121,7 +121,7 @@ if (-not $Minimal) {
 
     # Check common Windows install paths
     $sofficePaths = @(
-        "<LibreOffice目录>\program\soffice.exe",
+        "C:\Program Files\LibreOffice\program\soffice.exe",
         "C:\Program Files (x86)\LibreOffice\program\soffice.exe",
         "${env:LOCALAPPDATA}\Programs\LibreOffice\program\soffice.exe"
     )
