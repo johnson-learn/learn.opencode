@@ -2,7 +2,7 @@
 """CSI 拆分后全量校验：8 个文件的结构/公式/变量/图链接/SVG 重叠"""
 import re, glob, os
 
-outdir = r'<用户桌面目录>\NR-f40'
+outdir = r'<3GPP文档库目录>'
 files = sorted(glob.glob(os.path.join(outdir, 'CSI-0*.html')))
 print('文件:', [os.path.basename(f) for f in files])
 bad = 0

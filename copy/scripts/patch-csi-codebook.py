@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """插入 Type I 多天线码本补充节（5.2 补）"""
 
-f = r'<用户桌面目录>\NR-f40\CSI-信道状态信息全梳理.html'
+f = r'<3GPP文档库目录>\CSI-信道状态信息全梳理.html'
 h = open(f, encoding='utf-8').read()
 
 sec = '''<h3>5.2+ 深入：Type I 单面板多天线码本（i1/i2 两级结构与波束向量）</h3>

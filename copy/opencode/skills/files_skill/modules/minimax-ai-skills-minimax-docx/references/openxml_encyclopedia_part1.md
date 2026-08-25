@@ -43,7 +43,7 @@ using DocumentFormat.OpenXml.Wordprocessing;
 // --- STEP 1: CREATE THE PACKAGE ---
 // The file path can be absolute or relative. WordprocessingDocumentType.Document
 // is the standard choice for .docx files (vs. Template, MacroEnabled, etc.)
-string outputPath = "C:\\Docs\\MyDocument.docx";
+string outputPath = "<工具目录>\Docs\\MyDocument.docx";
 
 using var doc = WordprocessingDocument.Create(
     outputPath,                          // File path
@@ -134,7 +134,7 @@ body.Append(sectPr);
 // isEditable=false is faster (shared locks avoided) but throws if file is read-only.
 
 // --- OPEN FOR EDITING (READ/WRITE) ---
-string inputPath = "C:\\Docs\\Existing.docx";
+string inputPath = "<工具目录>\Docs\\Existing.docx";
 using var editDoc = WordprocessingDocument.Open(
     inputPath,
     isEditable: true,      // Required for modification
@@ -4002,7 +4002,7 @@ public static class BusinessReportGenerator
 /*
 public static void Main(string[] args)
 {
-    BusinessReportGenerator.Generate("C:\\Reports\\BusinessReport.docx");
+    BusinessReportGenerator.Generate("<工具目录>\Reports\\BusinessReport.docx");
     Console.WriteLine("Report generated successfully!");
 }
 */

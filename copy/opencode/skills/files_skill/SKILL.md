@@ -12,13 +12,13 @@ description: 综合文件识别与文档处理统一接口技能（全局 skill�
 | Python 3.12 | 一切脚本基础 | `python` | `python --version` | python.org 安装（勾选 PATH） |
 | Pix2Text (p2t) | 公式/版面 OCR（核心） | `<Python脚本目录>\p2t.exe` | `p2t.exe predict -h` | `pip install pix2text -i 清华源`（首次跑自动下模型 ~1GB 到 %APPDATA%\pix2text 等） |
 | pandoc | md⇄docx/公式转 OMML | pypandoc_binary 内嵌 | `python -c "import pypandoc; print(pypandoc.get_pandoc_path())"` | `pip install pypandoc_binary -i 清华源` |
-| LibreOffice | 批量 doc/docx/pptx→PDF | `C:\Program Files\LibreOffice\program\soffice.com`（26.2.5） | `soffice.com --headless -env:UserInstallation=file:///C:/Temp/LO --version` | winget `TheDocumentFoundation.LibreOffice`（离线包放 E:\software\wls 同法） |
+| LibreOffice | 批量 doc/docx/pptx→PDF | `<LibreOffice目录>\program\soffice.com`（26.2.5） | `soffice.com --headless -env:UserInstallation=file:///<工具目录>Temp/LO --version` | winget `TheDocumentFoundation.LibreOffice`（离线包放 <离线安装包目录> 同法） |
 | MS Office | Word/PPT COM 生成 docx/pptx | Office 16 | `New-Object -ComObject Word.Application` | — |
 | Python 文档库 | docx/pptx/xlsx/pdf 处理 | python-docx/python-pptx/openpyxl/pypdf/pdfplumber/PyMuPDF/matplotlib/PIL/chardet/pyzbar/opencv/imageio-ffmpeg | `python -c "import docx, pptx, openpyxl, pypdf, pdfplumber, pymupdf, matplotlib, PIL, chardet, pyzbar, cv2, imageio_ffmpeg"` | `pip install python-docx python-pptx openpyxl pypdf pdfplumber pymupdf matplotlib pillow chardet pyzbar opencv-python imageio-ffmpeg -i 清华源` |
-| Chrome | headless 校验 HTML/JS | `C:\Program Files\Google\Chrome\Application\chrome.exe` | `Test-Path` | — |
+| Chrome | headless 校验 HTML/JS | `<Chrome目录>\chrome.exe` | `Test-Path` | — |
 | 本机 PS 脚本 | doc/docx 提取、OCR、页面校验 | `<用户临时目录>\opencode\*.ps1`（extract-docx/doc、ocr、check-*） | `Test-Path <脚本>` | 从原机复制整套 Temp\opencode |
 | node+npx | LobeHub market-cli | npx 缓存 `06aaad52133b3ed7` 下 cli.js | `& node <cli.js> --help` | `npx -y @lobehub/market-cli`（首次拉取） |
-| Mermaid CLI (mmdc) | 流程图/时序图/状态图 → SVG（示意图绘制主力） | `<用户AppData目录>\npm\mmdc.cmd`（node v24 + 全局包） | `mmdc.cmd --version` | `npm.cmd install -g @mermaid-js/mermaid-cli`（渲染用系统 Chrome：设环境变量 `PUPPETEER_EXECUTABLE_PATH=C:\Program Files\Google\Chrome\Application\chrome.exe`；PowerShell 下须调 `mmdc.cmd` 而非 `mmdc`，因 ps1 被执行策略禁） |
+| Mermaid CLI (mmdc) | 流程图/时序图/状态图 → SVG（示意图绘制主力） | `<用户AppData目录>\npm\mmdc.cmd`（node v24 + 全局包） | `mmdc.cmd --version` | `npm.cmd install -g @mermaid-js/mermaid-cli`（渲染用系统 Chrome：设环境变量 `PUPPETEER_EXECUTABLE_PATH=<Chrome目录>\chrome.exe`；PowerShell 下须调 `mmdc.cmd` 而非 `mmdc`，因 ps1 被执行策略禁） |
 | 未装（大件） | LaTeX 引擎 / tesseract / whisper | — | — | 超 200M 需用户同意 |
 
 **移植检查脚本**（一键探测）：把上表「检查命令」列逐条跑一遍，缺什么装什么；p2t 与 pandoc 是本技能的两大核心依赖，缺一不可。
@@ -181,7 +181,7 @@ description: 综合文件识别与文档处理统一接口技能（全局 skill�
 - 全部页面 JS 检查：`powershell -NoProfile -ExecutionPolicy Bypass -File "<用户临时目录>\opencode\check-bwp.ps1"`（Chrome headless 抓 console 错误）
 - 计算器点击验证：`check-cdp.ps1` / `check-cdp2.ps1` / `check-pdcch.ps1`（CDP 模拟点击并核对数值）
 - SVG 重叠检测：`check-overlap.ps1`（getBBox 两两检测）
-- Chrome 路径：`C:\Program Files\Google\Chrome\Application\chrome.exe`
+- Chrome 路径：`<Chrome目录>\chrome.exe`
 - 计算器 JS 规范：函数名避开保留字；不用 ES6（for...of 等）；id 引用一律 document.getElementById
 
 ## 流程图识别
@@ -256,7 +256,7 @@ description: 综合文件识别与文档处理统一接口技能（全局 skill�
 
 ## 环境注意
 
-- 本机为 Windows + PowerShell，无全局 node/npm 命令时用 `& "C:\Program Files\nodejs\npx.cmd"`。
+- 本机为 Windows + PowerShell，无全局 node/npm 命令时用 `& "<Node目录>\npx.cmd"`。
 - 中文输出优先；文件编码保持 UTF-8。
 - **已装环境**：
   - Python 3.12（pip，默认源连不上时用清华镜像 `-i https://pypi.tuna.tsinghua.edu.cn/simple`）
@@ -266,14 +266,14 @@ description: 综合文件识别与文档处理统一接口技能（全局 skill�
   - chardet 7.6.0（编码检测）/ pyzbar 0.1.9（条码二维码解码）
   - opencv-python（视频抽帧）/ imageio-ffmpeg 0.6.0（`imageio_ffmpeg.get_ffmpeg_exe()` 取 ffmpeg 路径，视频抽帧/音频转换用）
   - jupyter（IPython + ipykernel，.ipynb 可本机运行）
-  - Chrome（headless 校验用）：`C:\Program Files\Google\Chrome\Application\chrome.exe`
+  - Chrome（headless 校验用）：`<Chrome目录>\chrome.exe`
   - Office 16（Word/PPT COM 转 PDF、生成 docx/pptx 用）
   - LibreOffice 26.2.5（批量无头转换，soffice 调用规范见下）
   - 未装（需询问用户后再装）：LaTeX 引擎（MiKTeX/TeX Live，>1GB）、whisper 语音转写（含模型 >500MB）、tesseract（备选 OCR，p2t 已覆盖）
 - **LibreOffice soffice 调用规范（本机已验证）**：
   - 必须用 `soffice.com`（非 .exe，命令行输出正常）且带独立 profile 防首次初始化卡死：
     ```
-    & "C:\Program Files\LibreOffice\program\soffice.com" --headless "-env:UserInstallation=file:///<用户临时目录>/LO-profile" --convert-to pdf --outdir 输出目录 源文件
+    & "<LibreOffice目录>\program\soffice.com" --headless "-env:UserInstallation=file:///<用户临时目录>/LO-profile" --convert-to pdf --outdir 输出目录 源文件
     ```
   - 批量：`--convert-to pdf --outdir 目录 *.docx`（支持 doc/docx/pptx/xlsx→pdf；过滤器可用 `writer_pdf_Export`、`impress_pdf_Export` 等）
   - stderr 的 "Could not find platform independent libraries" 为无害噪音，看输出目录是否生成文件即可

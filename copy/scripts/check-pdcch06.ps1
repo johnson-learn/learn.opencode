@@ -1,5 +1,5 @@
 # PDCCH-06 校验 v2：CDP 加载页面，检查关键内容
-$chrome = "C:\Program Files\Google\Chrome\Application\chrome.exe"
+$chrome = "<Chrome目录>\chrome.exe"
 $port = 9252
 $tmp = "<用户临时目录>\opencode\chrome-pdcch06b"
 if (Test-Path $tmp) { Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue }
@@ -27,7 +27,7 @@ function Eval([string]$expr) {
   if ($r -and $r.result -and $r.result.result -and $r.result.result.value -ne $null) { return $r.result.result.value.ToString() } else { return "(no value)" }
 }
 
-$f = "file:///<用户桌面目录>/NR-f40/PDCCH-06-配置链.html"
+$f = "file:///<3GPP文档库目录>/PDCCH-06-配置链.html"
 $t = Invoke-RestMethod -Method Put "http://127.0.0.1:$port/json/new?$([uri]::EscapeDataString($f))"
 Start-Sleep -Seconds 4
 $ws = New-Object System.Net.WebSockets.ClientWebSocket

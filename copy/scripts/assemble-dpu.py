@@ -3,7 +3,7 @@
 import re, os
 
 base = r'<用户临时目录>\opencode'
-outdir = r'<用户桌面目录>\NR-f40'
+outdir = r'<3GPP文档库目录>'
 
 def build(parts, figs, target):
     h = ''
