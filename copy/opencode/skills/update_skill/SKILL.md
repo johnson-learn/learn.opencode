@@ -51,7 +51,7 @@ description: 技能双向同步更新技能（全局 skill，仅显式触发，�
 ### 目标目录确定（记忆机制）
 - **首次调用必须指出同步目标目录**，格式：`update_skill：<目标目录路径>`（Windows UNC 如 `\\wsl.localhost\Ubuntu\home\github\learn.opencode`，或 WSL 路径如 `/home/github/learn.opencode`）
 - 首次调用未指出目录 → **提示用户**："请指出同步目标目录，格式：update_skill：<目录路径>"，等待用户给出后再继续
-- 目录记忆：本机状态文件 `<用户目录>\.config\opencode\skills\update_skill\sync_target.txt` 保存最近指定的目录；每次用户显式给出新目录 → 更新该文件
+- 目录记忆：本机状态文件 `<opencode配置目录>\skills\update_skill\sync_target.txt` 保存最近指定的目录；每次用户显式给出新目录 → 更新该文件
 - 后续调用未指出目录 → 读取状态文件用最近目录；**幂等**：目录已存在（或默认目录已存在）且状态文件有效时，不再重复询问，直接使用
 - Windows UNC 与 WSL 路径互转：UNC `\\wsl.localhost\Ubuntu\...` ↔ WSL `/...`；git 操作一律在 WSL 路径下执行
 
