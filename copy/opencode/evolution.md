@@ -7,3 +7,5 @@
 [2026-08-21] 首跑 update_skill 踩坑 → git commit/push 经 PowerShell 双引号嵌套时引号转义失败；经验：WSL 命令统一用 `bash -c '单引号包裹'` 避免引号地狱，commit 与 push 分步执行便于定位失败；已固化至 update_skill 技能环境注意
 [2026-08-21] 用户规则 → update_skill 同步方式改为差异合入模式（禁止 rm -rf 删除替换）：仓库可能被多机器更新，覆盖式 cp 合入、保留仓库多出文件、M 类文件逐文件 diff 裁决、D 类文件恢复保留、冲突按信息完整性优先合并
 [2026-08-21] 用户规则 → update_skill 升级为双向同步：功能1 本机→git（差异合入+commit+push）；功能2 git→本机（push 后 fetch 检查远端新提交，git diff old..HEAD 提取变更文件反向合入本机，冲突信息完整性优先）；执行时踩坑：本机状态文件 sync_target.txt 不应进仓库（.gitignore 排除）
+[2026-08-25] 用户规则 → 路径可移植层建立：仓库文件占位符化（自动类/填写类两级）、path_convert.py 转换工具（正反斜杠+URL 风格+长路径优先）、双向同步自动转换；踩坑：path_map.txt 误入仓库（git rm --cached + .gitignore 排除）；bash 传参反斜杠被吃（--home 用正斜杠）；WSL 内运行 Windows Python 需显式 --home
+[2026-08-25] 用户提问 → update_skill 增加第 0.5 步版本对齐检查（旧机器升级防倒退）：本机旧版本不得覆盖仓库新内容；仓库有本机无→先反向合入本机升级；两边不同→信息完整性优先合并；旧路径体系仓库先用 to_portable 就地升级
