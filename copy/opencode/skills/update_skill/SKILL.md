@@ -1,6 +1,6 @@
 ---
 name: update_skill
-description: 技能双向同步更新技能（全局 skill，仅显式触发，不靠关键词自动调用）。Use ONLY when 用户消息显式包含 "update_skill：" 或 "update_skill:"，或以 "update_skill&"、"update_skill " 与其他技能名并列后跟冒号——冒号后为用户任务或同步目标目录。加载后执行任务：双向同步本机与 Git 仓库（功能1：本机全局 opencode 配置的新改动以差异合入模式同步到仓库并 git commit/push；功能2：push 后检查远端其它机器的新提交并反向合入本机）。首次调用必须由用户指出目标目录（格式 update_skill：<目录>）；后续默认用最近指定目录。普通消息仅提及同步/git 但无 "update_skill：" 前缀时，不调用本技能。
+description: 技能双向同步更新技能（全局 skill，仅显式触发，不靠关键词自动调用）。Use ONLY when 用户消息显式包含 "update_skill：" 或 "update_skill:"，或以 "update_skill&"、"update_skill " 与其他技能名并列后跟冒号——冒号后为：目标目录路径（首次指定同步目录），或具体问题任务（先执行问题、再执行双向更新），或无内容（仅双向更新）。加载后执行任务：双向同步本机与 Git 仓库（功能1：本机全局 opencode 配置的新改动以差异合入模式同步到仓库并 git commit/push；功能2：push 后检查远端其它机器的新提交并反向合入本机）。普通消息仅提及同步/git 但无 "update_skill：" 前缀时，不调用本技能。
 ---
 
 # update_skill —— 技能同步更新技能
@@ -42,10 +42,16 @@ description: 技能双向同步更新技能（全局 skill，仅显式触发，�
 
 ## 处理流程（目标目录确定 → git 五步 + 同步三环节，按序执行）
 
-### 目标目录确定（记忆机制，第一步必做）
+### 调用解析（第一步必做，支持两种调用）
+- **调用格式**：`update_skill：<内容>`
+- **内容为目录路径**（含 `\`、`/`、盘符 `C:`、UNC `\\` 或 WSL 路径等路径特征）→ 按"目标目录指定"处理（见下）
+- **内容为问题/任务**（无路径特征，如"update_skill：检查有没有新skill"）→ **先执行冒号后的问题任务，任务完成后再执行本技能的双向更新流程**（pull → 版本对齐 → 差异合入 → commit/push → 反向检查）
+- 无冒号内容 → 仅执行双向更新流程
+
+### 目标目录确定（记忆机制）
 - **首次调用必须指出同步目标目录**，格式：`update_skill：<目标目录路径>`（Windows UNC 如 `\\wsl.localhost\Ubuntu\home\github\learn.opencode`，或 WSL 路径如 `/home/github/learn.opencode`）
 - 首次调用未指出目录 → **提示用户**："请指出同步目标目录，格式：update_skill：<目录路径>"，等待用户给出后再继续
-- 目录记忆：本机状态文件 `<opencode配置目录>\skills\update_skill\sync_target.txt` 保存最近指定的目录；每次用户显式给出新目录 → 更新该文件
+- 目录记忆：本机状态文件 `<用户目录>\.config\opencode\skills\update_skill\sync_target.txt` 保存最近指定的目录；每次用户显式给出新目录 → 更新该文件
 - 后续调用未指出目录 → 读取状态文件用最近目录；**幂等**：目录已存在（或默认目录已存在）且状态文件有效时，不再重复询问，直接使用
 - Windows UNC 与 WSL 路径互转：UNC `\\wsl.localhost\Ubuntu\...` ↔ WSL `/...`；git 操作一律在 WSL 路径下执行
 
