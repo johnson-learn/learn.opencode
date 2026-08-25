@@ -1,5 +1,5 @@
 ﻿# 校验 BWP-02 与 BWP-05 的计算器（CDP 模拟点击）
-$chrome = "C:\Program Files\Google\Chrome\Application\chrome.exe"
+$chrome = "<Chrome目录>\chrome.exe"
 $port = 9234
 $tmp = "<用户临时目录>\opencode\chrome-tmp2"
 if (Test-Path $tmp) { Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue }

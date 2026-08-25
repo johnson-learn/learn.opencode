@@ -3,7 +3,7 @@
 import os, subprocess
 
 OUT = r'<用户临时目录>\opencode'
-os.environ['PUPPETEER_EXECUTABLE_PATH'] = r'C:\Program Files\Google\Chrome\Application\chrome.exe'
+os.environ['PUPPETEER_EXECUTABLE_PATH'] = r'<Chrome目录>\chrome.exe'
 MMDC = r'<用户AppData目录>\npm\mmdc.cmd'
 
 def mmd(name, src):

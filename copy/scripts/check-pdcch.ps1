@@ -1,5 +1,5 @@
 ﻿# PDCCH 计算器 CDP 校验：模拟点击并核对数值
-$chrome = "C:\Program Files\Google\Chrome\Application\chrome.exe"
+$chrome = "<Chrome目录>\chrome.exe"
 $port = 9245
 $tmp = "<用户临时目录>\opencode\chrome-pdcch"
 if (Test-Path $tmp) { Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue }
