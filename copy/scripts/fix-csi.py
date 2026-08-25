@@ -2,7 +2,7 @@
 """CSI 文档：比喻词清理 + 裸变量 MathJax 化"""
 import re
 
-f = r'<3GPP文档库目录>\CSI-01-信道状态信息全梳理.html'
+f = r'<用户桌面目录>\NR-f40\CSI-01-信道状态信息全梳理.html'
 h = open(f, encoding='utf-8').read()
 parts = re.split(r'(<svg\b[\s\S]*?</svg>)', h)
 

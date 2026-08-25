@@ -1,5 +1,5 @@
 param(
-  [string]$src = "<3GPP文档库目录>",
+  [string]$src = "<用户桌面目录>\NR-f40",
   [string]$out = "<用户临时目录>\opencode\specs"
 )
 $ErrorActionPreference = "Stop"

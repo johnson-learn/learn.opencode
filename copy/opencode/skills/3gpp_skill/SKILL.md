@@ -10,14 +10,14 @@ description: 3GPP 移动通信标准专家技能（全局 skill，仅显式触�
 | 工具 | 用途 | 本机位置/版本 | 检查命令 | 缺失时安装 |
 |---|---|---|---|---|
 | Pix2Text (p2t) | 公式/符号图片识别（双轨提取必备） | `<Python脚本目录>\p2t.exe` | `p2t.exe predict -h` | `pip install pix2text -i 清华源` |
-| LibreOffice soffice | 文档批量转 PDF（公式核实链路） | `<LibreOffice目录>\program\soffice.com` | 见 files_skill 检查命令 | winget LibreOffice |
+| LibreOffice soffice | 文档批量转 PDF（公式核实链路） | `C:\Program Files\LibreOffice\program\soffice.com` | 见 files_skill 检查命令 | winget LibreOffice |
 | Python + PyMuPDF | 页面渲染 PNG、文本搜索 | `python` + `pymupdf` | `python -c "import pymupdf, docx"` | `pip install pymupdf python-docx -i 清华源` |
 | matplotlib | 结构图/走势图 SVG 生成（配图主力之一） | `python -c "import matplotlib"`（3.11+） | 同上 | `pip install matplotlib -i 清华源` |
 | Mermaid CLI (mmdc) | 流程图/时序图/状态图 → SVG（配图主力之一） | `<用户AppData目录>\npm\mmdc.cmd`（node v24 + 全局包） | `mmdc.cmd --version` | `npm.cmd install -g @mermaid-js/mermaid-cli`；渲染设 `$env:PUPPETEER_EXECUTABLE_PATH` 指向系统 Chrome；PowerShell 下用 `mmdc.cmd` 非 `mmdc`（ps1 被执行策略禁） |
 | PS 提取脚本 | doc/docx 文本提取 | `<用户临时目录>\opencode\extract-docx.ps1` / `extract-doc.ps1` | `Test-Path <脚本>` | 从原机复制 Temp\opencode |
 | 网络抓取 | FTP 目录/下载（需 UA 头） | PowerShell `Invoke-WebRequest` / `curl.exe -A` | `curl.exe --version` | Windows 自带 |
-| 本机文档库 | 本地规范（仅用户明确要求时用） | `<3GPP文档库目录>\` | `Test-Path` | 从 3GPP FTP 重新下载（流程见官网权威信息章节） |
-| 本机 6G 文档 | TR 22.870/38.914 存档 | `<项目目录>\temp\6G\` | `Test-Path` | 按「FTP 访问技巧」重下 |
+| 本机文档库 | 本地规范（仅用户明确要求时用） | `<用户桌面目录>\NR-f40\` | `Test-Path` | 从 3GPP FTP 重新下载（流程见官网权威信息章节） |
+| 本机 6G 文档 | TR 22.870/38.914 存档 | `E:\openCodeDefault\temp\6G\` | `Test-Path` | 按「FTP 访问技巧」重下 |
 
 **移植说明**：本技能核心链路 = 文本提取 + p2t 图片识别 + soffice 转 PDF + PyMuPDF 渲染，四件套缺一不可；网络抓取与本地文档库为可选项（缺时全部走官网实时获取）。
 
@@ -133,7 +133,7 @@ description: 3GPP 移动通信标准专家技能（全局 skill，仅显式触�
 - SA/CT 全会提案在 `tsg_sa/TSG_SA/`（SP-xxxxxx，止于 2023-03）、`tsg_ct/TSG_CT/`（CP-xxxxxx，止于 2023-03）；**最新 SA/CT 全会提案见 `Meetings_3GPP_SYNC/SA/`、`Meetings_3GPP_SYNC/CT/`**
 - 6G 无线研究（FS_6G_Radio）提案：最新在 `Meetings_3GPP_SYNC/RAN1/`；历史在 WG1_RL1 各会议目录；TSG_RAN 下另有 `Tool_Automation_6G/`
 - **FTP 路径带点号规律**：新规范（如 22.870、38.914）在 archive 下的目录名**带点号**（`archive/22_series/22.870/`、`archive/38_series/38.914/`），老规范目录用去点名（`archive/38_series/38211/`）——403 时先经 DynaReport（`dynareport/<规范号>.htm`）拿真实下载链接
-- **6G 核心文档本机存档**：`<项目目录>\temp\6G\`（TR 22.870 V2.0.0 正式版 + V1.1.0 历史版、TR 38.914 V0.3.0/0.4.0/0.4.1 草案 + 全会提案 RP-253750/RP-260073/RP-260870、全文文本索引 TR22.870-V2.0.0-文本索引.txt）
+- **6G 核心文档本机存档**：`E:\openCodeDefault\temp\6G\`（TR 22.870 V2.0.0 正式版 + V1.1.0 历史版、TR 38.914 V0.3.0/0.4.0/0.4.1 草案 + 全会提案 RP-253750/RP-260073/RP-260870、全文文本索引 TR22.870-V2.0.0-文本索引.txt）
 
 **TS vs TR 编号**：xx.9xx = 面向 SDO 转置的 TR；xx.8xx（及 xx.7xx）= 3GPP 内部可行性研究/计划 TR；30.xxx/50.xxx = 计划排期
 
@@ -323,7 +323,7 @@ ASN.1 一律放 `<pre>` 内用 span 着色；禁止自创伪 ASN.1 结构，全�
 
 > 默认分析走官网/FTP（覆盖各版本与最新版本）；本目录文档多为 V15.4.0（f40）版本，**非默认依据**。
 
-- **3GPP 文档库**：`<3GPP文档库目录>\`（PHY 38.104/133/201/202/211/212/213/214/215；L2/L3 38.300/304/321/322/323/331/37.324；接口/架构 38.401/410/413/415/425/473；系统/核心网 21.900/23.501/502/24.501/29.274/281/295.002/295.018/33.501/29.060/38.533）
+- **3GPP 文档库**：`<用户桌面目录>\NR-f40\`（PHY 38.104/133/201/202/211/212/213/214/215；L2/L3 38.300/304/321/322/323/331/37.324；接口/架构 38.401/410/413/415/425/473；系统/核心网 21.900/23.501/502/24.501/29.274/281/295.002/295.018/33.501/29.060/38.533）
 - **纯文本索引**：`<用户临时目录>\opencode\specs\*.txt`（全文搜索用；公式字符缺失需 p2t 核实）
 - **3GPP 权威下载**：官网 FTP `https://www.3gpp.org/ftp/Specs/archive/`（38 系列=5G NR，36 系列=4G LTE，23 系列=核心网；完整目录地图与代际划分见「官网权威信息 → 存档 FTP 结构」章节；直链模板 `https://www.3gpp.org/ftp/Specs/archive/38_series/38211/38211-h40.zip`）
 - **官网权威查询入口**：DynaReport（`https://www.3gpp.org/dynareport/<规范号>.htm`，最新版本信息）与 3GU Portal（portal.3gpp.org，含各 Release 规格清单）

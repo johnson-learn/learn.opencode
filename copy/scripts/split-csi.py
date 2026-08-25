@@ -3,7 +3,7 @@
 import re, os
 
 base = r'<用户临时目录>\opencode'
-outdir = r'<3GPP文档库目录>'
+outdir = r'<用户桌面目录>\NR-f40'
 src = os.path.join(outdir, 'CSI-01-信道状态信息全梳理.html')
 
 h = open(src, encoding='utf-8').read()

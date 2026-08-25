@@ -2,7 +2,7 @@
 """CSI HTML 最终校验"""
 import re
 
-f = r'<3GPP文档库目录>\CSI-01-信道状态信息全梳理.html'
+f = r'<用户桌面目录>\NR-f40\CSI-01-信道状态信息全梳理.html'
 h = open(f, encoding='utf-8').read()
 body = re.sub(r'<svg\b[\s\S]*?</svg>', '', h)
 print('比喻词:', len(re.findall(r'尺子|交卷|考卷|作业本|点名|挖空|灯塔|司令|户口本', body)))

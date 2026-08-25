@@ -2,7 +2,7 @@
 """去重：保留最后一份 restore（清理版），删除前 3 份；重插 fig2/fig4"""
 import re
 
-f = r'<3GPP文档库目录>\系统消息-01-SSB-MIB-SIB1与OSI.html'
+f = r'<用户桌面目录>\NR-f40\系统消息-01-SSB-MIB-SIB1与OSI.html'
 h = open(f, encoding='utf-8').read()
 
 P = [m.start() for m in re.finditer(r'<h3>1\.3 SI 的', h)]

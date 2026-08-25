@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
 
-f = r'<3GPP文档库目录>\系统消息-01-SSB-MIB-SIB1与OSI.html'
+f = r'<用户桌面目录>\NR-f40\系统消息-01-SSB-MIB-SIB1与OSI.html'
 html = open(f, encoding='utf-8').read()
 print('当前 SVG 数:', html.count('<svg'))
 

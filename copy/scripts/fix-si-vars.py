@@ -40,7 +40,7 @@ for a, b in reps:
 open(gp, 'w', encoding='utf-8').write(g)
 
 # ---------- 2) HTML 正文变量 MathJax 化（跳过 svg） ----------
-hf = r'<3GPP文档库目录>\系统消息-01-SSB-MIB-SIB1与OSI.html'
+hf = r'<用户桌面目录>\NR-f40\系统消息-01-SSB-MIB-SIB1与OSI.html'
 h = open(hf, encoding='utf-8').read()
 parts = re.split(r'(<svg\b[\s\S]*?</svg>)', h)
 body_reps = [

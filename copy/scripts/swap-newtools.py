@@ -2,7 +2,7 @@
 """用新工具图替换文档中的图 2 与图 8"""
 import re
 
-f = r'<3GPP文档库目录>\系统消息-01-SSB-MIB-SIB1与OSI.html'
+f = r'<用户桌面目录>\NR-f40\系统消息-01-SSB-MIB-SIB1与OSI.html'
 h = open(f, encoding='utf-8').read()
 
 # 新图 2（matplotlib）
