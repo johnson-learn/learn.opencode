@@ -93,8 +93,8 @@ def convert(text, pairs):
             text = text.replace(real_slash, ph)
     return text
 
-# 状态文件保护：这些本机特定文件不参与任何转换（防止 path_map 自我指涉；path_convert.py 自身含占位符键，转换会自毁）
-STATE_FILES = {"path_map.txt", "sync_target.txt", "path_convert.py"}
+# 状态文件保护：这些本机特定文件不参与任何转换（防止 path_map 自我指涉）
+STATE_FILES = {"path_map.txt", "sync_target.txt"}
 
 def walk_convert(root, pairs, suffix):
     count = 0
@@ -128,8 +128,6 @@ def scan_unknown_placeholders(root):
         if ".git" in dirpath.split(os.sep):
             continue
         for fn in filenames:
-            if fn.lower() in STATE_FILES:
-                continue
             if not fn.lower().endswith((".md", ".jsonc", ".json", ".txt", ".ps1", ".py", ".bat", ".sh")):
                 continue
             p = os.path.join(dirpath, fn)
