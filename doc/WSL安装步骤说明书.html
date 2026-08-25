@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>WSL 离线安装步骤说明书</title>
+<style>
+body { font-family:"Segoe UI","Microsoft YaHei",sans-serif; max-width:1000px; margin:30px auto; padding:0 24px; color:#1a1a1a; line-height:1.9; }
+h1 { font-size:26px; border-bottom:3px solid #005a9c; padding-bottom:10px; }
+h2 { font-size:19px; color:#005a9c; margin-top:36px; border-left:5px solid #005a9c; padding-left:12px; }
+h3 { font-size:16px; margin-top:22px; color:#0d3c66; }
+pre { background:#f6f8fa; border:1px solid #ddd; border-radius:6px; padding:12px 16px; font-size:13px; overflow-x:auto; line-height:1.6; }
+code { background:#eef; padding:1px 6px; border-radius:3px; font-size:13px; }
+.zhuyi { background:#fdf3f3; border-left:4px solid #c05050; padding:10px 14px; margin:14px 0; }
+.tip { background:#eef8ee; border-left:4px solid #4a9c4a; padding:10px 14px; margin:14px 0; }
+table { border-collapse:collapse; margin:12px 0; font-size:13px; }
+th,td { border:1px solid #888; padding:6px 12px; text-align:left; }
+th { background:#e8eef7; }
+.step { background:#eef5fc; border:1px solid #b8d2ea; border-radius:8px; padding:14px 18px; margin:16px 0; }
+.step h3 { margin-top:0; }
+</style>
+</head>
+<body>
+<h1>WSL（Windows Subsystem for Linux）离线安装步骤说明书</h1>
+
+<p>适用环境：Windows 10 1903+ / Windows 11。本说明基于<b>离线安装包</b>方式，全程不依赖微软在线下载（官方在线安装慢/失败的根因是发行版清单托管在 raw.githubusercontent.com，国内访问受限）。</p>
+
+<h2>安装包清单（本目录）</h2>
+<table>
+<tr><th>文件</th><th>大小</th><th>用途</th></tr>
+<tr><td><code>wsl-installer.msi</code></td><td>247 MB</td><td>WSL 本体 2.7.12.0（含 wsl.exe、内核、服务）</td></tr>
+<tr><td><code>ubuntu-22.04-wsl.rootfs.tar.gz</code></td><td>325 MB</td><td>Ubuntu 22.04.5 LTS 根文件系统（清华镜像）</td></tr>
+</table>
+
+<div class="zhuyi"><b>重要</b>：第 1、2 步需要<b>管理员权限</b>（弹 UAC 点"是"）；第 2 步后需要<b>重启电脑</b>一次。</div>
+
+<h2>步骤一：启用 Windows 功能（管理员）</h2>
+<div class="step">
+<p>打开<b>管理员</b> PowerShell / CMD（开始菜单搜索 PowerShell → 右键 → 以管理员身份运行），执行：</p>
+<pre>dism /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
+dism /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart</pre>
+<p>两条都显示"操作成功完成"后，<b>重启电脑</b>。</p>
+</div>
+
+<h2>步骤二：安装 WSL 本体（管理员）</h2>
+<div class="step">
+<pre>msiexec /i "E:\software\wls\wsl-installer.msi" /qn /norestart</pre>
+<p>静默安装，约 10 秒。验证：</p>
+<pre>wsl --version</pre>
+<p>输出类似 <code>WSL 版本: 2.7.12.0</code> 即成功。</p>
+</div>
+
+<div class="tip"><b>提示</b>：若提示需要 WSL2 内核，本 MSI 已内置最新内核（6.18.x），无需再单独安装旧版 wsl2kernel 更新包。</div>
+
+<h2>步骤三：导入 Ubuntu 发行版（免管理员）</h2>
+<div class="step">
+<p>普通 PowerShell 执行（导入目标盘符和目录可自定义，建议放非系统盘）：</p>
+<pre>mkdir D:\WSL\Ubuntu
+wsl --import Ubuntu D:\WSL\Ubuntu "E:\software\wls\ubuntu-22.04-wsl.rootfs.tar.gz"</pre>
+<p>验证：</p>
+<pre>wsl -l -v</pre>
+<p>应显示 <code>Ubuntu  Stopped  2</code>。</p>
+</div>
+
+<h2>步骤四：首次进入并初始化</h2>
+<div class="step">
+<pre>wsl -d Ubuntu</pre>
+<p>以 root 身份进入（--import 方式默认 root）。设置默认用户与密码：</p>
+<pre>passwd root</pre>
+<p>（可选）创建普通用户：</p>
+<pre>adduser yourname</pre>
+</div>
+
+<h2>步骤五：更换 apt 国内源并安装开发工具</h2>
+<div class="step">
+<pre>sed -i 's/archive.ubuntu.com/mirrors.tuna.tsinghua.edu.cn/g; s/security.ubuntu.com/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list
+apt-get update
+apt-get install -y gcc g++ make build-essential</pre>
+<p>验证编译器：</p>
+<pre>gcc --version    # 应显示 gcc 11.4.0</pre>
+</div>
+
+<h2>安装包完整性校验（可选）</h2>
+<div class="step">
+<p>安装前建议校验 MSI 完整性（本机曾因镜像下载截断损坏报错 1620）：</p>
+<pre>python -c "import msilib; msilib.OpenDatabase(r'E:\software\wls\wsl-installer.msi', msilib.MSIDBOPEN_READONLY); print('OK')"</pre>
+<p>rootfs 校验（下载源 MD5）：</p>
+<pre>CertUtil -hashfile "E:\software\wls\ubuntu-22.04-wsl.rootfs.tar.gz" MD5</pre>
+</div>
+
+<h2>常见问题</h2>
+<table>
+<tr><th>现象</th><th>原因与解决</th></tr>
+<tr><td>msiexec 返回 1620</td><td>MSI 文件损坏（下载截断）。重新完整下载并校验</td></tr>
+<tr><td>wsl --install 报 0x80070005</td><td>未用管理员权限，或功能未启用（先做步骤一）</td></tr>
+<tr><td>wsl --install -d Ubuntu 卡住/超时</td><td>发行版清单在 GitHub raw，被墙。用本说明的 rootfs 导入法</td></tr>
+<tr><td>WSL 命令提示"未安装分发"</td><td>本体装好但没导入发行版（做步骤三）</td></tr>
+<tr><td>导入后 rootfs 解压慢</td><td>正常，325MB 压缩包解压约 1-2 分钟，放 SSD 更快</td></tr>
+</table>
+
+<div class="tip"><b>备选发行版</b>：需要其它版本可去清华镜像列目录找（如 noble=24.04、oracular），URL 结构：<br><code>https://mirrors.tuna.tsinghua.edu.cn/ubuntu-cloud-images/wsl/&lt;版本&gt;/current/</code>，文件名带 <code>-ubuntu&lt;版本号&gt;lts</code> 后缀，务必先列目录确认。</div>
+
+<p style="margin-top:40px;color:#888;font-size:12px;">说明书生成日期：2026-08-21 ｜ 与 <code>WSL使用与C编译说明书.html</code> 配套使用</p>
+</body>
+</html>
