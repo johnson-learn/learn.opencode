@@ -1,0 +1,2 @@
+# learn.opencode
+opencode skill
