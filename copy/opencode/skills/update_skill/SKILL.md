@@ -28,7 +28,8 @@ description: 技能双向同步更新技能（全局 skill，仅显式触发，�
 
 ### 占位符体系
 - **自动类**（转换时自动推导，无需用户填写）：`<用户目录>`、`<opencode配置目录>`、`<opencode数据目录>`、`<用户临时目录>`、`<用户AppData目录>`、`<用户桌面目录>`、`<WSL用户映射>`、`<Python脚本目录>`
-- **填写类**（新机器移植时用户填写，存于本机 `path_map.txt`，不进仓库）：`<项目目录>`、`<源码目录>`、`<WSL安装目录>`、`<离线安装包目录>`、`<工具目录>`、`<LibreOffice目录>`、`<Chrome目录>`、`<Node目录>`、`<3GPP文档库目录>` 等
+- **工具类**（安装脚本自动探测本机实际安装目录并写入 path_map.txt，无需用户填写）：`<LibreOffice目录>`（找 soffice.com）、`<Chrome目录>`（找 chrome.exe）、`<Node目录>`（PATH 中 node 位置）、`<工具目录>`（找 w64devkit\bin\gcc.exe）、`<WSL安装目录>`（注册表 Lxss BasePath）
+- **数据类**（用户自选目录，必须手动填写 path_map.txt）：`<项目目录>`、`<源码目录>`、`<离线安装包目录>`、`<3GPP文档库目录>`——不填则保持 FILL_ME 占位，使用相关 skill 时按提示补填
 
 ### 转换流程（集成进同步三环节）
 1. **本机 → 仓库**：合入前先对仓库文件跑 `python3 <仓库>/copy/scripts/path_convert.py to_portable --home="<本机用户目录正斜杠>" <仓库>/copy/opencode`（及 scripts 目录）——把本机合入内容中的真实路径转为占位符
