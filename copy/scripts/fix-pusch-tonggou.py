@@ -2,7 +2,7 @@
 """PUSCH 消除"同构"带过：展开 SLIV/RIV/RBG/MCS/TBS/处理链各步"""
 import sys
 sys.stdout.reconfigure(encoding='utf-8')
-d = r'<3GPP文档库目录>'
+d = r'<用户桌面目录>\NR-f40'
 f = d + r'\PUSCH-物理上行共享信道全梳理.html'
 h = open(f, encoding='utf-8').read()
 

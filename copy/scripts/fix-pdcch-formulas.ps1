@@ -5,7 +5,7 @@ $RC = [char]0x2309
 $LF = [char]0x230A
 $RF = [char]0x230B
 
-$f3 = "<3GPP文档库目录>\PDCCH-03-DCI格式与字段.html"
+$f3 = "<用户桌面目录>\NR-f40\PDCCH-03-DCI格式与字段.html"
 $c = Get-Content $f3 -Raw -Encoding UTF8
 $pairs = @(
   @("max(" + $LC + "log2(N_RB^BWP(N_RB^BWP+1)/2)" + $RC + "," + $LC + "N_RB^BWP/P" + $RC + ")+1", '$\max(\lceil\log_2(N_{RB}^{BWP}(N_{RB}^{BWP}+1)/2)\rceil,\lceil N_{RB}^{BWP}/P\rceil)+1$'),
@@ -31,14 +31,14 @@ foreach ($p in $pairs) { $c = $c.Replace($p[0], $p[1]) }
 [System.IO.File]::WriteAllText($f3, $c, (New-Object System.Text.UTF8Encoding($false)))
 Write-Output "03 done"
 
-$f6 = "<3GPP文档库目录>\PDCCH-06-配置链.html"
+$f6 = "<用户桌面目录>\NR-f40\PDCCH-06-配置链.html"
 $c = Get-Content $f6 -Raw -Encoding UTF8
 $c = $c.Replace("N_RB^CORESET", '$N_{RB}^{CORESET}$')
 $c = $c.Replace("N_symb^CORESET", '$N_{symb}^{CORESET}$')
 [System.IO.File]::WriteAllText($f6, $c, (New-Object System.Text.UTF8Encoding($false)))
 Write-Output "06 done"
 
-$f8 = "<3GPP文档库目录>\PDCCH-08-练习册与计算器.html"
+$f8 = "<用户桌面目录>\NR-f40\PDCCH-08-练习册与计算器.html"
 $c = Get-Content $f8 -Raw -Encoding UTF8
 $c = $c.Replace("n_0=(O" + [char]0xB7 + "2^" + [char]0x3BC + "+" + $LF + "i" + [char]0xB7 + "M" + $RF + ") mod N_slot^frame," + [char]0x3BC, '$n_0=(O\cdot 2^{\mu}+\lfloor i\cdot M\rfloor) \bmod N_{slot}^{frame,\mu}$')
 $c = $c.Replace("n_0=12 mod 10=2", '$n_0=12 \bmod 10=2$')

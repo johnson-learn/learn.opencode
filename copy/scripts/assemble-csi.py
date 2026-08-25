@@ -3,7 +3,7 @@
 import os
 
 base = r'<用户临时目录>\opencode'
-target = r'<3GPP文档库目录>\CSI-01-信道状态信息全梳理.html'
+target = r'<用户桌面目录>\NR-f40\CSI-01-信道状态信息全梳理.html'
 
 h = ''
 for f in ('csi-r1.html', 'csi-r2.html', 'csi-r3.html', 'csi-r4.html'):

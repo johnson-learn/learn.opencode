@@ -24,7 +24,7 @@ def get_home():
 HOME = get_home()
 
 def win_to_wsl(p):
-    # Windows 路径转 WSL 挂载路径（<工具目录>xxx -> /mnt/c/xxx）
+    # Windows 路径转 WSL 挂载路径（C:/xxx -> /mnt/c/xxx）
     p2 = p.replace("\\", "/")
     if len(p2) >= 2 and p2[1] == ":":
         p2 = "/mnt/" + p2[0].lower() + p2[2:]
@@ -87,7 +87,7 @@ def build_portable_map():
 def convert(text, pairs):
     for real, ph in pairs:
         text = text.replace(real, ph)
-        # URL 风格（正斜杠，如 file:///<工具目录>Users/x）也替换
+        # URL 风格（正斜杠，如 file:///C:/Users/x）也替换
         real_slash = real.replace("\\", "/")
         if real_slash != real:
             text = text.replace(real_slash, ph)
@@ -100,8 +100,6 @@ def walk_convert(root, pairs, suffix):
             continue
         for fn in filenames:
             if not fn.lower().endswith((".md", ".jsonc", ".json", ".txt", ".ps1", ".py", ".bat", ".sh")):
-                continue
-            if fn in ("path_map.txt", "sync_target.txt", "path_convert.py"):
                 continue
             p = os.path.join(dirpath, fn)
             try:
@@ -126,8 +124,6 @@ def scan_unknown_placeholders(root):
             continue
         for fn in filenames:
             if not fn.lower().endswith((".md", ".jsonc", ".json", ".txt", ".ps1", ".py", ".bat", ".sh")):
-                continue
-            if fn in ("path_map.txt", "sync_target.txt", "path_convert.py"):
                 continue
             p = os.path.join(dirpath, fn)
             try:

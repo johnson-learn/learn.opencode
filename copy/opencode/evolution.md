@@ -9,3 +9,4 @@
 [2026-08-21] 用户规则 → update_skill 升级为双向同步：功能1 本机→git（差异合入+commit+push）；功能2 git→本机（push 后 fetch 检查远端新提交，git diff old..HEAD 提取变更文件反向合入本机，冲突信息完整性优先）；执行时踩坑：本机状态文件 sync_target.txt 不应进仓库（.gitignore 排除）
 [2026-08-25] 用户规则 → 路径可移植层建立：仓库文件占位符化（自动类/填写类两级）、path_convert.py 转换工具（正反斜杠+URL 风格+长路径优先）、双向同步自动转换；踩坑：path_map.txt 误入仓库（git rm --cached + .gitignore 排除）；bash 传参反斜杠被吃（--home 用正斜杠）；WSL 内运行 Windows Python 需显式 --home
 [2026-08-25] 用户提问 → update_skill 增加第 0.5 步版本对齐检查（旧机器升级防倒退）：本机旧版本不得覆盖仓库新内容；仓库有本机无→先反向合入本机升级；两边不同→信息完整性优先合并；旧路径体系仓库先用 to_portable 就地升级
+[2026-08-26] 用户规则（重要边界） → 同步边界铁律：只有显式调用 update_skill 才允许远端↔本机同步（pull/反向合入/复制同步目录/commit/push）；其它场景不得擅自执行任何 git 同步动作，本机 skill 文件直接编辑除外；已写入 instructions.md 全局规则第 0 条

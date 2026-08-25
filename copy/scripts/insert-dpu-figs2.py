@@ -3,7 +3,7 @@
 import re, sys, os
 sys.stdout.reconfigure(encoding='utf-8')
 base = r'<用户临时目录>\opencode'
-d = r'<3GPP文档库目录>'
+d = r'<用户桌面目录>\NR-f40'
 
 def insert(fname, figs):
     f = d + '\\' + fname

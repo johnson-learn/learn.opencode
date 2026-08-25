@@ -2,7 +2,7 @@
 """修复 PDSCH 例题 4.2 与系统消息双视角表的裸取整符号"""
 import re, sys
 sys.stdout.reconfigure(encoding='utf-8')
-d = r'<3GPP文档库目录>'
+d = r'<用户桌面目录>\NR-f40'
 f1 = d + r'\PDSCH-物理下行共享信道全梳理.html'
 h = open(f1, encoding='utf-8').read()
 h = h.replace('C=⌈100000/(8448−24)⌉=⌈100000/8424⌉=12 段', 'C=\\(\\lceil 100000/(8448-24) \\rceil=\\lceil 100000/8424 \\rceil=12\\) 段')

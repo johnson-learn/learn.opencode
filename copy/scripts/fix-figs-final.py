@@ -2,7 +2,7 @@
 """修复：清空全部 figure，按锚点重插 9 图（图2=matplotlib、图8=Mermaid，其余 si-figs v2）"""
 import re, os
 
-f = r'<3GPP文档库目录>\系统消息-01-SSB-MIB-SIB1与OSI.html'
+f = r'<用户桌面目录>\NR-f40\系统消息-01-SSB-MIB-SIB1与OSI.html'
 h = open(f, encoding='utf-8').read()
 
 # 1) 全清 figure（每个 figure 独立匹配，安全）

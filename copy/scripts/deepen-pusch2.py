@@ -2,7 +2,7 @@
 """PUSCH 深化：① 变换预编码 DFT 公式展开 ② UCI 复用 RE 公式展开"""
 import re, sys
 sys.stdout.reconfigure(encoding='utf-8')
-d = r'<3GPP文档库目录>'
+d = r'<用户桌面目录>\NR-f40'
 f = d + r'\PUSCH-物理上行共享信道全梳理.html'
 h = open(f, encoding='utf-8').read()
 
