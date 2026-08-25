@@ -2,7 +2,7 @@
 """再查 BWP 剩余重叠"""
 import re
 
-d = r'<用户桌面目录>\NR-f40'
+d = r'<3GPP文档库目录>'
 h = open(d + r'\BWP-带宽部分全梳理.html', encoding='utf-8').read()
 svgs = re.findall(r'<svg\b.*?</svg>', h, re.S)
 for si, svg in enumerate(svgs):

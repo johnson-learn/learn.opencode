@@ -17,6 +17,20 @@ description: 技能双向同步更新技能（全局 skill，仅显式触发，�
 | 同步源（本机脚本） | 配套 PS/Python 脚本 | `<用户目录>\AppData\Local\Temp\opencode\*.ps1`、项目 temp 的 inject_skills.py/fetch_skills.py | `Test-Path` | — |
 | 目标 Git 仓库 | 云端同步落点 | `/home/github/learn.opencode/copy`（WSL 内；Windows 访问 `\\wsl.localhost\Ubuntu\home\github\learn.opencode\copy`） | `wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git remote -v"` | 从 GitHub clone：`git clone git@github.com:johnson-learn/learn.opencode.git copy` |
 
+## 路径可移植层（双向同步必须执行的转换）
+
+> 仓库（GitHub）里的文件必须保持**占位符形式**（可移植）；本机源文件保持**真实路径**（本机使用）。双向同步时自动转换，禁止把本机真实路径推上 GitHub。
+
+### 占位符体系
+- **自动类**（转换时自动推导，无需用户填写）：`<用户目录>`、`<opencode配置目录>`、`<opencode数据目录>`、`<用户临时目录>`、`<用户AppData目录>`、`<用户桌面目录>`、`<WSL用户映射>`、`<Python脚本目录>`
+- **填写类**（新机器移植时用户填写，存于本机 `path_map.txt`，不进仓库）：`<项目目录>`、`<源码目录>`、`<WSL安装目录>`、`<离线安装包目录>`、`<工具目录>`、`<LibreOffice目录>`、`<Chrome目录>`、`<Node目录>`、`<3GPP文档库目录>` 等
+
+### 转换流程（集成进同步三环节）
+1. **本机 → 仓库**：合入前先对仓库文件跑 `python3 <仓库>/copy/scripts/path_convert.py to_portable --home="<本机用户目录正斜杠>" <仓库>/copy/opencode`（及 scripts 目录）——把本机合入内容中的真实路径转为占位符
+2. **仓库 → 本机**（反向合入）：把仓库文件复制回本机后，对本机文件跑 `python3 <仓库>/copy/scripts/path_convert.py to_local --home="<本机用户目录正斜杠>" <本机opencode配置目录>`（及 Temp\opencode）——把占位符转回本机真实路径
+3. 转换前后各跑一次 `grep -rl "<本机用户名>" <目录>` 残留检查，残留为 0 才可提交/合入
+4. 本机状态文件：`<用户目录>\.config\opencode\skills\update_skill\path_map.txt`（填写类占位符→本机真实路径映射，**不进仓库**，同步排除）
+
 ## 处理流程（目标目录确定 → git 五步 + 同步三环节，按序执行）
 
 ### 目标目录确定（记忆机制，第一步必做）

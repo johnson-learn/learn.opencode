@@ -2,7 +2,7 @@
 """PDSCH 第 4 讲重写：LDPC 编码链逐步详细解析（原文+翻译+公式+例题+注意点，末尾才提炼）"""
 import re, sys
 sys.stdout.reconfigure(encoding='utf-8')
-d = r'<用户桌面目录>\NR-f40'
+d = r'<3GPP文档库目录>'
 f = d + r'\PDSCH-物理下行共享信道全梳理.html'
 h = open(f, encoding='utf-8').read()
 

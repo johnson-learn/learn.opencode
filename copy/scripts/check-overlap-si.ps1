@@ -44,7 +44,7 @@ $js = @'
 })()
 '@
 
-$dir = "<用户桌面目录>\NR-f40"
+$dir = "<3GPP文档库目录>"
 $files = Get-ChildItem $dir -Filter "系统消息*.html" | Sort-Object Name
 foreach ($f in $files) {
   $url = "file:///" + ($f.FullName -replace '\\','/')

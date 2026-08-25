@@ -3,7 +3,7 @@
 import os, re
 
 base = r'<用户临时目录>\opencode'
-outdir = r'<用户桌面目录>\NR-f40'
+outdir = r'<3GPP文档库目录>'
 
 h = ''
 for f in ('csi-main-r1.html', 'csi-main-r2.html', 'csi-main-r3.html', 'csi-main-r4.html'):
