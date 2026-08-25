@@ -24,7 +24,7 @@ def get_home():
 HOME = get_home()
 
 def win_to_wsl(p):
-    # Windows 路径转 WSL 挂载路径（<工具目录>xxx -> /mnt/c/xxx）
+    # Windows 路径转 WSL 挂载路径（C:/xxx -> /mnt/c/xxx）
     p2 = p.replace("\\", "/")
     if len(p2) >= 2 and p2[1] == ":":
         p2 = "/mnt/" + p2[0].lower() + p2[2:]
@@ -87,7 +87,7 @@ def build_portable_map():
 def convert(text, pairs):
     for real, ph in pairs:
         text = text.replace(real, ph)
-        # URL 风格（正斜杠，如 file:///<工具目录>Users/x）也替换
+        # URL 风格（正斜杠，如 file:///C:/Users/x）也替换
         real_slash = real.replace("\\", "/")
         if real_slash != real:
             text = text.replace(real_slash, ph)
@@ -115,6 +115,26 @@ def walk_convert(root, pairs, suffix):
                 print("[ok] " + os.path.relpath(p, root))
     print("=== %s 完成: %d 个文件转换" % (suffix, count))
 
+def scan_unknown_placeholders(root):
+    """扫描目录中残留的 <xxx> 占位符，返回未转换的占位符集合（to_local 后应只含用户尚未映射的填写类）"""
+    unknown = set()
+    pat = re.compile(r"<[^<>\s]{2,40}>")
+    for dirpath, dirnames, filenames in os.walk(root):
+        if ".git" in dirpath.split(os.sep):
+            continue
+        for fn in filenames:
+            if not fn.lower().endswith((".md", ".jsonc", ".json", ".txt", ".ps1", ".py", ".bat", ".sh")):
+                continue
+            p = os.path.join(dirpath, fn)
+            try:
+                with open(p, encoding="utf-8") as f:
+                    c = f.read()
+            except (UnicodeDecodeError, OSError):
+                continue
+            for m in pat.finditer(c):
+                unknown.add(m.group(0))
+    return unknown
+
 if __name__ == "__main__":
     argv = [a for a in sys.argv[1:] if not a.startswith("--home=")]
     mode = argv[0] if argv else ""
@@ -125,5 +145,12 @@ if __name__ == "__main__":
         pairs = [(ph, real) for ph, real in build_local_map().items()]
         pairs.sort(key=lambda x: len(x[0]), reverse=True)
         walk_convert(root, pairs, "to_local")
+        unk = scan_unknown_placeholders(root)
+        if unk:
+            print("=== 警告：残留未转换占位符（请补充 path_map.txt 后重跑 to_local）===")
+            for u in sorted(unk):
+                print("  " + u)
+        else:
+            print("=== 占位符全部转换完成，无残留 ===")
     else:
-        print("用法: python path_convert.py to_portable|to_local <目录>")
+        print("用法: python path_convert.py to_portable|to_local <目录> [--home=用户目录]")
