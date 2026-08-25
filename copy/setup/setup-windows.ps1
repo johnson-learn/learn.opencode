@@ -31,11 +31,75 @@ function Step([string]$msg) { Write-Host "`n=== $msg ===" -ForegroundColor Cyan 
 function Ok([string]$msg) { Write-Host "  [OK] $msg" -ForegroundColor Green }
 function Warn([string]$msg) { Write-Host "  [跳过/警告] $msg" -ForegroundColor Yellow }
 
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+
+# LibreOffice 的 soffice 通常不在 PATH，不能只靠 Get-Command 判断是否已安装
+function Test-Soffice {
+  if (Test-Cmd "soffice") { return $true }
+  foreach ($p in @(
+    "C:\Program Files\LibreOffice\program\soffice.exe",
+    "C:\Program Files\LibreOffice\program\soffice.com",
+    "C:\Program Files (x86)\LibreOffice\program\soffice.exe",
+    "C:\Program Files (x86)\LibreOffice\program\soffice.com"
+  )) { if (Test-Path $p) { return $true } }
+  return $false
+}
+
+# 依据 winget 包 id 判断是否已装（Chrome/LibreOffice 用安装路径判断更可靠）
+function Test-Pkg([string]$id) {
+  switch ($id) {
+    "Git.Git"                     { return (Test-Cmd "git") }
+    "OpenJS.NodeJS.LTS"           { return (Test-Cmd "node") }
+    "Python.Python.3.12"          { return (Test-Cmd "python") }
+    "Google.Chrome"               { return (Test-Path "C:\Program Files\Google\Chrome\Application\chrome.exe") }
+    "TheDocumentFoundation.LibreOffice" { return (Test-Soffice) }
+    default                       { return $false }
+  }
+}
+
+# 获取当前 python 的 pip Scripts 目录（--user 安装后 p2t 等命令所在位置）
+function Get-PipScriptsDir {
+  try {
+    $ub = (python -c "import site; print(site.getuserbase())" 2>$null).Trim()
+    if ($ub) { $d = Join-Path $ub "Scripts"; if (Test-Path $d) { return $d } }
+  } catch {}
+  # 回退：sysconfig 的 scripts 路径
+  try {
+    $sc = (python -c "import sysconfig; print(sysconfig.get_path('scripts'))" 2>$null).Trim()
+    if ($sc -and (Test-Path $sc)) { return $sc }
+  } catch {}
+  return $null
+}
+
+# 把目录加入用户级 PATH（已存在则跳过；返回是否写入）
+function Add-ToUserPath([string]$dir) {
+  if (-not $dir -or -not (Test-Path $dir)) { return $false }
+  $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+  if ($userPath -and $userPath.TrimEnd(';') -split ';' -contains $dir.TrimEnd('\')) { return $false }
+  [Environment]::SetEnvironmentVariable("Path", ($userPath.TrimEnd(';') + ';' + $dir), "User")
+  $env:Path += ';' + $dir
+  return $true
+}
+
 # ---------- 0. 前置检查 ----------
 Step "0. 前置检查"
 $psVer = $PSVersionTable.PSVersion
 Write-Host "  PowerShell $psVer；脚本要求 5.1+（Windows 10/11 内置即满足）"
 if ($psVer.Major -lt 5) { Write-Host "  [失败] PowerShell 版本过低" -ForegroundColor Red; exit 1 }
+
+# 启用 Windows 长路径（默认关闭，会导致 pip 安装 torch/pix2text 时因路径超 260 字符报 OSError）
+$lpKey = "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem"
+$lp = Get-ItemProperty -Path $lpKey -Name LongPathsEnabled -ErrorAction SilentlyContinue
+if ($lp.LongPathsEnabled -ne 1) {
+  if ($isAdmin) {
+    Set-ItemProperty -Path $lpKey -Name LongPathsEnabled -Value 1 -Type DWord
+    Ok "已启用 Windows 长路径（LongPathsEnabled=1，建议重启后生效）"
+  } else {
+    Warn "Windows 长路径未启用，pip 安装 torch/pix2text 可能因路径过长失败。请以管理员运行一次：reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f"
+  }
+} else {
+  Ok "Windows 长路径已启用（LongPathsEnabled=1）"
+}
 
 # ---------- 1. winget 安装基础软件 ----------
 if (-not $SkipWinget) {
@@ -51,16 +115,12 @@ if (-not $SkipWinget) {
       @{ id = "TheDocumentFoundation.LibreOffice"; name = "LibreOffice" }
     )
     foreach ($p in $pkgs) {
-      $already = $false
-      if ($p.id -eq "Git.Git") { $already = Test-Cmd "git" }
-      elseif ($p.id -eq "OpenJS.NodeJS.LTS") { $already = Test-Cmd "node" }
-      elseif ($p.id -eq "Python.Python.3.12") { $already = Test-Cmd "python" }
-      elseif ($p.id -eq "Google.Chrome") { $already = Test-Path "C:\Program Files\Google\Chrome\Application\chrome.exe" }
-      elseif ($p.id -eq "TheDocumentFoundation.LibreOffice") { $already = Test-Cmd "soffice" }
+      $already = Test-Pkg $p.id
       if ($already) { Ok "$($p.name) 已安装"; continue }
       Write-Host "  安装 $($p.name) ...（可能耗时数分钟，请耐心等待）"
-      winget install --id $p.id -e --accept-source-agreements --accept-package-agreements --silent
-      if ($?) { Ok "$($p.name) 安装完成" } else { Warn "$($p.name) 安装失败，可手动安装（见 REQUIREMENTS.md）" }
+      winget install --id $p.id -e --accept-source-agreements --accept-package-agreements --silent | Out-Null
+      # winget 在"已装但无可用升级"等场景下返回码可能非 0，故结合再检测判断是否成功
+      if (($LASTEXITCODE -eq 0) -or (Test-Pkg $p.id)) { Ok "$($p.name) 安装完成" } else { Warn "$($p.name) 安装失败，可手动安装（见 REQUIREMENTS.md）" }
     }
   }
 } else { Warn "已跳过基础软件安装（-SkipWinget）" }
@@ -89,13 +149,24 @@ if (-not $SkipPip) {
   if (-not (Test-Cmd "python")) {
     Warn "python 不可用（未装或未刷新 PATH）。装好后重跑本脚本即可。"
   } else {
+    # 识别 Microsoft Store 版 Python（路径含 WindowsApps，其 --user 目录极长，易触发 torch 安装失败）
+    $pyExe = $null
+    try { $pyExe = (python -c "import sys; print(sys.executable)" 2>$null).Trim() } catch {}
+    if ($pyExe -and $pyExe -like "*WindowsApps*") {
+      Warn "检测到 Microsoft Store 版 Python（$pyExe）。其用户目录路径过长，torch/pix2text 可能安装失败。建议用 winget 安装官方 Python 3.12 后重跑本脚本。"
+    }
     $pi = if ($UseChinaMirror) { "-i https://pypi.tuna.tsinghua.edu.cn/simple" } else { "" }
     foreach ($pkg in @("pix2text","matplotlib","PyMuPDF","pillow")) {
       Write-Host "  pip install $pkg ..."
-      python -m pip install --upgrade $pkg $pi
-      if ($?) { Ok "$pkg 安装完成" } else { Warn "$pkg 安装失败" }
+      python -m pip install --upgrade --user $pkg $pi
+      if ($LASTEXITCODE -eq 0) { Ok "$pkg 安装完成" } else { Warn "$pkg 安装失败" }
     }
-    if (-not (Test-Cmd "p2t")) { Warn "p2t 命令未在 PATH（pip 的 Scripts 目录未入 PATH，可手动加：%LOCALAPPDATA%\Programs\Python\Python312\Scripts 或 Python 安装目录\Scripts）" }
+    # 把 pip 的 Scripts 目录加入用户 PATH（否则 p2t 等命令找不到）
+    $scriptsDir = Get-PipScriptsDir
+    if ($scriptsDir -and (Add-ToUserPath $scriptsDir)) {
+      Ok "已将 pip Scripts 目录加入用户 PATH：$scriptsDir（新开终端生效）"
+    }
+    if (-not (Test-Cmd "p2t")) { Warn "p2t 命令仍未在 PATH（可手动加：$scriptsDir）" }
   }
 } else { Warn "已跳过 pip 包（-SkipPip）" }
 
@@ -103,8 +174,16 @@ if (-not $SkipPip) {
 if (-not $SkipWsl) {
   Step "4. WSL2 + Ubuntu 22.04"
   $wslOk = $false
-  try { $l = wsl -l -v 2>&1; $wslOk = ($l -match "Ubuntu-22.04") } catch { $wslOk = $false }
-  if ($wslOk) { Ok "WSL Ubuntu-22.04 已就绪" }
+  # 发行版注册位置：新版 WSL（应用商店版）在 HKCU，旧版在 HKLM；发行版名可能为 Ubuntu / Ubuntu-22.04。
+  # 用注册表判断可避免 wsl.exe 输出 UTF-16 编码导致的字符串匹配失效问题。
+  foreach ($root in @("HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss","HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Lxss")) {
+    foreach ($k in (Get-ChildItem $root -ErrorAction SilentlyContinue)) {
+      $dn = (Get-ItemProperty $k.PSPath -ErrorAction SilentlyContinue).DistributionName
+      if ($dn -and $dn -match "Ubuntu") { $wslOk = $true; break }
+    }
+    if ($wslOk) { break }
+  }
+  if ($wslOk) { Ok "WSL Ubuntu 已就绪" }
   else {
     Write-Host "  运行 install-wsl.ps1（需要管理员权限，可能要求重启）..."
     $installer = Join-Path $RepoRoot "setup\install-wsl.ps1"
@@ -126,6 +205,18 @@ if (-not $SkipDeploy) {
     foreach ($f in @("opencode.jsonc","instructions.md","evolution.md","package.json")) {
       $s = Join-Path $RepoRoot "opencode\$f"
       if (Test-Path $s) { Copy-Item $s $ConfigDir -Force }
+    }
+    # 部署 plugins\（skill-banner.js 等 opencode 插件）
+    $srcPlugins = Join-Path $RepoRoot "opencode\plugins"
+    if (Test-Path $srcPlugins) {
+      New-Item -ItemType Directory -Path (Join-Path $ConfigDir "plugins") -Force | Out-Null
+      robocopy $srcPlugins (Join-Path $ConfigDir "plugins") /E /NFL /NDL /NJH /NJS /NP | Out-Null
+    }
+    # 安装 skill-banner 插件依赖（@opencode-ai/plugin），否则 plugins\skill-banner.js 无法加载
+    if ((Test-Path (Join-Path $ConfigDir "package.json")) -and (Test-Cmd "npm")) {
+      Push-Location $ConfigDir
+      try { npm install --no-audit --no-fund 2>&1 | Out-Null; Ok "skill-banner 插件依赖已安装" } catch { Warn "skill-banner 插件依赖安装失败（可手动在 $ConfigDir 运行 npm install）" }
+      Pop-Location
     }
     New-Item -ItemType Directory -Path $dstSkills -Force | Out-Null
     Get-ChildItem $srcSkills -Directory | ForEach-Object {
@@ -170,13 +261,23 @@ if (-not $SkipDeploy) {
 
 # ---------- 8. 汇总验证 ----------
 Step "8. 验证汇总"
+
+# 若 LibreOffice 已安装但 soffice 不在 PATH，自动加入用户 PATH
+if (Test-Soffice -and -not (Test-Cmd "soffice")) {
+  $soDir = $null
+  foreach ($p in @("C:\Program Files\LibreOffice\program","C:\Program Files (x86)\LibreOffice\program")) {
+    if (Test-Path (Join-Path $p "soffice.exe")) { $soDir = $p; break }
+  }
+  if ($soDir -and (Add-ToUserPath $soDir)) { Ok "已将 LibreOffice program 目录加入用户 PATH：$soDir（新开终端生效）" }
+}
+
 $checks = @(
   @{ name = "opencode CLI";    ok = (Test-Cmd "opencode") },
   @{ name = "mmdc";            ok = (Test-Cmd "mmdc") },
   @{ name = "python";          ok = (Test-Cmd "python") },
   @{ name = "p2t";             ok = (Test-Cmd "p2t") },
   @{ name = "git";             ok = (Test-Cmd "git") },
-  @{ name = "soffice";         ok = (Test-Cmd "soffice") },
+  @{ name = "soffice";         ok = (Test-Soffice) },
   @{ name = "Chrome";          ok = (Test-Path "C:\Program Files\Google\Chrome\Application\chrome.exe") -or (Test-Path "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe") },
   @{ name = "skills 部署";     ok = (Test-Path (Join-Path $ConfigDir "skills\3gpp_skill\SKILL.md")) },
   @{ name = "辅助脚本部署";    ok = (Test-Path (Join-Path $ToolDir "extract-docx.ps1")) }

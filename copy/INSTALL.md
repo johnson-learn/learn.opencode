@@ -65,6 +65,10 @@ Test-Path "$env:LOCALAPPDATA\Temp\opencode\extract-docx.ps1"               # Tru
 |---|---|
 | winget 不存在 | 商店安装"应用安装程序"，或直接官网下载各软件手动装 |
 | winget 装 Python 后 PATH 无 python | 重启终端；仍无则手动把 Python 与 `Scripts` 目录加入 PATH |
+| pip 装 pix2text 报 `OSError ... No such file or directory`（torch 路径过长） | Windows 长路径未启用。以管理员运行：`reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f` 后重启重试 |
+| 系统里是 Microsoft Store 版 Python | 其 `--user` 目录路径极长易触发 torch 安装失败；建议 `winget install Python.Python.3.12` 改用官方 Python |
+| p2t 命令找不到 | 脚本已自动把 pip 的 Scripts 目录加入用户 PATH，新开终端即可；仍不行则手动把 `python -c "import site;print(site.getuserbase())"` 输出的 `Scripts` 目录加入 PATH |
+| soffice 命令找不到（LibreOffice 已装） | 脚本已自动把 `C:\Program Files\LibreOffice\program` 加入用户 PATH；或直接用全路径 `soffice.com` |
 | p2t 模型下载失败 | 设 `HF_ENDPOINT=https://hf-mirror.com`；或从旧机拷贝 `p2t-models` 目录 |
 | mmdc 报无 Chrome | 设 `$env:PUPPETEER_EXECUTABLE_PATH = "C:\Program Files\Google\Chrome\Application\chrome.exe"` |
 | WSL 商店渠道失败 | 用 `curl.exe -L -o ubuntu2204.appx https://aka.ms/wslubuntu2204` + `Add-AppxPackage`（见 REQUIREMENTS.md §4） |
