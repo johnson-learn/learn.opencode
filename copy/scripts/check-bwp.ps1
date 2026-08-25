@@ -1,6 +1,6 @@
 # BWP HTML 校验脚本：用 Chrome headless 加载页面并捕获 JS 控制台错误
 param([string]$file = $null)
-$chrome = "<Chrome目录>\chrome.exe"
+$chrome = "C:\Program Files\Google\Chrome\Application\chrome.exe"
 $dir = "<用户桌面目录>\NR-f40"
 $files = if ($file) { @(Join-Path $dir $file) } else { @(Get-ChildItem $dir -Filter "BWP-*.html" | Sort-Object Name | ForEach-Object { $_.FullName }) }
 foreach ($f in $files) {
