@@ -18,8 +18,8 @@ description: 技能双向同步更新技能（全局 skill，仅显式触发，�
 |---|---|---|---|---|
 | git | 版本同步 | WSL Ubuntu 内 git 2.34 | `wsl -d Ubuntu -e bash -c "git --version"` | `apt install git` |
 | SSH 密钥 | GitHub 推送认证（SSH 远程） | `~/.ssh/id_*`（github.com 已授权） | `wsl -d Ubuntu -e bash -c "ssh -T git@github.com"` | 生成密钥并添加到 GitHub 账号 |
-| 同步源（本机全局配置） | 进化后的最新内容 | `<用户目录>\.config\opencode\`（skills/instructions.md/evolution.md/opencode.jsonc/plugins） | `Test-Path <用户目录>\.config\opencode\instructions.md` | — |
-| 同步源（本机脚本） | 配套 PS/Python 脚本 | `<用户目录>\AppData\Local\Temp\opencode\*.ps1`、项目 temp 的 inject_skills.py/fetch_skills.py | `Test-Path` | — |
+| 同步源（本机全局配置） | 进化后的最新内容 | `<opencode配置目录>\`（skills/instructions.md/evolution.md/opencode.jsonc/plugins） | `Test-Path <opencode配置目录>\instructions.md` | — |
+| 同步源（本机脚本） | 配套 PS/Python 脚本 | `<用户临时目录>\opencode\*.ps1`、项目 temp 的 inject_skills.py/fetch_skills.py | `Test-Path` | — |
 | 目标 Git 仓库 | 云端同步落点 | `/home/github/learn.opencode/copy`（WSL 内；Windows 访问 `\\wsl.localhost\Ubuntu\home\github\learn.opencode\copy`） | `wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git remote -v"` | 从 GitHub clone：`git clone git@github.com:johnson-learn/learn.opencode.git copy` |
 
 ## 路径可移植层（双向同步必须执行的转换）
@@ -36,14 +36,16 @@ description: 技能双向同步更新技能（全局 skill，仅显式触发，�
 2. **仓库 → 本机**（反向合入，第 0.5 步与第 4 步均适用）：把仓库文件复制回本机后，对本机文件跑 `python3 <仓库>/copy/scripts/path_convert.py to_local --home="<本机用户目录正斜杠>" <本机opencode配置目录>`（及 Temp\opencode）——把占位符转回本机真实路径
 3. **远端路径技巧的防御（关键）**：远端文件全部是占位符形式，反向合入到本机时**必须经 to_local 转换**，否则本机 skill 出现占位符导致工具路径失效；to_local 结束自动输出"残留未转换占位符"清单——**出现未知占位符（远端新定义的填写类）时，提示用户补充本机 path_map.txt 后重跑 to_local，不得带着占位符继续使用**
 4. 转换前后各跑一次 `grep -rl "<本机用户名>" <目录>`（正向）与占位符残留扫描（反向）残留检查，为 0 才可提交/合入
-5. 本机状态文件：`<用户目录>\.config\opencode\skills\update_skill\path_map.txt`（填写类占位符→本机真实路径映射，**不进仓库**，同步排除）；远端新增占位符时同步更新该文件
+5. 本机状态文件：`<opencode配置目录>\skills\update_skill\path_map.txt`（填写类占位符→本机真实路径映射，**不进仓库**，同步排除）；远端新增占位符时同步更新该文件
+6. **状态文件保护（✓ 本机实测踩坑）**：path_map.txt/sync_target.txt 位于 opencode 配置目录内，to_local 全目录扫描会**把 path_map.txt 自身的占位符键转换毁掉**（`<项目目录>=D:\...` → `D:\...=D:\...`），导致后续转换全部失效——path_convert.py 已内置跳过这两个文件名，**勿删该跳过逻辑**；同理会话内先跑 to_local 再核对 path_map.txt 键是否原样
+7. **教学列表保护（✓ 本机实测踩坑）**：本技能「占位符体系」章节中列举占位符名的两行（自动类/填写类枚举）会被 to_local 转换为本机真实路径，使教学文档失真——反向合入后**按仓库版本恢复这两行**（占位符名必须保持原样，不能变成本机路径）
 
 ## 处理流程（目标目录确定 → git 五步 + 同步三环节，按序执行）
 
 ### 目标目录确定（记忆机制，第一步必做）
 - **首次调用必须指出同步目标目录**，格式：`update_skill：<目标目录路径>`（Windows UNC 如 `\\wsl.localhost\Ubuntu\home\github\learn.opencode\copy`，或 WSL 路径如 `/home/github/learn.opencode/copy`）
 - 首次调用未指出目录 → **提示用户**："请指出同步目标目录，格式：update_skill：<目录路径>"，等待用户给出后再继续
-- 目录记忆：本机状态文件 `<用户目录>\.config\opencode\skills\update_skill\sync_target.txt` 保存最近指定的目录；每次用户显式给出新目录 → 更新该文件
+- 目录记忆：本机状态文件 `<opencode配置目录>\skills\update_skill\sync_target.txt` 保存最近指定的目录；每次用户显式给出新目录 → 更新该文件
 - 后续调用未指出目录 → 读取状态文件用最近目录；状态文件不存在或内容无效 → 按首次调用处理（提示用户）
 - Windows UNC 与 WSL 路径互转：UNC `\\wsl.localhost\Ubuntu\...` ↔ WSL `/...`；git 操作一律在 WSL 路径下执行
 
@@ -58,7 +60,7 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 ### 第 0.5 步：版本对齐检查（旧机器升级场景防倒退，必做）
 > 场景：本机是早期移植的旧版本（如旧路径体系、缺新 skill），远端已有其它机器的新提交。**必须防止旧本机内容覆盖仓库新内容（版本倒退）**。
 1. pull 后对比本机与仓库的差异方向：
-   - 本机全局配置目录：`<用户目录>\.config\opencode\`（含 skills、instructions.md、evolution.md、plugins）
+   - 本机全局配置目录：`<opencode配置目录>\`（含 skills、instructions.md、evolution.md、plugins）
    - 仓库目录：`copy\opencode\`（占位符版本）
 2. 判定规则：
    - **仓库有、本机没有**的文件/skill → 这是远端新增 → **先反向合入本机**（复制仓库文件 → path_convert to_local → 覆盖到本机），本机完成升级
@@ -77,7 +79,7 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
    ```
 2. **合入本机脚本** → 仓库 `scripts/`（同样覆盖式合入）：
    ```
-   cp <用户目录>\AppData\Local\Temp\opencode\*.ps1、*.py 与 <项目目录>\temp\inject_skills.py、fetch_skills.py → copy/scripts/
+   cp <用户临时目录>\opencode\*.ps1、*.py 与 <项目目录>\temp\inject_skills.py、fetch_skills.py → copy/scripts/
    ```
 3. **差异对比与裁决**：
    - `git status --short` 列出全部差异：`A`（本机新增→直接接受）、`M`（同文件两边可能都改）、`D`（仓库有本机无→**不删除，恢复保留**，除非确认已废弃）
@@ -96,10 +98,10 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 1. push 前记录旧 HEAD：`OLD=$(git rev-parse HEAD)`
 2. push 成功后检查远端：`git fetch origin && git log --oneline $OLD..origin/main | head`——有输出说明其它机器有新提交
 3. 有远端新提交 → `git pull --rebase origin main` → 提取变更文件：`git diff --name-only $OLD..HEAD` → 将这些文件**从仓库反向复制回本机**（差异合入、不删除本机文件）：
-   - `opencode/skills/...` → `<用户目录>\.config\opencode\skills\...`
-   - `opencode/instructions.md、evolution.md、opencode.jsonc` → `<用户目录>\.config\opencode\`
-   - `opencode/plugins/...` → `<用户目录>\.config\opencode\plugins\`
-   - `scripts/...` → `<用户目录>\AppData\Local\Temp\opencode\`
+   - `opencode/skills/...` → `<opencode配置目录>\skills\...`
+   - `opencode/instructions.md、evolution.md、opencode.jsonc` → `<opencode配置目录>\`
+   - `opencode/plugins/...` → `<opencode配置目录>\plugins\`
+   - `scripts/...` → `<用户临时目录>\opencode\`
 4. 反向合入的冲突处理：同名文件本机与远端都改过时，按"信息完整性优先"合并（本机当前内容为主、远端新增有效内容并入），无法自动合并的报告用户裁决
 5. 无远端新提交 → 报告"远端无新变化"，流程结束
 
@@ -114,7 +116,7 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 ## 环境注意
 
 - 目标仓库在 WSL 内（`/home/github/learn.opencode/copy`），本机 Windows 源经 `/mnt/c/` 访问；WSL 未运行时先 `wsl -d Ubuntu` 拉起
-- **目录记忆状态文件**：`<用户目录>\.config\opencode\skills\update_skill\sync_target.txt`（记录最近目标目录；首次调用必须由用户指出目录，后续默认用最近目录）
+- **目录记忆状态文件**：`<opencode配置目录>\skills\update_skill\sync_target.txt`（记录最近目标目录；首次调用必须由用户指出目录，后续默认用最近目录）
 - 推送认证走 SSH（git@github.com）；若换 HTTPS 需配 token
 - 仓库内 `setup/`（install-wsl.ps1 等）、`README.md`、`INSTALL.md`、`REQUIREMENTS.md` 为移植配套文档，同步时保留不动
 - **风险规避**：同步前检查不包含任何密钥/token；`~/.lobehub-market/credentials.json` 等凭证一律不进入仓库
