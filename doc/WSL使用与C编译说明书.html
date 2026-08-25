@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Windows 下使用 WSL 编译运行 C 代码说明书</title>
+<style>
+body { font-family:"Segoe UI","Microsoft YaHei",sans-serif; max-width:1000px; margin:30px auto; padding:0 24px; color:#1a1a1a; line-height:1.9; }
+h1 { font-size:26px; border-bottom:3px solid #005a9c; padding-bottom:10px; }
+h2 { font-size:19px; color:#005a9c; margin-top:36px; border-left:5px solid #005a9c; padding-left:12px; }
+h3 { font-size:16px; margin-top:22px; color:#0d3c66; }
+pre { background:#f6f8fa; border:1px solid #ddd; border-radius:6px; padding:12px 16px; font-size:13px; overflow-x:auto; line-height:1.6; }
+code { background:#eef; padding:1px 6px; border-radius:3px; font-size:13px; }
+.zhuyi { background:#fdf3f3; border-left:4px solid #c05050; padding:10px 14px; margin:14px 0; }
+.tip { background:#eef8ee; border-left:4px solid #4a9c4a; padding:10px 14px; margin:14px 0; }
+table { border-collapse:collapse; margin:12px 0; font-size:13px; }
+th,td { border:1px solid #888; padding:6px 12px; text-align:left; }
+th { background:#e8eef7; }
+.box { background:#eef5fc; border:1px solid #b8d2ea; border-radius:8px; padding:14px 18px; margin:16px 0; }
+</style>
+</head>
+<body>
+<h1>Windows 下使用 WSL（Linux）编译与运行 C 代码说明书</h1>
+
+<p>适用环境：已按《WSL 安装步骤说明书》完成 WSL + Ubuntu 22.04 + gcc 安装。本机发行版名为 <code>Ubuntu</code>，装在 <code>E:\WSL\Ubuntu</code>。</p>
+
+<h2>一、常用 WSL 命令速查</h2>
+<table>
+<tr><th>命令（Windows PowerShell 中执行）</th><th>作用</th></tr>
+<tr><td><code>wsl -l -v</code></td><td>列出所有发行版及状态/版本</td></tr>
+<tr><td><code>wsl -d Ubuntu</code></td><td>进入 Ubuntu 交互式 shell</td></tr>
+<tr><td><code>wsl -d Ubuntu -e bash -c "命令"</code></td><td>不进入 shell，直接执行一条 Linux 命令</td></tr>
+<tr><td><code>wsl --shutdown</code></td><td>关闭 WSL（释放内存）</td></tr>
+<tr><td><code>wsl --set-default Ubuntu</code></td><td>设为默认发行版</td></tr>
+<tr><td><code>wsl --set-version Ubuntu 2</code></td><td>切到 WSL2 内核</td></tr>
+</table>
+
+<h2>二、文件互通（Windows ⇄ Linux）</h2>
+<div class="box">
+<p>Windows 盘符在 Linux 中挂载为 <code>/mnt/&lt;盘符小写&gt;</code>：</p>
+<table>
+<tr><th>Windows 路径</th><th>Linux 路径</th></tr>
+<tr><td><code>E:\openCodeDefault\temp\main.c</code></td><td><code>/mnt/e/openCodeDefault/temp/main.c</code></td></tr>
+<tr><td><code>C:\Users\你的用户名</code></td><td><code>/mnt/c/Users/你的用户名</code></td></tr>
+</table>
+<p>Windows 资源管理器地址栏输入 <code>\\wsl$\Ubuntu\</code> 可浏览 Linux 文件系统。</p>
+</div>
+<div class="zhuyi"><b>注意</b>：编译建议在 <code>/mnt/e/...</code>（Windows 盘）直接进行，产物两边都能访问；但大型构建（大量小文件 IO）在 /mnt 下会慢，此时可把源码复制到 Linux 家目录 <code>~/</code> 编译。</div>
+
+<h2>三、编译并运行 C 代码（三步走）</h2>
+
+<h3>3.1 单文件程序</h3>
+<pre># Windows PowerShell 中，一条命令完成编译+运行（E 盘路径示例）
+wsl -d Ubuntu -e bash -c "cd /mnt/e/openCodeDefault/temp && gcc -O2 -pthread main.c -o main && ./main"</pre>
+<p>分步写法（进入 Linux 后）：</p>
+<pre>wsl -d Ubuntu                    # 进入 Linux
+cd /mnt/e/openCodeDefault/temp   # 切到源码目录
+gcc -O2 main.c -o main           # 编译
+./main                           # 运行</pre>
+
+<h3>3.2 多线程程序</h3>
+<div class="box">
+<p>必须加 <code>-pthread</code>（GCC 才会链接 POSIX 线程库）：</p>
+<pre>gcc -O2 -pthread linux_thread_demo.c -o demo
+./demo 2000          # 参数可传节拍数</pre>
+</div>
+
+<h3>3.3 常用编译选项</h3>
+<table>
+<tr><th>选项</th><th>含义</th></tr>
+<tr><td><code>-O2</code></td><td>二级优化（推荐默认）</td></tr>
+<tr><td><code>-g</code></td><td>加调试符号（配合 gdb）</td></tr>
+<tr><td><code>-Wall -Wextra</code></td><td>打开常见警告</td></tr>
+<tr><td><code>-pthread</code></td><td>多线程必加</td></tr>
+<tr><td><code>-lm</code></td><td>链接数学库（用了 math.h 时）</td></tr>
+<tr><td><code>-std=c11</code> / <code>-std=c17</code></td><td>指定 C 标准</td></tr>
+</table>
+
+<h2>四、C 开发工具链（Linux 内）</h2>
+<table>
+<tr><th>工具</th><th>安装</th><th>用途</th></tr>
+<tr><td>gcc / g++</td><td><code>apt install gcc g++</code></td><td>C / C++ 编译器</td></tr>
+<tr><td>make</td><td><code>apt install make</code></td><td>Makefile 构建</td></tr>
+<tr><td>gdb</td><td><code>apt install gdb</code></td><td>调试器</td></tr>
+<tr><td>valgrind</td><td><code>apt install valgrind</code></td><td>内存泄漏检测</td></tr>
+<tr><td>cmake</td><td><code>apt install cmake</code></td><td>跨平台构建系统</td></tr>
+</table>
+
+<h2>五、验证过的示例：0.5ms 实时线程框架</h2>
+<div class="box">
+<p>源码：<code>E:\openCodeDefault\temp\linux_thread_demo.c</code>（主进程 + 双线程 + 0.5ms 节拍驱动 + 计数回报）。</p>
+<pre>wsl -d Ubuntu -e bash -c "cd /mnt/e/openCodeDefault/temp && gcc -O2 -pthread linux_thread_demo.c -o demo && ./demo 2000"</pre>
+<p>实测输出（2000 拍 = 精确 1.0 秒，Linux 上 0.5ms 粒度完全达成）：</p>
+<pre>[主进程] 启动时间戳: 2026-08-21 15:50:28.478807
+[主进程] 结束时间戳: 2026-08-21 15:50:29.478679
+[主进程] 线程1 计数: 2000 (期望 2000)
+[主进程] 线程2 计数: 2000 (期望 2000)
+[主进程] 计数一致: 是</pre>
+</div>
+
+<h2>六、VS Code 集成（可选，推荐）</h2>
+<div class="box">
+<ol>
+<li>Windows 装 VS Code + 插件 <b>WSL</b>（微软官方）</li>
+<li>WSL 中任意目录执行 <code>code .</code> 打开</li>
+<li>装 <b>C/C++</b> 插件后即可在 WSL 环境内 IntelliSense、断点调试</li>
+</ol>
+</div>
+
+<h2>七、常见问题</h2>
+<table>
+<tr><th>现象</th><th>解决</th></tr>
+<tr><td><code>undefined reference to 'pthread_create'</code></td><td>编译没加 <code>-pthread</code></td></tr>
+<tr><td>程序在 /mnt 下运行很慢</td><td>复制到 Linux 家目录 <code>~/</code> 再跑（/mnt 是 9P 网络盘，小文件 IO 慢）</td></tr>
+<tr><td>中文输出乱码</td><td>源码保存为 UTF-8；终端设置 UTF-8：<code>chcp 65001</code>（Windows 侧）</td></tr>
+<tr><td>WSL 内存占用大</td><td><code>wsl --shutdown</code> 释放；或 .wslconfig 限制内存</td></tr>
+<tr><td>想换 Ubuntu 版本</td><td>重新 <code>wsl --import</code> 其它 rootfs（见安装说明书备选发行版）</td></tr>
+<tr><td>Windows 侧直接编译（无 WSL 时）</td><td>用 w64devkit 便携 GCC（winpthreads），但 0.5ms 级实时精度只有 Linux 能做到</td></tr>
+</table>
+
+<div class="tip"><b>核心结论</b>：日常 C 开发用 <code>wsl -d Ubuntu -e bash -c "cd /mnt/e/... && gcc ... && ./..."</code> 一条命令搞定；需要精确到亚毫秒的实时程序，必须在 WSL/Linux 上编译运行（Windows 定时器精度极限约 1ms）。</div>
+
+<p style="margin-top:40px;color:#888;font-size:12px;">说明书生成日期：2026-08-21 ｜ 与 <code>WSL安装步骤说明书.html</code> 配套使用</p>
+</body>
+</html>
