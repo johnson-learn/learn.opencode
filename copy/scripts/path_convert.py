@@ -128,6 +128,8 @@ def scan_unknown_placeholders(root):
         if ".git" in dirpath.split(os.sep):
             continue
         for fn in filenames:
+            if fn.lower() in STATE_FILES:
+                continue
             if not fn.lower().endswith((".md", ".jsonc", ".json", ".txt", ".ps1", ".py", ".bat", ".sh")):
                 continue
             p = os.path.join(dirpath, fn)
