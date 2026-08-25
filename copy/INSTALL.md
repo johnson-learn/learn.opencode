@@ -111,3 +111,16 @@ Test-Path "$env:LOCALAPPDATA\Temp\opencode\extract-docx.ps1"               # Tru
    ```
 3. 校验残留：grep 搜索 "<用户目录>" 等占位符应为空
 4. 自动类占位符（用户目录等）无需填写，脚本按新机器自动推导
+
+
+## 语言规则验证（解决"中文提问英文回答"）
+
+install 脚本完成并重启 opencode 后，必须验证全局规则注入：
+
+1. 检查注册：`C:\Users\<新用户>\.config\opencode\opencode.jsonc` 含 `"instructions": ["instructions.md"]`
+2. 检查文件：同目录下 `instructions.md` 存在且非空
+3. **完全重启 opencode**（不是新会话，是退出进程重启——instructions 只在启动时加载）
+4. 新会话用中文提问验证：回答应为中文；若仍英文 → instructions 未加载：
+   - 确认 opencode.jsonc 内容无误（JSON 合法、instructions 键存在）
+   - 确认无项目级 opencode.json 覆盖了全局配置
+   - 排查后仍无效：把 instructions 内容合并进项目 AGENTS.md 作为临时兜底
