@@ -1,0 +1,1685 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Agent 系统框架设计白皮书</title>
+<style>
+  :root {
+    --bg: #f0f4f8;
+    --card: #ffffff;
+    --text: #0f172a;
+    --text-2: #475569;
+    --text-3: #64748b;
+    --border: #e2e8f0;
+    --primary: #0d9488;
+    --primary-dark: #0f766e;
+    --primary-light: #ccfbf1;
+    --primary-bg: #f0fdfa;
+    --accent: #0284c7;
+    --accent-light: #e0f2fe;
+    --code-bg: #0f172a;
+    --code-text: #e2e8f0;
+    --success: #059669;
+    --warning: #d97706;
+    --danger: #dc2626;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.08), 0 4px 10px rgba(0,0,0,0.04);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.85;
+    font-size: 15px;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px 60px; }
+
+  /* Hero */
+  .hero {
+    background: linear-gradient(135deg, #0f766e 0%, #0891b2 50%, #0284c7 100%);
+    color: #fff;
+    padding: 64px 48px 56px;
+    border-radius: 0 0 28px 28px;
+    margin: 0 -24px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::after {
+    content: "";
+    position: absolute;
+    top: -50%; right: -10%;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .hero .badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(4px);
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 0.82em;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+  }
+  .hero h1 { font-size: 2.4em; font-weight: 700; margin-bottom: 16px; letter-spacing: -0.5px; }
+  .hero .sub { font-size: 1.08em; opacity: 0.9; max-width: 720px; line-height: 1.7; }
+  .hero .meta { margin-top: 28px; display: flex; gap: 32px; flex-wrap: wrap; }
+  .hero .meta div { font-size: 0.88em; opacity: 0.8; }
+  .hero .meta strong { display: block; font-size: 1.3em; opacity: 1; margin-bottom: 2px; }
+
+  /* TOC */
+  .toc {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px 36px;
+    margin-bottom: 36px;
+    box-shadow: var(--shadow);
+  }
+  .toc h2 { font-size: 1.15em; color: var(--primary-dark); margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+  .toc h2::before { content: "📑"; }
+  .toc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 32px; }
+  .toc a {
+    color: var(--text-2);
+    text-decoration: none;
+    font-size: 0.93em;
+    padding: 5px 0;
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px dashed transparent;
+    transition: all 0.2s;
+  }
+  .toc a:hover { color: var(--primary); border-bottom-color: var(--primary-light); }
+  .toc .num { color: var(--primary); font-weight: 600; min-width: 24px; }
+
+  /* Section */
+  section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 40px 44px;
+    margin-bottom: 28px;
+    box-shadow: var(--shadow);
+  }
+  h2 {
+    font-size: 1.55em;
+    color: var(--text);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  h2 .sec-num {
+    background: var(--primary);
+    color: #fff;
+    font-size: 0.55em;
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-weight: 700;
+  }
+  .sec-desc { color: var(--text-3); font-size: 0.95em; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+
+  h3 {
+    font-size: 1.18em;
+    color: var(--text);
+    margin: 32px 0 14px;
+    padding: 10px 16px;
+    background: var(--primary-bg);
+    border-left: 4px solid var(--primary);
+    border-radius: 0 8px 8px 0;
+  }
+  h4 {
+    font-size: 1.05em;
+    color: var(--primary-dark);
+    margin: 22px 0 10px;
+    font-weight: 600;
+  }
+  p { margin-bottom: 14px; color: var(--text-2); }
+  ul, ol { margin: 10px 0 16px 24px; color: var(--text-2); }
+  li { margin-bottom: 6px; }
+  strong { color: var(--text); }
+
+  /* Table */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 24px;
+    font-size: 0.9em;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px var(--border);
+  }
+  th, td { padding: 11px 14px; text-align: left; vertical-align: top; }
+  th {
+    background: var(--primary);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.9em;
+    letter-spacing: 0.3px;
+  }
+  tr:nth-child(even) { background: #f8fafc; }
+  tr:hover { background: var(--primary-bg); }
+  td { border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+
+  /* Code / Diagram */
+  pre {
+    background: var(--code-bg);
+    color: var(--code-text);
+    padding: 22px 26px;
+    border-radius: 12px;
+    overflow-x: auto;
+    margin: 18px 0 24px;
+    font-family: "Cascadia Code", "Fira Code", "Consolas", monospace;
+    font-size: 0.85em;
+    line-height: 1.65;
+    border: 1px solid #1e293b;
+  }
+  code {
+    background: var(--accent-light);
+    color: var(--accent);
+    padding: 2px 7px;
+    border-radius: 5px;
+    font-family: "Cascadia Code", "Consolas", monospace;
+    font-size: 0.87em;
+  }
+  pre code { background: none; color: inherit; padding: 0; }
+  .diagram {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    overflow-x: auto;
+    margin: 18px 0 24px;
+    font-family: "Cascadia Code", "Consolas", monospace;
+    font-size: 0.83em;
+    line-height: 1.6;
+    color: var(--text);
+    white-space: pre;
+  }
+
+  /* Callout */
+  .callout {
+    padding: 18px 22px;
+    border-radius: 10px;
+    margin: 20px 0;
+    border-left: 4px solid;
+  }
+  .callout p { margin-bottom: 0; }
+  .callout.info { background: var(--accent-light); border-color: var(--accent); }
+  .callout.tip { background: var(--primary-bg); border-color: var(--primary); }
+  .callout.warn { background: #fffbeb; border-color: var(--warning); }
+  .callout .label { font-weight: 700; margin-right: 6px; }
+
+  /* Cards */
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 20px 0; }
+  .card {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 22px;
+    transition: all 0.25s;
+  }
+  .card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); border-color: var(--primary-light); }
+  .card .icon { font-size: 1.6em; margin-bottom: 8px; }
+  .card h4 { margin: 0 0 8px; color: var(--text); }
+  .card p { font-size: 0.9em; margin-bottom: 0; color: var(--text-3); }
+
+  /* Concept map */
+  .concept-row { display: flex; gap: 16px; margin: 16px 0; flex-wrap: wrap; }
+  .concept-box {
+    flex: 1; min-width: 200px;
+    background: linear-gradient(135deg, var(--primary-bg), #fff);
+    border: 1px solid var(--primary-light);
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+  .concept-box h4 { color: var(--primary-dark); margin-top: 0; }
+  .concept-box p { font-size: 0.88em; margin-bottom: 0; }
+
+  /* Example timeline */
+  .timeline { position: relative; padding-left: 32px; margin: 24px 0; }
+  .timeline::before { content: ""; position: absolute; left: 10px; top: 0; bottom: 0; width: 2px; background: var(--primary-light); }
+  .tl-item { position: relative; margin-bottom: 24px; }
+  .tl-item::before {
+    content: ""; position: absolute; left: -28px; top: 6px;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--primary); border: 3px solid #fff;
+    box-shadow: 0 0 0 2px var(--primary-light);
+  }
+  .tl-item .tl-time { font-size: 0.8em; color: var(--primary); font-weight: 600; }
+  .tl-item .tl-title { font-weight: 600; color: var(--text); margin: 2px 0; }
+  .tl-item .tl-desc { font-size: 0.9em; color: var(--text-3); }
+
+  footer {
+    text-align: center;
+    padding: 40px 20px 20px;
+    color: var(--text-3);
+    font-size: 0.88em;
+  }
+  footer .divider { width: 60px; height: 3px; background: var(--primary); border-radius: 2px; margin: 0 auto 16px; }
+
+  @media (max-width: 768px) {
+    .wrap { padding: 0 14px 40px; }
+    .hero { padding: 40px 24px; margin: 0 -14px 28px; }
+    .hero h1 { font-size: 1.7em; }
+    section { padding: 24px 20px; }
+    .toc-grid { grid-template-columns: 1fr; }
+    table { font-size: 0.82em; }
+    th, td { padding: 8px 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ==================== HERO ==================== -->
+<div class="hero">
+  <div class="badge">FRAMEWORK DESIGN · WHITEPAPER</div>
+  <h1>AI Agent 系统框架设计</h1>
+  <p class="sub">从核心概念到八层技术架构，从规划推理到自我进化——一份面向工程实践的 Agent 系统完整设计指南，辅以真实运行场景示例。</p>
+  <div class="meta">
+    <div><strong>15</strong>核心章节</div>
+    <div><strong>8</strong>技术层级</div>
+    <div><strong>60+</strong>技术点</div>
+    <div><strong>1</strong>完整示例</div>
+  </div>
+</div>
+
+<!-- ==================== TOC ==================== -->
+<div class="toc">
+  <h2>目录</h2>
+  <div class="toc-grid">
+    <a href="#s1"><span class="num">01</span> 文档背景与动机</a>
+    <a href="#s2"><span class="num">02</span> 核心概念解释</a>
+    <a href="#s3"><span class="num">03</span> 设计原理与整体框架</a>
+    <a href="#s4"><span class="num">04</span> 八层技术架构详解</a>
+    <a href="#s5"><span class="num">05</span> Agent 架构模式对比</a>
+    <a href="#s6"><span class="num">06</span> 规划与推理系统</a>
+    <a href="#s7"><span class="num">07</span> 记忆系统分类体系</a>
+    <a href="#s8"><span class="num">08</span> 工具使用进阶模式</a>
+    <a href="#s9"><span class="num">09</span> 多模态与环境交互</a>
+    <a href="#s10"><span class="num">10</span> Agent 间协作与通信</a>
+    <a href="#s11"><span class="num">11</span> 自我改进与进化机制</a>
+    <a href="#s12"><span class="num">12</span> 部署与运维架构</a>
+    <a href="#s13"><span class="num">13</span> Agent 评估体系</a>
+    <a href="#s14"><span class="num">14</span> 界面交互设计</a>
+    <a href="#s15"><span class="num">15</span> 完整示例：以自身为例</a>
+    <a href="#s16"><span class="num">16</span> 本机 skill 系统分析（opencode）</a>
+    <a href="#s17"><span class="num">17</span> 常用工具速查手册</a>
+  </div>
+</div>
+
+<!-- ==================== S1 背景 ==================== -->
+<section id="s1">
+  <h2><span class="sec-num">01</span>文档背景与动机</h2>
+  <div class="sec-desc">为什么需要系统化地理解 Agent 架构？大模型时代的工程挑战是什么？</div>
+
+  <h3>1.1 时代背景</h3>
+  <p>2022 年底以来，以 GPT 系列、Claude、豆包、通义千问等为代表的大语言模型（LLM）快速迭代，展现出惊人的通用推理和语言生成能力。然而，<strong>裸模型只能"说话"，不能"办事"</strong>——它无法读取文件、无法调用 API、无法操作浏览器、无法记住跨会话的信息。</p>
+  <p>于是，<strong>AI Agent（智能体）</strong>应运而生：在大模型外围包裹一层工程系统，让模型具备感知环境、调用工具、规划任务、长期记忆、自主迭代的能力。Agent 是大模型从"聊天机器人"走向"生产力工具"的关键桥梁。</p>
+
+  <h3>1.2 工程挑战</h3>
+  <p>构建一个生产级 Agent 系统，面临以下核心挑战：</p>
+  <div class="card-grid">
+    <div class="card">
+      <div class="icon">🧠</div>
+      <h4>上下文稀缺</h4>
+      <p>LLM 的上下文窗口有限（通常 8K~200K token），如何在有限空间内塞入最相关的信息？</p>
+    </div>
+    <div class="card">
+      <div class="icon">🔧</div>
+      <h4>工具可靠性</h4>
+      <p>模型调用工具时可能参数错误、选错工具、陷入死循环，如何保证执行的稳定性？</p>
+    </div>
+    <div class="card">
+      <div class="icon">🛡️</div>
+      <h4>安全边界</h4>
+      <p>Agent 能执行代码、访问文件、调用 API，如何防止越权操作和 Prompt 注入攻击？</p>
+    </div>
+    <div class="card">
+      <div class="icon">📊</div>
+      <h4>可观测性</h4>
+      <p>Agent 的执行过程是多轮、非线性的，如何追踪、调试和评估其行为？</p>
+    </div>
+    <div class="card">
+      <div class="icon">💰</div>
+      <h4>成本控制</h4>
+      <p>一次复杂任务可能触发 10+ 次 LLM 调用，如何在效果和成本间取得平衡？</p>
+    </div>
+    <div class="card">
+      <div class="icon">🔄</div>
+      <h4>持续进化</h4>
+      <p>如何让 Agent 从成功和失败中学习，持续优化自身的 Prompt、工具选择和知识储备？</p>
+    </div>
+  </div>
+
+  <h3>1.3 本文档目标</h3>
+  <div class="callout tip">
+    <p><span class="label">目标：</span>提供一份从概念到工程、从架构到示例的 Agent 系统完整设计指南，帮助开发者理解 Agent 系统的分层设计原理和各层技术选型，并通过真实运行场景示例展示各组件如何协同工作。</p>
+  </div>
+</section>
+
+<!-- ==================== S2 概念 ==================== -->
+<section id="s2">
+  <h2><span class="sec-num">02</span>核心概念解释</h2>
+  <div class="sec-desc">在深入架构之前，先统一 Agent 领域的核心术语和概念边界。</div>
+
+  <div class="concept-row">
+    <div class="concept-box">
+      <h4>LLM（大语言模型）</h4>
+      <p>基于 Transformer 架构、在海量文本上预训练的语言模型，具备通用推理和生成能力。是 Agent 的"大脑"，但本身不具备行动能力。</p>
+    </div>
+    <div class="concept-box">
+      <h4>Agent（智能体）</h4>
+      <p>以 LLM 为核心推理引擎，包裹工具调用、记忆管理、任务规划等工程能力的自主系统。能感知环境、做出决策、执行行动、观察反馈。</p>
+    </div>
+  </div>
+  <div class="concept-row">
+    <div class="concept-box">
+      <h4>Tool / Skill（工具/技能）</h4>
+      <p>Agent 可调用的外部能力单元。Tool 是原子操作（如搜索、读文件），Skill 是封装了多步流程的复合能力（如"生成 PPT"）。</p>
+    </div>
+    <div class="concept-box">
+      <h4>RAG（检索增强生成）</h4>
+      <p>将私有知识库向量化存储，用户提问时检索相关片段注入 LLM 上下文，让模型能基于私有知识回答，而非仅依赖训练数据。</p>
+    </div>
+  </div>
+  <div class="concept-row">
+    <div class="concept-box">
+      <h4>Function Calling（函数调用）</h4>
+      <p>LLM 的一种原生能力：模型不输出自然语言回答，而是输出符合 JSON Schema 的结构化指令，指定要调用的函数名和参数，由外部系统执行。</p>
+    </div>
+    <div class="concept-box">
+      <h4>ReAct（推理+行动）</h4>
+      <p>Agent 的核心运行范式：模型交替进行 Reasoning（思考下一步做什么）和 Action（调用工具执行），拿到 Observation（结果）后继续循环，直到任务完成。</p>
+    </div>
+  </div>
+
+  <h3>2.1 Agent 与 Chatbot 的本质区别</h3>
+  <table>
+    <tr><th>维度</th><th>Chatbot（聊天机器人）</th><th>Agent（智能体）</th></tr>
+    <tr><td>核心能力</td><td>文本生成、问答</td><td>推理 + 规划 + 工具执行 + 记忆</td></tr>
+    <tr><td>交互轮次</td><td>单轮请求-响应</td><td>多轮自主循环（可能 5~20 轮）</td></tr>
+    <tr><td>外部交互</td><td>无（或有限的预设按钮）</td><td>调用 API、读写文件、操作浏览器、执行代码</td></tr>
+    <tr><td>记忆</td><td>当前对话上下文</td><td>短期 + 长期 + 用户画像 + 知识库</td></tr>
+    <tr><td>自主性</td><td>被动响应</td><td>主动规划、自我纠错、可异步执行</td></tr>
+    <tr><td>输出</td><td>文本</td><td>文本 + 文件 + 图片 + 代码 + 操作结果</td></tr>
+  </table>
+
+  <h3>2.2 Agent 的核心能力三角</h3>
+  <div class="diagram">
+                    ┌──────────────┐
+                    │   规划能力     │
+                    │  (Planning)   │
+                    │  拆解·决策·纠错 │
+                    └──────┬───────┘
+                           │
+              ┌────────────┼────────────┐
+              ▼                         ▼
+      ┌──────────────┐         ┌──────────────┐
+      │   行动能力     │         │   记忆能力     │
+      │  (Acting)     │         │  (Memory)     │
+      │ 工具·代码·浏览器│         │ 上下文·知识库·画像│
+      └──────────────┘         └──────────────┘
+
+    三者缺一不可：
+    · 只有规划没有行动 → 纸上谈兵
+    · 只有行动没有规划 → 无头苍蝇
+    · 只有规划和行动没有记忆 → 每次从零开始，无法积累
+  </div>
+</section>
+
+<!-- ==================== S3 设计原理框架 ==================== -->
+<section id="s3">
+  <h2><span class="sec-num">03</span>设计原理与整体框架</h2>
+  <div class="sec-desc">Agent 系统的分层设计哲学、核心设计原则和八层架构全景图。</div>
+
+  <h3>3.1 五条核心设计原则</h3>
+  <div class="card-grid">
+    <div class="card">
+      <div class="icon">🏗️</div>
+      <h4>分层解耦</h4>
+      <p>每一层只关心自己的抽象级别，层间通过标准化接口通信。任何一层（如模型、向量库、沙箱）都可以独立替换升级。</p>
+    </div>
+    <div class="card">
+      <div class="icon">⚠️</div>
+      <h4>模型不可信</h4>
+      <p>LLM 的输出永远需要校验（格式、逻辑、安全），不能直接执行或返回用户。沙箱、权限、输出校验都是这个原则的体现。</p>
+    </div>
+    <div class="card">
+      <div class="icon">💎</div>
+      <h4>上下文稀缺</h4>
+      <p>Token 窗口是最宝贵的资源，一切设计都在优化"什么信息该进上下文"——懒加载、摘要压缩、结果截断、动态工具加载。</p>
+    </div>
+    <div class="card">
+      <div class="icon">👁️</div>
+      <h4>透明化建立信任</h4>
+      <p>Agent 的每一步行动（调了什么工具、拿到什么结果、为什么这么做）都对用户可见，而不是黑盒。透明化是用户信任的基础。</p>
+    </div>
+    <div class="card">
+      <div class="icon">🤝</div>
+      <h4>人在回路中</h4>
+      <p>关键决策点（权限授权、危险操作确认）保留人类否决权。Agent 是工具不是自主主体，最终控制权在用户手中。</p>
+    </div>
+    <div class="card">
+      <div class="icon">📈</div>
+      <h4>持续进化</h4>
+      <p>系统应能从成功和失败中学习：优化 Prompt、补充知识、改进工具选择、积累最佳实践，形成闭环改进。</p>
+    </div>
+  </div>
+
+  <h3>3.2 八层架构全景图</h3>
+  <div class="diagram">
+┌─────────────────────────────────────────────────────────────────────┐
+│  第8层  交互层  Interface                                              │
+│  聊天界面 · 流式输出 · 工具调用可视化 · 权限弹窗 · 文件交付 · 多模态输入  │
+├─────────────────────────────────────────────────────────────────────┤
+│  第7层  会话层  Session                                                │
+│  会话状态机 · 上下文窗口管理 · 滑动窗口 · 摘要压缩 · 多会话隔离          │
+├─────────────────────────────────────────────────────────────────────┤
+│  第6层  编排层  Orchestration  ◄── 核心调度层                          │
+│  意图路由 · 任务规划 · ReAct循环 · 多Agent协作 · 重试回退 · 自我纠错    │
+├─────────────────────────────────────────────────────────────────────┤
+│  第5层  能力层  Capability                                             │
+│  Skill系统 · 工具注册 · Function Calling · 代码沙箱 · 浏览器自动化      │
+├─────────────────────────────────────────────────────────────────────┤
+│  第4层  知识层  Knowledge                                              │
+│  短期记忆 · 用户画像 · RAG检索 · 向量数据库 · 文档解析 · 知识图谱        │
+├─────────────────────────────────────────────────────────────────────┤
+│  第3层  模型层  Model                                                  │
+│  LLM API · 多模型路由 · Fallback · 结构化输出 · 语义缓存 · Token管理   │
+├─────────────────────────────────────────────────────────────────────┤
+│  第2层  安全层  Guardrails                                             │
+│  沙箱隔离 · 权限分级 · 内容审核 · Prompt注入防护 · 输出校验 · 审计日志   │
+├─────────────────────────────────────────────────────────────────────┤
+│  第1层  基础设施层  Infrastructure                                      │
+│  可观测性 · 任务队列 · 文件系统 · 配置管理 · 成本统计 · 评估框架 · 部署  │
+└─────────────────────────────────────────────────────────────────────┘
+
+  数据流方向：用户请求从第8层进入，自上而下穿透各层；
+  工具执行和模型调用在底层完成后，结果自下而上返回，最终由第8层呈现给用户。
+  </div>
+
+  <h3>3.3 层间协作的核心循环</h3>
+  <div class="diagram">
+         用户请求
+            │
+            ▼
+    ┌───────────────────┐
+    │  交互层：接收+渲染  │
+    └─────────┬─────────┘
+              │
+    ┌─────────▼─────────┐
+    │  会话层：恢复上下文  │
+    └─────────┬─────────┘
+              │
+    ┌─────────▼─────────┐     ┌──────────────┐
+    │  编排层：推理决策   │────►│  模型层：LLM  │
+    │  (ReAct 循环)      │◄────│  调用+返回    │
+    └─────────┬─────────┘     └──────────────┘
+              │
+    ┌─────────▼─────────┐     ┌──────────────┐
+    │  能力层：执行工具   │────►│  安全层：校验  │
+    │  (Skill/Tool/代码) │◄────│  沙箱+权限    │
+    └─────────┬─────────┘     └──────────────┘
+              │
+    ┌─────────▼─────────┐
+    │  知识层：检索+记忆  │
+    │  (RAG/画像/历史)   │
+    └─────────┬─────────┘
+              │
+              ▼
+         结果返回（循环直到完成）
+  </div>
+</section>
+
+<!-- ==================== S4 八层技术 ==================== -->
+<section id="s4">
+  <h2><span class="sec-num">04</span>八层技术架构详解</h2>
+  <div class="sec-desc">每一层的核心技术、补充技术和在实际系统中的体现。</div>
+
+  <h3>4.1 交互层</h3>
+  <table>
+    <tr><th>技术</th><th>说明</th></tr>
+    <tr><td><strong>流式输出（SSE/WebSocket）</strong></td><td>LLM 逐 token 生成，通过 Server-Sent Events 推送到前端，实现"打字机"效果，降低首字延迟感知</td></tr>
+    <tr><td><strong>工具调用可视化</strong></td><td>Agent 调用工具时展示"正在搜索…""正在读取文件…"等状态和耗时，提升透明度</td></tr>
+    <tr><td><strong>权限弹窗（HITL）</strong></td><td>危险操作触发用户确认对话框，用户批准后才执行，保留人类最终控制权</td></tr>
+    <tr><td><strong>文件交付组件</strong></td><td>生成的文件（图片/文档/表格/代码）通过专门的交付组件渲染，支持预览和下载</td></tr>
+    <tr><td><strong>Markdown 渲染引擎</strong></td><td>支持表格、代码块、公式、列表、引用等富文本渲染，结构化呈现复杂信息</td></tr>
+    <tr><td><strong>多模态输入</strong></td><td>支持图片上传（OCR+视觉理解）、文件拖拽、语音输入等非文本交互方式</td></tr>
+    <tr><td><strong>引用溯源</strong></td><td>回答中的事实标注来源链接，点击可跳转原始信源，增强可信度</td></tr>
+    <tr><td><strong>中断/取消机制</strong></td><td>用户可在生成过程中随时中断 Agent 执行，避免浪费资源</td></tr>
+  </table>
+
+  <h3>4.2 会话层</h3>
+  <table>
+    <tr><th>技术</th><th>说明</th></tr>
+    <tr><td><strong>会话状态机</strong></td><td>idle → thinking → acting → responding → done，状态转换驱动界面更新和资源调度</td></tr>
+    <tr><td><strong>上下文窗口管理</strong></td><td>实时统计 token 用量，接近模型上限时触发压缩策略，保证不超窗口</td></tr>
+    <tr><td><strong>滑动窗口 + 摘要压缩</strong></td><td>超出窗口时保留最近 N 轮，对更早内容生成摘要替代原文，平衡信息保留和 token 效率</td></tr>
+    <tr><td><strong>消息角色系统</strong></td><td>标准的 user / assistant / system / tool 四种角色，构建结构化对话历史</td></tr>
+    <tr><td><strong>多会话隔离</strong></td><td>不同对话之间上下文完全隔离，互不干扰，支持用户同时处理多个独立任务</td></tr>
+    <tr><td><strong>会话持久化</strong></td><td>对话历史存入数据库，支持跨设备同步、历史回溯和长期分析</td></tr>
+  </table>
+
+  <h3>4.3 编排层（核心调度层）</h3>
+  <table>
+    <tr><th>技术</th><th>说明</th></tr>
+    <tr><td><strong>ReAct 循环</strong></td><td>Reasoning → Action → Observation 循环，直到任务完成。是 Agent 最核心的运行范式</td></tr>
+    <tr><td><strong>意图路由器</strong></td><td>判断用户意图，决定路径：直接回答 / 调工具 / 派子 Agent / 触发 Skill</td></tr>
+    <tr><td><strong>任务规划器</strong></td><td>复杂任务先拆解为有序子步骤，识别可并行环节，再逐步执行</td></tr>
+    <tr><td><strong>多 Agent 协作</strong></td><td>Main → Organize → Sub 三层架构，复杂任务委派给专门的子 Agent 处理</td></tr>
+    <tr><td><strong>Prompt 模板引擎</strong></td><td>系统提示用 Jinja2 等模板动态组装，变量包括用户画像、当前时间、工具列表等</td></tr>
+    <tr><td><strong>输出解析器</strong></td><td>解析 LLM 返回的文本为结构化动作指令；解析失败时把错误喂回模型修正格式</td></tr>
+    <tr><td><strong>重试与回退</strong></td><td>工具调用失败自动重试（指数退避），LLM 调用失败切换备用模型</td></tr>
+    <tr><td><strong>最大迭代限制</strong></td><td>ReAct 循环设置最大轮数（如 10 轮），超过后强制终止，防止死循环</td></tr>
+    <tr><td><strong>自我纠错</strong></td><td>工具返回错误或结果不符预期时，Agent 自动调整策略换方式重试</td></tr>
+    <tr><td><strong>并发工具调用</strong></td><td>无依赖关系的工具并行执行，减少总耗时</td></tr>
+  </table>
+
+  <h3>4.4 能力层</h3>
+  <table>
+    <tr><th>技术</th><th>说明</th></tr>
+    <tr><td><strong>Skill 系统</strong></td><td>标准化能力插件：SKILL.md（描述+触发规则）+ 脚本（执行体）+ 配置。支持懒加载</td></tr>
+    <tr><td><strong>工具注册中心</strong></td><td>所有可用工具集中注册，包含名称、描述、参数 Schema、执行函数、权限级别</td></tr>
+    <tr><td><strong>Function Calling</strong></td><td>LLM 原生支持的工具调用协议，输出符合 JSON Schema 的结构化指令</td></tr>
+    <tr><td><strong>代码沙箱执行</strong></td><td>安全执行 LLM 生成的 Python/Shell 代码，隔离环境，资源受限</td></tr>
+    <tr><td><strong>浏览器自动化</strong></td><td>Playwright/Puppeteer 控制真实浏览器，处理需要登录/JS 渲染的复杂页面</td></tr>
+    <tr><td><strong>工具 Schema 自动生成</strong></td><td>从函数签名+类型注解+docstring 自动生成 JSON Schema，保证文档与代码一致</td></tr>
+    <tr><td><strong>结果截断与格式化</strong></td><td>工具返回的长结果截断到合理长度，格式化为 LLM 易理解的结构，防止爆 token</td></tr>
+    <tr><td><strong>动态工具加载</strong></td><td>根据用户意图动态加载相关工具描述，不常驻全部工具，节省上下文</td></tr>
+    <tr><td><strong>工具权限矩阵</strong></td><td>每个工具有独立权限级别（只读/需授权/高危），执行前按矩阵判定</td></tr>
+  </table>
+
+  <h3>4.5 知识层</h3>
+  <table>
+    <tr><th>技术</th><th>说明</th></tr>
+    <tr><td><strong>短期记忆</strong></td><td>当前对话的所有消息和工具结果，存在会话上下文中</td></tr>
+    <tr><td><strong>中期记忆（用户画像）</strong></td><td>跨会话的用户偏好、背景、高频话题，每次对话开始时注入系统提示</td></tr>
+    <tr><td><strong>长期记忆（RAG）</strong></td><td>私有知识库，通过向量检索按需加载，不常驻上下文</td></tr>
+    <tr><td><strong>向量数据库</strong></td><td>Milvus / Chroma / pgvector，存储 embedding 向量，支持语义相似度检索</td></tr>
+    <tr><td><strong>Embedding 模型</strong></td><td>将文本转为高维向量，bge / m3e / text-embedding 等</td></tr>
+    <tr><td><strong>文档切片与解析</strong></td><td>将长文档切成语义完整的块，提取正文、表格、图片，Unstructured / LlamaParse</td></tr>
+    <tr><td><strong>重排序（Rerank）</strong></td><td>向量检索 top-K 后用交叉编码器二次排序，提升召回精度，bge-reranker</td></tr>
+    <tr><td><strong>混合检索</strong></td><td>语义检索 + 关键词检索（BM25）结合，兼顾语义理解和精确匹配</td></tr>
+    <tr><td><strong>上下文压缩器</strong></td><td>检索到的文档块用 LLM 提取与问题相关的片段，减少上下文噪音</td></tr>
+    <tr><td><strong>记忆提炼与更新</strong></td><td>每次对话结束后分析是否有新偏好/背景需补充到用户画像，持续更新</td></tr>
+  </table>
+
+  <h3>4.6 模型层</h3>
+  <table>
+    <tr><th>技术</th><th>说明</th></tr>
+    <tr><td><strong>LLM API 调用</strong></td><td>核心推理引擎，通过 REST API 调用通用大模型</td></tr>
+    <tr><td><strong>多模型路由</strong></td><td>根据任务复杂度选择不同能力/成本的模型，简单任务用小模型降本</td></tr>
+    <tr><td><strong>Fallback 机制</strong></td><td>主模型调用失败时自动切换备用模型，保证服务可用性</td></tr>
+    <tr><td><strong>结构化输出（JSON Mode）</strong></td><td>强制 LLM 输出符合指定 JSON Schema 的格式，用于工具调用和数据提取</td></tr>
+    <tr><td><strong>语义缓存</strong></td><td>对相似问题缓存 LLM 响应，语义相似度超阈值时直接返回，降本降延迟</td></tr>
+    <tr><td><strong>Token 预算管理</strong></td><td>每次调用前计算输入 token，输出设置 max_tokens，防止超限和无限生成</td></tr>
+    <tr><td><strong>流式解析</strong></td><td>流式返回的 token 实时解析，判断是文本还是工具调用，边接收边处理</td></tr>
+    <tr><td><strong>模型能力探测</strong></td><td>运行时检测模型支持的功能（Function Calling、上下文长度、多模态），动态调整策略</td></tr>
+  </table>
+
+  <h3>4.7 安全层</h3>
+  <table>
+    <tr><th>技术</th><th>说明</th></tr>
+    <tr><td><strong>沙箱隔离</strong></td><td>Docker / gVisor / Firecracker 隔离执行环境，防止越权访问宿主系统</td></tr>
+    <tr><td><strong>权限分级（RBAC）</strong></td><td>读/写/执行/网络访问分级控制，writable_roots 限制文件写入范围</td></tr>
+    <tr><td><strong>内容安全审核</strong></td><td>输入和输出都经过敏感内容过滤，拦截高风险请求</td></tr>
+    <tr><td><strong>Prompt 注入防护</strong></td><td>检测并防御用户输入和工具返回内容中的恶意指令注入</td></tr>
+    <tr><td><strong>工具调用白名单</strong></td><td>LLM 只能调用注册过的工具，无法任意执行系统命令</td></tr>
+    <tr><td><strong>间接注入检测</strong></td><td>工具返回内容中出现"忽略之前指令"等模式时标记为潜在注入，不执行</td></tr>
+    <tr><td><strong>资源限制（cgroups）</strong></td><td>沙箱内 CPU、内存、磁盘 IO、网络带宽都有上限，防止耗尽资源</td></tr>
+    <tr><td><strong>超时机制</strong></td><td>每个工具调用有超时限制，超时自动终止，防止死循环或挂起</td></tr>
+    <tr><td><strong>审计日志</strong></td><td>所有工具调用、文件操作、网络访问都记录审计日志，可追溯</td></tr>
+  </table>
+
+  <h3>4.8 基础设施层</h3>
+  <table>
+    <tr><th>技术</th><th>说明</th></tr>
+    <tr><td><strong>可观测性</strong></td><td>Langfuse / LangSmith / OpenTelemetry，追踪每一步 LLM 调用和工具执行</td></tr>
+    <tr><td><strong>分布式追踪</strong></td><td>用 Trace ID 串联一次请求涉及的多次 LLM 调用、工具执行、Agent 协作</td></tr>
+    <tr><td><strong>任务队列</strong></td><td>Celery / RabbitMQ / Redis Queue，异步执行长任务，支持重试和优先级</td></tr>
+    <tr><td><strong>文件系统抽象</strong></td><td>虚拟工作目录，每个会话有独立工作空间，支持文件的读写和交付</td></tr>
+    <tr><td><strong>配置管理</strong></td><td>环境变量 / 配置文件 / 远程配置中心，管理模型参数、工具开关等</td></tr>
+    <tr><td><strong>成本统计</strong></td><td>按 token 用量统计成本，支持按用户/会话/工具维度分析和预算告警</td></tr>
+    <tr><td><strong>Prompt 版本管理</strong></td><td>系统提示纳入 Git 版本控制，支持回滚和 A/B 测试</td></tr>
+    <tr><td><strong>灰度发布</strong></td><td>新功能或新模型先对小比例用户开放，观察稳定性后全量推送</td></tr>
+    <tr><td><strong>评估框架</strong></td><td>Agent 行为评估、回归测试、A/B 测试，持续优化系统表现</td></tr>
+  </table>
+</section>
+
+<!-- ==================== S5 架构模式 ==================== -->
+<section id="s5">
+  <h2><span class="sec-num">05</span>Agent 架构模式对比</h2>
+  <div class="sec-desc">四种主流 Agent 组织方式的结构、适用场景、优劣势对比。</div>
+
+  <table>
+    <tr><th>架构模式</th><th>结构</th><th>适用场景</th><th>优势</th><th>局限</th></tr>
+    <tr>
+      <td><strong>单 Agent 循环</strong></td>
+      <td>一个 LLM + ReAct 循环，自己规划自己执行</td>
+      <td>简单问答、单工具任务、个人助手</td>
+      <td>实现简单、延迟低、上下文完整</td>
+      <td>复杂任务易迷失、上下文窗口受限</td>
+    </tr>
+    <tr>
+      <td><strong>分层 Agent</strong></td>
+      <td>Main → Organize → Sub 三层，自上而下委派</td>
+      <td>多步骤复杂任务、跨领域工作流</td>
+      <td>关注点分离、可并行、上下文隔离</td>
+      <td>通信开销大、层级间信息损耗</td>
+    </tr>
+    <tr>
+      <td><strong>对等多 Agent</strong></td>
+      <td>多个专业 Agent 平等协作，通过消息传递协调</td>
+      <td>需要多角色辩论、群体决策、创意发散</td>
+      <td>多角度覆盖、可动态增减角色</td>
+      <td>协调成本高、可能陷入死循环或分歧</td>
+    </tr>
+    <tr>
+      <td><strong>混合架构</strong></td>
+      <td>分层为主干，特定层内用对等协作</td>
+      <td>超复杂系统（全自动软件开发、科研助手）</td>
+      <td>兼顾秩序与灵活性</td>
+      <td>实现复杂度最高、调试困难</td>
+    </tr>
+  </table>
+
+  <h3>架构选择决策树</h3>
+  <div class="diagram">
+任务复杂度评估
+    │
+    ├── 单步、单工具 → 单 Agent 循环
+    │
+    ├── 多步但单领域 → 单 Agent + 规划器
+    │
+    ├── 多步跨领域 → 分层 Agent
+    │
+    ├── 需要多视角/辩论 → 对等多 Agent
+    │
+    └── 超复杂全流程 → 混合架构
+  </div>
+</section>
+
+<!-- ==================== S6 规划推理 ==================== -->
+<section id="s6">
+  <h2><span class="sec-num">06</span>规划与推理系统</h2>
+  <div class="sec-desc">Agent 的"大脑运转方式"——五种规划范式和规划器的通用模块组成。</div>
+
+  <table>
+    <tr><th>规划范式</th><th>原理</th><th>代表方法</th><th>适用场景</th></tr>
+    <tr><td><strong>ReAct（反应式）</strong></td><td>边想边做，每步行动后观察再决定下一步</td><td>Reasoning + Acting 交替</td><td>大多数通用任务，动态环境</td></tr>
+    <tr><td><strong>Plan-and-Execute</strong></td><td>先生成完整计划，再逐步执行，执行中可修正</td><td>Planner + Executor 分离</td><td>步骤明确的长任务、报告生成</td></tr>
+    <tr><td><strong>Tree of Thoughts</strong></td><td>探索多条推理路径，评估后选择最优分支</td><td>ToT、Graph of Thoughts</td><td>需要探索多种方案的决策类任务</td></tr>
+    <tr><td><strong>HTN（层次任务网络）</strong></td><td>将复杂任务递归分解为子任务，直到原子操作</td><td>经典 AI 规划 + LLM 分解</td><td>流程固定的工业场景、运维自动化</td></tr>
+    <tr><td><strong>反思与自我修正</strong></td><td>执行后评估结果，发现问题则回溯修正</td><td>Reflexion、Self-Refine、CRITIC</td><td>高质量要求任务、代码生成、写作</td></tr>
+  </table>
+
+  <h3>规划器的通用模块组成</h3>
+  <div class="diagram">
+┌──────────────────────────────────────────────┐
+│  任务理解器                                     │
+│  · 解析用户目标 · 识别约束条件 · 评估复杂度      │
+└──────────────────┬───────────────────────────┘
+                   ▼
+┌──────────────────────────────────────────────┐
+│  策略选择器                                     │
+│  · 根据任务类型选择规划范式                     │
+│  · 决定单Agent还是多Agent                      │
+└──────────────────┬───────────────────────────┘
+                   ▼
+┌──────────────────────────────────────────────┐
+│  步骤生成器                                     │
+│  · 生成有序子任务列表 · 定义每步的输入输出       │
+│  · 识别可并行的步骤                             │
+└──────────────────┬───────────────────────────┘
+                   ▼
+┌──────────────────────────────────────────────┐
+│  执行监控器                                     │
+│  · 跟踪每步完成状态 · 检测失败和偏差            │
+│  · 触发重规划或回退                             │
+└──────────────────┬───────────────────────────┘
+                   ▼
+┌──────────────────────────────────────────────┐
+│  结果评估器                                     │
+│  · 验证最终结果是否满足目标 · 生成质量评分       │
+│  · 不满足则触发反思循环                         │
+└──────────────────────────────────────────────┘
+  </div>
+</section>
+
+<!-- ==================== S7 记忆系统 ==================== -->
+<section id="s7">
+  <h2><span class="sec-num">07</span>记忆系统分类体系</h2>
+  <div class="sec-desc">借鉴认知科学的六类记忆分类，以及记忆的写入与检索流程。</div>
+
+  <table>
+    <tr><th>记忆类型</th><th>认知科学对应</th><th>存储内容</th><th>技术实现</th><th>生命周期</th></tr>
+    <tr><td><strong>感觉记忆</strong></td><td>瞬时记忆</td><td>原始输入（用户消息、工具返回的原始数据）</td><td>会话缓冲区</td><td>秒级，处理后即丢弃</td></tr>
+    <tr><td><strong>工作记忆</strong></td><td>短时记忆</td><td>当前任务的推理链、中间结果、待办步骤</td><td>LLM 上下文窗口</td><td>当前任务，结束即清空</td></tr>
+    <tr><td><strong>情节记忆</strong></td><td>情景记忆</td><td>历史对话记录、过去任务的执行过程和结果</td><td>对话数据库 + 向量检索</td><td>跨会话，可长期保存</td></tr>
+    <tr><td><strong>语义记忆</strong></td><td>事实/知识记忆</td><td>知识库文档、事实性信息、领域知识</td><td>向量数据库 + 知识图谱</td><td>永久，持续更新</td></tr>
+    <tr><td><strong>程序记忆</strong></td><td>技能/习惯记忆</td><td>完成任务的流程、工具使用模式、最佳实践</td><td>Skill 库 + 微调模型 + Prompt 模板</td><td>永久，持续积累优化</td></tr>
+    <tr><td><strong>用户画像记忆</strong></td><td>人际记忆</td><td>用户偏好、背景、习惯、高频话题</td><td>结构化用户档案 + 偏好提取器</td><td>跨会话，持续更新</td></tr>
+  </table>
+
+  <h3>记忆的写入与检索流程</h3>
+  <div class="diagram">
+写入路径：
+  信息产生 → 重要性评估 → 分类（情节/语义/程序/画像）
+    → 向量化 → 存入对应存储 → 建立索引
+
+检索路径：
+  当前任务 → 记忆需求分析 → 多路并行检索
+    → 情节记忆检索（相似历史对话）
+    → 语义记忆检索（相关知识）
+    → 程序记忆检索（相关Skill/流程）
+    → 用户画像检索（相关偏好）
+  → 结果融合排序 → 去重 → 注入工作记忆（上下文）
+  → 超出窗口时触发摘要压缩
+  </div>
+</section>
+
+<!-- ==================== S8 工具进阶 ==================== -->
+<section id="s8">
+  <h2><span class="sec-num">08</span>工具使用进阶模式</h2>
+  <div class="sec-desc">从基础 Function Calling 到工具组合、生成、学习的六种进阶模式。</div>
+
+  <table>
+    <tr><th>模式</th><th>原理</th><th>说明</th><th>典型应用</th></tr>
+    <tr><td><strong>工具组合（Chaining）</strong></td><td>多个工具按依赖关系串联，前一个输出作为后一个输入</td><td>Agent 自动发现工具间数据依赖，构建执行链</td><td>搜索→提取→翻译→总结 流水线</td></tr>
+    <tr><td><strong>工具并行（Parallel）</strong></td><td>无依赖关系的工具同时调用，减少总耗时</td><td>LLM 一次输出多个工具调用指令，系统并行执行</td><td>同时搜索多个关键词、同时读取多个文件</td></tr>
+    <tr><td><strong>工具生成（Generation）</strong></td><td>遇到没有现成工具时，自己编写脚本作为新工具</td><td>在代码沙箱中动态生成并执行 Python/Shell 函数</td><td>需要特定数据处理逻辑时临时写脚本</td></tr>
+    <tr><td><strong>工具学习（Learning）</strong></td><td>通过阅读工具文档和试错，学会使用陌生工具</td><td>给定 API 文档，Agent 自主理解参数含义和调用方式</td><td>接入新 API 时无需人工编写调用逻辑</td></tr>
+    <tr><td><strong>工具选择优化</strong></td><td>用小模型或分类器预筛选工具，减少大模型选择负担</td><td>先从 100+ 工具中粗筛 top-5，再让大模型精确选择</td><td>工具数量很多时的性能优化</td></tr>
+    <tr><td><strong>人机协作工具</strong></td><td>工具执行中遇到决策点时暂停，请求人类输入后继续</td><td>Human-in-the-loop，关键步骤需要人工确认或补充信息</td><td>危险操作确认、模糊意图澄清</td></tr>
+  </table>
+
+  <h3>工具调用的五级错误处理</h3>
+  <div class="diagram">
+工具调用失败
+    │
+    ├── L1: 瞬时错误（网络超时、限流）→ 自动重试（指数退避，最多3次）
+    │
+    ├── L2: 参数错误（Schema校验失败）→ 输出解析器修复，把错误喂回LLM重生成
+    │
+    ├── L3: 工具执行错误（API返回错误码）→ LLM分析错误，调整参数或换工具
+    │
+    ├── L4: 工具不可用（服务宕机、权限不足）→ Fallback到替代工具或方法
+    │
+    └── L5: 任务级失败（所有方法都试过仍不行）→ 向用户说明情况，请求指导
+  </div>
+</section>
+
+<!-- ==================== S9 多模态 ==================== -->
+<section id="s9">
+  <h2><span class="sec-num">09</span>多模态与环境交互</h2>
+  <div class="sec-desc">Agent 从纯文本向六模态感知和环境操作扩展的技术框架。</div>
+
+  <table>
+    <tr><th>模态</th><th>输入能力</th><th>输出能力</th><th>关键技术</th></tr>
+    <tr><td><strong>文本</strong></td><td>用户消息、文档内容、网页文本</td><td>回答、报告、代码、配置文件</td><td>LLM、文本嵌入、RAG</td></tr>
+    <tr><td><strong>图像</strong></td><td>截图、照片、图表、UI界面</td><td>生成图片、编辑图片、图表可视化</td><td>多模态LLM、图像生成模型、OCR</td></tr>
+    <tr><td><strong>音频</strong></td><td>语音输入、会议录音</td><td>语音回答、音频生成</td><td>ASR（语音识别）、TTS（语音合成）</td></tr>
+    <tr><td><strong>视频</strong></td><td>视频内容理解、屏幕录制</td><td>生成视频、视频编辑</td><td>视频理解模型、视频生成模型、帧提取</td></tr>
+    <tr><td><strong>结构化数据</strong></td><td>Excel、CSV、数据库、JSON</td><td>数据分析报告、可视化图表</td><td>数据解析、SQL生成、图表库</td></tr>
+    <tr><td><strong>代码/文件</strong></td><td>代码仓库、配置文件、日志</td><td>代码修改、文件生成、项目脚手架</td><td>代码LLM、AST解析、Git操作、文件系统</td></tr>
+  </table>
+
+  <h3>环境交互框架</h3>
+  <div class="diagram">
+┌──────────────────────────────────────────────────┐
+│                   Agent 大脑                       │
+│         （多模态理解 + 推理 + 决策）               │
+└────────────┬─────────────────────────────────────┘
+             │
+    ┌────────┼────────┬──────────┐
+    ▼        ▼        ▼          ▼
+┌──────┐ ┌──────┐ ┌──────┐ ┌──────────┐
+│文件系统│ │浏览器│ │数据库│ │外部API服务│
+│读写删 │ │操作  │ │查询  │ │调用      │
+└──────┘ └──────┘ └──────┘ └──────────┘
+    │        │        │          │
+    └────────┴────────┴──────────┘
+             │
+             ▼
+      ┌─────────────┐
+      │  沙箱执行环境  │
+      │ （隔离+权限+审计）│
+      └─────────────┘
+  </div>
+</section>
+
+<!-- ==================== S10 Agent协作 ==================== -->
+<section id="s10">
+  <h2><span class="sec-num">10</span>Agent 间协作与通信</h2>
+  <div class="sec-desc">多 Agent 系统的五种协作模式和标准化通信协议。</div>
+
+  <table>
+    <tr><th>协作模式</th><th>通信方式</th><th>协调机制</th><th>典型框架</th></tr>
+    <tr><td><strong>主从模式</strong></td><td>自上而下指令传递，自下而上结果汇报</td><td>主 Agent 分配任务、汇总结果、质量把关</td><td>AutoGen（GroupChat with manager）</td></tr>
+    <tr><td><strong>对等讨论</strong></td><td>广播消息，所有 Agent 都能看到</td><td>轮流发言，达成共识或由裁判裁决</td><td>AutoGen（GroupChat）、CrewAI</td></tr>
+    <tr><td><strong>流水线</strong></td><td>顺序传递，A的输出是B的输入</td><td>按预定义流程流转，每步完成触发下一步</td><td>LangGraph、n8n + Agent</td></tr>
+    <tr><td><strong>黑板模式</strong></td><td>共享公共存储（黑板），各 Agent 读写</td><td>Agent 自主判断何时贡献信息，无中心协调</td><td>经典 AI 黑板架构的现代实现</td></tr>
+    <tr><td><strong>拍卖/竞标</strong></td><td>任务发布后各 Agent 竞标，最优者执行</td><td>基于能力匹配度和成本的市场机制分配</td><td>合同网协议（Contract Net）</td></tr>
+  </table>
+
+  <h3>Agent 通信消息的标准结构</h3>
+  <pre><code>{
+  "sender": "agent_a",
+  "receiver": "agent_b",
+  "message_type": "task_assign",
+  "content": {
+    "task": "分析5G TCI配置流程",
+    "constraints": ["必须引用3GPP原文", "输出表格格式"],
+    "deadline": "2026-08-26T18:00:00Z"
+  },
+  "context_ref": "session_123",
+  "priority": "high",
+  "metadata": { "timestamp": "...", "trace_id": "..." }
+}</code></pre>
+</section>
+
+<!-- ==================== S11 自我改进 ==================== -->
+<section id="s11">
+  <h2><span class="sec-num">11</span>自我改进与进化机制</h2>
+  <div class="sec-desc">高级 Agent 系统从经验中学习、持续优化自身的六种闭环机制。</div>
+
+  <table>
+    <tr><th>机制</th><th>原理</th><th>实现方式</th><th>改进对象</th></tr>
+    <tr><td><strong>经验回放</strong></td><td>记录成功/失败的任务执行轨迹，供未来参考</td><td>将历史任务的完整 Trace 存入案例库，相似任务时检索参考</td><td>任务执行策略</td></tr>
+    <tr><td><strong>Prompt 自动优化</strong></td><td>根据任务反馈自动调整系统提示词</td><td>用 LLM 评估不同 Prompt 版本效果，A/B 测试后选最优</td><td>系统提示词</td></tr>
+    <tr><td><strong>工具使用优化</strong></td><td>统计工具调用的成功率和耗时，优化选择策略</td><td>记录工具调用日志，分析失败模式，更新工具描述和优先级</td><td>工具选择策略</td></tr>
+    <tr><td><strong>知识沉淀</strong></td><td>将任务中获得的新知识持久化到知识库</td><td>任务完成后提取新事实、新流程，经校验后写入向量库</td><td>知识库</td></tr>
+    <tr><td><strong>Skill 自动生成</strong></td><td>发现重复性任务模式时，自动封装为新 Skill</td><td>分析历史任务，识别高频操作模式，生成 SKILL.md + 脚本模板</td><td>Skill 库</td></tr>
+    <tr><td><strong>模型微调反馈环</strong></td><td>积累高质量交互数据，定期微调模型</td><td>筛选成功任务的对话数据，构造 SFT 数据集，定期微调</td><td>模型本身</td></tr>
+  </table>
+
+  <h3>自我改进的反馈闭环</h3>
+  <div class="diagram">
+任务执行
+    │
+    ▼
+结果评估（自动评分 + 用户反馈）
+    │
+    ├── 成功 → 提取成功经验 → 存入案例库 → 更新最佳实践
+    │
+    ├── 失败 → 分析失败原因 → 归因（Prompt/工具/模型/知识）
+    │         │
+    │         ├── Prompt问题 → 优化系统提示
+    │         ├── 工具问题 → 优化工具描述/增加替代工具
+    │         ├── 知识缺失 → 补充知识库
+    │         └── 模型能力不足 → 积累微调数据
+    │
+    └── 部分成功 → 记录改进点 → 下一轮迭代优化
+  </div>
+</section>
+
+<!-- ==================== S12 部署运维 ==================== -->
+<section id="s12">
+  <h2><span class="sec-num">12</span>部署与运维架构</h2>
+  <div class="sec-desc">从开发到生产的六阶段部署体系和生产环境拓扑。</div>
+
+  <table>
+    <tr><th>阶段</th><th>核心组件</th><th>技术选型</th><th>关键指标</th></tr>
+    <tr><td><strong>开发环境</strong></td><td>本地调试、Prompt 迭代、工具测试</td><td>Jupyter、VS Code + 插件、LangSmith 本地版</td><td>迭代速度、调试便利性</td></tr>
+    <tr><td><strong>测试环境</strong></td><td>自动化测试、回归测试、性能测试</td><td>pytest、Agent 评估框架、压力测试工具</td><td>任务成功率、回归覆盖率</td></tr>
+    <tr><td><strong>预发布环境</strong></td><td>灰度测试、A/B 测试、真实流量验证</td><td>金丝雀发布、流量镜像、Feature Flag</td><td>错误率、用户满意度</td></tr>
+    <tr><td><strong>生产环境</strong></td><td>高可用、弹性伸缩、负载均衡</td><td>K8s、Docker、自动扩缩容、多可用区部署</td><td>可用性（99.9%+）、延迟、吞吐量</td></tr>
+    <tr><td><strong>监控告警</strong></td><td>全链路追踪、指标监控、日志分析</td><td>Prometheus、Grafana、ELK、OpenTelemetry</td><td>MTTR（平均恢复时间）、告警准确率</td></tr>
+    <tr><td><strong>成本管理</strong></td><td>Token 用量统计、模型成本优化、预算控制</td><td>成本看板、用量告警、缓存命中率监控</td><td>单次任务成本、月度预算偏差</td></tr>
+  </table>
+
+  <h3>生产环境部署拓扑</h3>
+  <div class="diagram">
+                    ┌──────────────┐
+                    │  CDN / WAF   │
+                    └──────┬───────┘
+                           │
+                    ┌──────▼───────┐
+                    │  负载均衡器    │
+                    │  (Nginx/K8s)  │
+                    └──────┬───────┘
+                           │
+              ┌────────────┼────────────┐
+              ▼            ▼            ▼
+        ┌──────────┐ ┌──────────┐ ┌──────────┐
+        │ Agent 服务 │ │ Agent 服务 │ │ Agent 服务 │
+        │  Pod 1    │ │  Pod 2    │ │  Pod N    │
+        └─────┬────┘ └─────┬────┘ └─────┬────┘
+              │              │              │
+              └──────────────┼──────────────┘
+                             │
+           ┌─────────────────┼─────────────────┐
+           ▼                 ▼                 ▼
+    ┌────────────┐   ┌────────────┐   ┌────────────┐
+    │ 模型网关     │   │ 向量数据库  │   │ 会话/缓存   │
+    │ (多模型路由) │   │ (Milvus等) │   │ (Redis/PG) │
+    └────────────┘   └────────────┘   └────────────┘
+           │
+           ▼
+    ┌─────────────────────────────────────┐
+    │         可观测性平台                  │
+    │  日志 · 指标 · 追踪 · 告警 · 成本    │
+    └─────────────────────────────────────┘
+  </div>
+</section>
+
+<!-- ==================== S13 评估体系 ==================== -->
+<section id="s13">
+  <h2><span class="sec-num">13</span>Agent 评估体系</h2>
+  <div class="sec-desc">Agent 系统的七维度评估框架和 CI/CD 评估流水线。</div>
+
+  <table>
+    <tr><th>评估维度</th><th>评估指标</th><th>评估方法</th><th>工具/框架</th></tr>
+    <tr><td><strong>任务完成度</strong></td><td>成功率、部分完成率、失败率</td><td>标准测试集 + 自动评分 + 人工抽检</td><td>自定义评估集、AgentBench</td></tr>
+    <tr><td><strong>回答质量</strong></td><td>准确性、相关性、完整性、格式合规性</td><td>LLM-as-Judge + 人工评估</td><td>GPT-4 评分、Ragas、TruLens</td></tr>
+    <tr><td><strong>工具使用效率</strong></td><td>工具调用次数、冗余调用率、首次成功率</td><td>分析工具调用 Trace，统计效率指标</td><td>Langfuse、LangSmith 分析</td></tr>
+    <tr><td><strong>延迟性能</strong></td><td>首 token 延迟、总响应时间、P50/P95/P99</td><td>压测 + 生产环境监控</td><td>Prometheus、Grafana</td></tr>
+    <tr><td><strong>成本效率</strong></td><td>单次任务 token 成本、缓存命中率、模型路由效率</td><td>成本看板 + 用量分析</td><td>自定义成本统计</td></tr>
+    <tr><td><strong>安全性</strong></td><td>越狱成功率、Prompt 注入防御率、危险操作拦截率</td><td>红队测试 + 自动化安全扫描</td><td>Garak、Promptfoo</td></tr>
+    <tr><td><strong>鲁棒性</strong></td><td>异常输入处理率、工具失败恢复率、长任务稳定性</td><td>混沌测试 + 边界用例测试</td><td>自定义故障注入</td></tr>
+  </table>
+
+  <h3>评估流水线</h3>
+  <div class="diagram">
+代码/Prompt变更
+    │
+    ▼
+CI 自动触发评估
+    │
+    ├── 单元测试（工具函数、解析器、校验器）
+    ├── 集成测试（端到端任务执行）
+    ├── 回归测试（历史失败用例必须通过）
+    ├── 安全测试（越狱、注入、越权）
+    └── 性能测试（延迟、吞吐量、成本）
+    │
+    ▼
+评估报告生成
+    │
+    ├── 全部通过 → 合并到主分支 → 预发布环境验证
+    ├── 部分失败 → 阻断合并 → 开发者修复
+    └── 性能退化 → 人工审核 → 决定是否放行
+  </div>
+</section>
+
+<!-- ==================== S14 界面交互 ==================== -->
+<section id="s14">
+  <h2><span class="sec-num">14</span>界面交互设计</h2>
+  <div class="sec-desc">Agent 系统的用户界面信息架构、权限弹窗和工具调用可视化。</div>
+
+  <h3>14.1 聊天界面的信息架构</h3>
+  <div class="diagram">
+┌─────────────────────────────────────────────────────────┐
+│  对话区（主区域）                                          │
+│  ┌─────────────────────────────────────────────────┐    │
+│  │  用户消息（右对齐）                                │    │
+│  └─────────────────────────────────────────────────┘    │
+│  ┌─────────────────────────────────────────────────┐    │
+│  │  助手消息（左对齐）                                │    │
+│  │  ┌───────────────────────────────────────────┐  │    │
+│  │  │  文字回复（Markdown渲染）                   │  │    │
+│  │  │  · 表格 · 代码块 · 列表                     │  │    │
+│  │  └───────────────────────────────────────────┘  │    │
+│  │  ┌───────────────────────────────────────────┐  │    │
+│  │  │  工具调用状态（可折叠）                      │  │    │
+│  │  │  ✓ 搜索 "5G TCI" → 5条结果                 │  │    │
+│  │  │  ✓ 读取文档 38.214 → 2000字                │  │    │
+│  │  └───────────────────────────────────────────┘  │    │
+│  │  ┌───────────────────────────────────────────┐  │    │
+│  │  │  文件交付组件                                │  │    │
+│  │  │  [📄 分析报告.docx] [📊 数据.xlsx]         │  │    │
+│  │  └───────────────────────────────────────────┘  │    │
+│  └─────────────────────────────────────────────────┘    │
+├─────────────────────────────────────────────────────────┤
+│  输入区                                                    │
+│  ┌─────────────────────────────────────────────────┐    │
+│  │  [📎 附件] [🖼️ 图片]  输入消息...        [发送] │    │
+│  └─────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────┘
+  </div>
+
+  <h3>14.2 权限弹窗界面</h3>
+  <div class="diagram">
+┌─────────────────────────────────────────────┐
+│  ⚠️ 操作需要授权                              │
+│                                               │
+│  助手正在尝试执行以下操作：                     │
+│                                               │
+│  命令：pip install pandas                     │
+│  说明：安装Python数据分析库                   │
+│  影响范围：系统Python环境                     │
+│                                               │
+│  [允许本次执行]    [拒绝]    [始终允许此类操作]│
+└─────────────────────────────────────────────┘
+  </div>
+
+  <h3>14.3 工具调用的可视化状态</h3>
+  <div class="diagram">
+🔄 正在搜索 "5G NR TCI state configuration"...
+✓ 搜索完成，找到 5 条结果（耗时 1.2s）
+
+🔄 正在读取文档 https://.../38.214.pdf...
+✓ 读取完成，提取 2,340 字相关内容（耗时 0.8s）
+
+🔄 正在生成回答...
+  </div>
+  <div class="callout info">
+    <p><span class="label">设计要点：</span>透明化设计让用户知道 Agent "在干什么"，而不是盯着一个转圈的加载图标干等。每步操作展示状态、结果和耗时，建立用户对系统的信任。</p>
+  </div>
+</section>
+
+<!-- ==================== S15 完整示例 ==================== -->
+<section id="s15">
+  <h2><span class="sec-num">15</span>完整示例：以自身为例</h2>
+  <div class="sec-desc">通过一个真实任务场景，展示 Agent 系统各层组件如何协同工作。</div>
+
+  <h3>15.1 场景设定</h3>
+  <div class="callout tip">
+    <p><span class="label">用户请求：</span>"帮我调研一下 5G NR 中 TCI（Transmission Configuration Indicator）状态的配置流程，整理成结构化表格，然后生成一份 HTML 格式的技术文档保存到本地。"</p>
+  </div>
+  <p>这个任务涉及<strong>信息检索、内容理解、结构化整理、文件生成</strong>四个环节，是一个典型的多步骤 Agent 任务。下面逐层拆解系统如何处理。</p>
+
+  <h3>15.2 各层组件的协同工作</h3>
+
+  <div class="timeline">
+    <div class="tl-item">
+      <div class="tl-time">T0 · 交互层</div>
+      <div class="tl-title">接收用户请求</div>
+      <div class="tl-desc">用户在聊天界面输入请求，交互层通过 WebSocket 建立连接，准备流式输出。同时识别这是一个复杂任务（涉及搜索+整理+生成文件），不是简单问答。</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-time">T1 · 会话层</div>
+      <div class="tl-title">恢复上下文 + 注入用户画像</div>
+      <div class="tl-desc">会话层加载当前对话历史，同时从用户画像记忆中提取：用户是5G通信研发工程师、偏好溯源性解释和表格呈现、关注3GPP协议原文。这些信息被注入系统提示，影响后续的回答风格和深度。</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-time">T2 · 编排层（第1轮LLM调用）</div>
+      <div class="tl-title">意图识别 + 任务规划</div>
+      <div class="tl-desc">编排层将系统提示（含角色定义、安全规则、可用工具/Skill目录、用户画像）+ 对话历史 + 用户请求发给 LLM。LLM 推理后输出："这个任务需要先搜索5G TCI相关信息，然后整理表格，最后生成HTML文件。我先调用搜索工具。" → 解析为工具调用指令。</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-time">T3 · 能力层 + 安全层</div>
+      <div class="tl-title">执行搜索工具</div>
+      <div class="tl-desc">能力层接收到搜索指令，通过工具注册中心找到 general_search 工具，执行搜索。安全层校验：搜索是只读操作，直接放行。工具返回5条结果（含3GPP文档链接和技术博客）。结果经过截断和格式化后，注入上下文。</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-time">T4 · 编排层（第2轮LLM调用）</div>
+      <div class="tl-title">分析搜索结果 + 决定深入</div>
+      <div class="tl-desc">LLM 看到搜索结果后判断：摘要信息不够详细，需要精读3GPP 38.214和38.211协议原文中关于TCI state的章节。输出调用 web.fetch 工具的指令，指定两个文档URL和查询关键词。</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-time">T5 · 知识层 + 能力层</div>
+      <div class="tl-title">精读文档 + 知识检索</div>
+      <div class="tl-desc">能力层并行调用两次 web.fetch 精读两个3GPP文档。同时知识层从RAG知识库中检索是否有已存储的5G TCI相关资料（如果之前处理过类似任务，可直接复用）。返回的文档片段经过上下文压缩器提取与TCI配置流程相关的段落。</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-time">T6 · 编排层（第3轮LLM调用）</div>
+      <div class="tl-title">整理结构化表格</div>
+      <div class="tl-desc">LLM 综合搜索结果+精读文档+知识库资料，按照用户偏好（表格呈现、溯源3GPP原文）整理出TCI配置流程的结构化表格，包含：TCI状态定义、配置信令、激活流程、MAC CE控制、与QCL的关系等。</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-time">T7 · 编排层（第4轮LLM调用）</div>
+      <div class="tl-title">生成HTML文档 + 写入文件</div>
+      <div class="tl-desc">LLM 判断信息已足够，生成完整的HTML技术文档内容（含标题、章节、表格、引用来源）。然后调用 Write 工具将HTML内容写入本地文件。安全层校验：写入路径在工作目录内，直接放行。文件写入成功。</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-time">T8 · 交互层</div>
+      <div class="tl-title">交付文件 + 流式回答</div>
+      <div class="tl-desc">交互层通过 present_files 交付生成的HTML文档，用户可直接预览和下载。同时流式输出文字总结，说明文档内容结构和关键要点。整个任务完成。</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-time">T9 · 基础设施层（后台）</div>
+      <div class="tl-title">记录 + 评估 + 知识沉淀</div>
+      <div class="tl-desc">可观测性平台记录完整Trace（4次LLM调用、4次工具执行、总token用量、耗时）。评估系统自动评分（任务是否完成、回答质量、工具效率）。知识沉淀模块提取本次任务中的TCI配置流程知识，经校验后写入向量库，供未来相似任务复用。</div>
+    </div>
+  </div>
+
+  <h3>15.3 本次任务的资源消耗统计</h3>
+  <table>
+    <tr><th>指标</th><th>数值</th><th>说明</th></tr>
+    <tr><td>LLM 调用次数</td><td>4 次</td><td>规划1次 + 分析1次 + 整理1次 + 生成1次</td></tr>
+    <tr><td>工具调用次数</td><td>4 次</td><td>搜索1次 + 精读2次 + 写文件1次</td></tr>
+    <tr><td>并行执行</td><td>有</td><td>两次 web.fetch 精读并行执行</td></tr>
+    <tr><td>涉及层级</td><td>全部8层</td><td>从交互层到基础设施层全部参与</td></tr>
+    <tr><td>记忆使用</td><td>3类</td><td>工作记忆（上下文）+ 用户画像（偏好）+ 语义记忆（RAG检索）</td></tr>
+    <tr><td>安全校验</td><td>2次</td><td>搜索（只读放行）+ 写文件（路径校验放行）</td></tr>
+    <tr><td>产物</td><td>2个</td><td>文字总结 + HTML文档文件</td></tr>
+  </table>
+
+  <h3>15.4 如果任务失败会怎样</h3>
+  <div class="callout warn">
+    <p><span class="label">场景：</span>假设3GPP文档链接访问超时（工具执行失败）。</p>
+  </div>
+  <p>系统会按五级错误处理机制响应：</p>
+  <ol>
+    <li><strong>L1 重试</strong>：自动重试 web.fetch（指数退避，最多3次）</li>
+    <li><strong>L3 换工具</strong>：如果仍失败，LLM 分析后改用 general_search 搜索其他来源的TCI资料</li>
+    <li><strong>L4 替代方法</strong>：如果搜索也不够详细，从RAG知识库中检索已存储的5G资料</li>
+    <li><strong>L5 说明情况</strong>：如果所有方法都无法获取足够信息，向用户说明"3GPP文档暂时无法访问，已基于公开资料整理，建议稍后重试或手动提供文档"</li>
+  </ol>
+  <p>整个过程对用户透明——每一步重试和换策略都会在界面上展示状态，用户不会看到一个"卡死"的加载图标。</p>
+
+  <h3>15.5 这个示例体现的设计原则</h3>
+  <div class="card-grid">
+    <div class="card">
+      <div class="icon">🔄</div>
+      <h4>ReAct 循环</h4>
+      <p>4轮LLM调用交替进行推理和行动，每轮拿到工具结果后再决定下一步，不是一次性生成答案。</p>
+    </div>
+    <div class="card">
+      <div class="icon">🧩</div>
+      <h4>分层协作</h4>
+      <p>8层各司其职：编排层决策、能力层执行、知识层补充、安全层把关、基础设施层记录，互不干扰。</p>
+    </div>
+    <div class="card">
+      <div class="icon">🎯</div>
+      <h4>个性化适配</h4>
+      <p>用户画像（5G工程师、偏好表格和溯源）直接影响回答深度和格式，不是"千人一面"的通用回答。</p>
+    </div>
+    <div class="card">
+      <div class="icon">🛡️</div>
+      <h4>安全内建</h4>
+      <p>每次工具调用都经过安全层校验，写文件检查路径权限，不是"模型说什么就执行什么"。</p>
+    </div>
+    <div class="card">
+      <div class="icon">👁️</div>
+      <h4>全程透明</h4>
+      <p>搜索、精读、生成文件的每一步状态都对用户可见，用户知道Agent"在干什么"和"为什么这么做"。</p>
+    </div>
+    <div class="card">
+      <div class="icon">📚</div>
+      <h4>知识积累</h4>
+      <p>任务完成后知识沉淀到向量库，下次处理5G相关任务时可直接复用，系统越用越"聪明"。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== S16 本机skill分析 ==================== -->
+<section id="s16">
+  <h2><span class="sec-num">16</span>本机 skill 系统分析（opencode）</h2>
+  <div class="sec-desc">以本机 opencode 的 skill 目录为真实案例，分析其架构设计、在八层框架中的定位、可取之处与弊端。</div>
+
+  <h3>16.1 目录结构概览</h3>
+  <p>本机 opencode 配置位于 <code>~/.config/opencode/</code>，是一套用户自建的 skill 生态系统，整体结构如下：</p>
+  <div class="diagram">
+~/.config/opencode/
+├── opencode.jsonc              # 主配置（仅引用 instructions.md）
+├── instructions.md             # 全局规则（9KB，核心调度逻辑）
+├── evolution.md                # 进化日志（记录每次自我更新）
+├── package.json                # Node 依赖声明
+├── plugins/
+│   └── skill-banner.js         # 插件：会话创建时自动扫描并 toast 展示 skill 列表
+├── skills/
+│   ├── 3gpp_skill/             # 3GPP 通信专家（41KB SKILL.md + 13 个子技能）
+│   │   ├── SKILL.md            # 唯一注册入口（frontmatter + 工具依赖 + 路由表 + 领域知识）
+│   │   └── modules/            # 子技能资源库（不独立注册，GUIDE.md）
+│   ├── files_skill/            # 文件处理（28KB SKILL.md + 104 个子技能）
+│   ├── find_skill/             # 网络资源获取与镜像加速
+│   ├── program_skill/          # 编程开发（默认 WSL Linux 环境）
+│   └── update_skill/           # 技能双向同步（git + 可移植性转换）
+└── node_modules/               # 运行时依赖（effect, zod, @ai-sdk/provider 等）
+  </div>
+
+  <h3>16.2 核心架构特点</h3>
+
+  <h4>特点一：全局 skill 显式触发 + 项目 skill 自动注入的两段式设计</h4>
+  <p>全局 skill 默认<strong>不自动调用</strong>，必须用 <code>skill名：任务</code> 的语法显式触发（支持中文冒号、英文冒号、<code>&amp;</code> 并列、空格并列）。这避免了 5 个全局 skill 的描述常驻上下文。</p>
+  <p>当用户在新项目中首次显式调用全局 skill 时，系统执行<strong>注入机制</strong>：把全部全局 skill 复制到项目的 <code>.opencode/skills/</code> 下，改写 frontmatter description 为"项目级 skill，默认触发"。注入后项目内提问自动匹配 skill，无需再显式调用。</p>
+
+  <h4>特点二：聚合式 skill 架构（唯一入口 + modules 资源库）</h4>
+  <p>每个全局 skill 是一个<strong>唯一注册入口</strong>，SKILL.md 中包含 frontmatter（name/description）、工具依赖清单、处理流程、路由表、领域知识。大量子技能放在 <code>modules/</code> 目录下，<strong>不独立注册</strong>，而是通过路由表按任务类型引用。</p>
+  <p>例如 files_skill 聚合了 104 个文档处理子技能，按"图片识别/OCR""PDF""Word/DOCX""PPTX""Excel""翻译"等分类建立路由表，执行时先读对应 <code>modules/&lt;目录&gt;/GUIDE.md</code> 再按其说明执行。</p>
+
+  <h4>特点三：智能进化协议（闭环自我更新）</h4>
+  <p>instructions.md 中定义了<strong>智能进化协议</strong>：每次提问-思考-回答过程的末尾都必须触发一次进化检查，提取可复用的新经验（新方法/新工具/新踩坑/新风险规避），按五步流程固化：</p>
+  <ol>
+    <li><strong>归纳</strong>：提取可复用经验，通用化表述（不局限本机）</li>
+    <li><strong>归属</strong>：判断更新到哪个 skill 的哪个章节</li>
+    <li><strong>更新</strong>：用 edit 工具增补，保持既有结构</li>
+    <li><strong>记录</strong>：追加到 evolution.md（日期+来源+更新点）</li>
+    <li><strong>自检</strong>：frontmatter 合法、无矛盾、无敏感信息、通用性达标</li>
+  </ol>
+  <p>evolution.md 中已记录了 18 次进化，涵盖引号转义踩坑、双向同步链断裂修复、对称回退防护、状态文件保护等真实经验。</p>
+
+  <h4>特点四：可移植性工程（占位符体系 + 自动转换）</h4>
+  <p>为支持多机器同步，update_skill 建立了完整的<strong>路径可移植层</strong>：</p>
+  <ul>
+    <li><strong>占位符三类</strong>：自动类（用户目录等可自动推导）、工具类（安装脚本自动探测）、数据类（安装时交互选择，存 path_map.txt）</li>
+    <li><strong>双向转换</strong>：本机→仓库时跑 <code>path_convert.py to_portable</code> 把真实路径转占位符；仓库→本机时跑 <code>to_local</code> 转回真实路径</li>
+    <li><strong>状态文件保护</strong>：path_map.txt、sync_target.txt 不进仓库，双向同步时显式跳过，防止本机真实映射被仓库占位符版覆盖</li>
+  </ul>
+
+  <h4>特点五：插件化的 skill 发现机制</h4>
+  <p><code>skill-banner.js</code> 是一个 opencode 插件，监听 <code>session.created</code> 事件，动态扫描 <code>skills/*/SKILL.md</code> 的 frontmatter，提取 name 和 description 前 42 字，通过 TUI toast 展示"本机全局技能（N 个）"列表。新增 skill 无需改任何配置，重启即自动纳入。</p>
+
+  <h3>16.3 在八层框架中的定位</h3>
+  <table>
+    <tr><th>框架层级</th><th>对应组件</th><th>说明</th></tr>
+    <tr><td><strong>交互层</strong></td><td>opencode TUI、skill-banner 插件</td><td>终端界面 + 会话创建时 toast 展示可用 skill 列表</td></tr>
+    <tr><td><strong>会话层</strong></td><td>opencode 会话管理、项目级 vs 全局级隔离</td><td>项目内 skill 默认触发，全局 skill 显式触发，两套机制隔离</td></tr>
+    <tr><td><strong>编排层</strong></td><td>instructions.md（全局规则、触发语法、路由逻辑、进化协议）</td><td>核心调度文件，定义 skill 调用语法、组合规则、注入规则、进化触发</td></tr>
+    <tr><td><strong>能力层</strong></td><td>5 个全局 skill + 100+ 子技能 modules</td><td>3gpp/files/find/program/update 五大能力域，聚合式架构</td></tr>
+    <tr><td><strong>知识层</strong></td><td>SKILL.md 中的领域知识、evolution.md 经验日志</td><td>3GPP 规范/FTP 结构、工具依赖、踩坑经验等固化知识</td></tr>
+    <tr><td><strong>模型层</strong></td><td>opencode 底层 LLM（@ai-sdk/provider 抽象）</td><td>通过 AI SDK 统一调用多家模型，opencode 本身不绑定特定模型</td></tr>
+    <tr><td><strong>安全层</strong></td><td>显式触发机制、同步边界铁律、状态文件保护、可移植性检查</td><td>全局 skill 不误调用、update_skill 不擅自 git 同步、状态文件不被覆盖</td></tr>
+    <tr><td><strong>基础设施层</strong></td><td>git 双向同步、path_convert.py、inject_skills.py、fetch_skills.py</td><td>多机器同步、路径转换、项目注入、批量安装子技能的工程脚本</td></tr>
+  </table>
+
+  <h3>16.4 可取之处</h3>
+  <div class="card-grid">
+    <div class="card">
+      <div class="icon">⚡</div>
+      <h4>两段式触发设计</h4>
+      <p>全局 skill 显式触发不占上下文，项目内注入后自动触发兼顾便利。token 效率和使用体验取得平衡。</p>
+    </div>
+    <div class="card">
+      <div class="icon">📦</div>
+      <h4>聚合式 skill 架构</h4>
+      <p>一个入口聚合上百个子技能，通过路由表管理，避免了 skill 数量爆炸导致的注册开销和选择困难。</p>
+    </div>
+    <div class="card">
+      <div class="icon">🔄</div>
+      <h4>闭环进化协议</h4>
+      <p>强制每次任务后固化经验，evolution.md 提供完整追溯。skill 会越用越完善，而非静态文档。</p>
+    </div>
+    <div class="card">
+      <div class="icon">🔀</div>
+      <h4>多机器可移植性</h4>
+      <p>占位符体系 + 自动转换 + 状态文件保护，解决了"在 A 机写的 skill 移植到 B 机路径全坏"的痛点。</p>
+    </div>
+    <div class="card">
+      <div class="icon">🛠</div>
+      <h4>标准化工具依赖清单</h4>
+      <p>每个 skill 开头的五列表格（工具/用途/本机位置/检查命令/缺失安装），移植新机器时可逐项核验。</p>
+    </div>
+    <div class="card">
+      <div class="icon">🚧</div>
+      <h4>同步边界铁律</h4>
+      <p>明确规定只有显式调用 update_skill 才执行 git 同步，防止进化固化时误触发 push，边界清晰。</p>
+    </div>
+    <div class="card">
+      <div class="icon">📝</div>
+      <h4>踩坑固化文化</h4>
+      <p>evolution.md 记录了引号转义、对称回退、状态文件保护等真实踩坑，并固化到 skill 中，不重复犯错。</p>
+    </div>
+    <div class="card">
+      <div class="icon">🔌</div>
+      <h4>插件化发现机制</h4>
+      <p>skill-banner 动态扫描自动展示，新增 skill 零配置。符合"约定优于配置"的工程哲学。</p>
+    </div>
+  </div>
+
+  <h3>16.5 弊端与不足</h3>
+
+  <h4>弊端一：全局 skill 显式触发的使用门槛</h4>
+  <p>用户必须记住 5 个 skill 名和 <code>skill名：任务</code> 语法，对新用户不友好。虽然 skill-banner toast 会展示，但仍需手动输入精确名称，拼写错误即不触发。</p>
+
+  <h4>弊端二：SKILL.md 单文件过于庞大</h4>
+  <p>3gpp_skill 的 SKILL.md 达 41KB，files_skill 达 28KB。单次加载会占用大量 token（约 1万~1.5万 token），虽然显式触发减少了加载频率，但加载后仍很重，挤压了任务本身的上下文空间。缺乏按需分块加载机制。</p>
+
+  <h4>弊端三：子技能质量参差不齐</h4>
+  <p>100+ 子技能来自 skillsmp.com、GitHub、LobeHub 等不同来源，质量和格式不统一。部分子技能可能已过时、包含错误信息、或与本机环境不兼容。缺乏统一的质量校验和版本锁定机制。</p>
+
+  <h4>弊端四：进化协议的执行依赖模型自觉性</h4>
+  <p>"每次任务末尾必须触发进化检查"是写在 instructions.md 里的自然语言规则，实际执行完全依赖 LLM 是否遵守。模型可能忽略、执行不彻底、或归纳质量不稳定。缺乏程序化的强制触发和校验机制。</p>
+
+  <h4>弊端五：可移植性体系复杂度高</h4>
+  <p>占位符分三类（自动/工具/数据）、path_convert.py 双向转换、状态文件保护、教学列表保护、对称回退防护……规则非常复杂，维护成本高。evolution.md 中至少 5 次记录了与可移植性相关的踩坑（路径泄漏、状态文件被覆盖、教学行误伤、对称回退），说明这套体系本身容易出问题。</p>
+
+  <h4>弊端六：缺乏自动化测试</h4>
+  <p>skill 的更新主要靠人工验证和进化协议，没有自动化的回归测试。更新 SKILL.md 后无法自动验证"修改是否破坏了原有功能""frontmatter 是否仍合法""路由表是否有死链"。一次错误的进化固化可能引入回归。</p>
+
+  <h4>弊端七：Windows + WSL 双环境复杂度</h4>
+  <p>program_skill 默认 WSL Linux 编译运行，update_skill 的 git 操作也在 WSL 内执行，但源文件在 Windows 盘（<code>/mnt/e/</code>）。跨环境路径转换、换行符差异、权限映射等增加了复杂度。evolution.md 中"bash 传参反斜杠被吃""WSL 内运行 Windows Python 需显式 --home"等踩坑都与此相关。</p>
+
+  <h3>16.6 总体评价</h3>
+  <div class="callout tip">
+    <p><span class="label">评价：</span>这是一套<strong>工程化程度很高、自我进化意识很强</strong>的个人 skill 系统。其聚合式架构、两段式触发、闭环进化、多机可移植性等设计，在个人知识管理和生产力工具领域属于相当成熟的实践。主要短板在于<strong>单文件过重、子技能质量不可控、进化执行依赖模型自觉、可移植性体系过于复杂</strong>。如果能引入 skill 分块懒加载、子技能版本锁定、程序化进化触发器、自动化回归测试，这套系统的可靠性和可维护性将显著提升。</p>
+  </div>
+</section>
+
+<!-- ==================== S17 常用工具速查 ==================== -->
+<section id="s17">
+  <h2><span class="sec-num">17</span>常用工具速查手册</h2>
+  <div class="sec-desc">资料处理、文件生成、图片识别、公式图表、多媒体、网络抓取、质量校验等全场景工具清单，每个工具标注用途、调用方式和安装源（优先级 ①→④ 从高到低）。</div>
+
+  <div class="callout info">
+    <p><span class="label">安装源优先级说明：</span>① 系统包管理器（winget/apt/brew）或官方推荐方式 → ② 语言包管理器（pip/npm/pipx/cargo）→ ③ 官方二进制下载 → ④ 源码编译。带"内置"标记的工具无需安装，直接可用。</p>
+  </div>
+
+  <h3>17.1 文档解析与格式转换</h3>
+  <table>
+    <tr><th>工具</th><th>用途</th><th>调用方式</th><th>安装源（优先级）</th></tr>
+    <tr><td><strong>Read（多模态）</strong></td><td>读取文本/图片，直接理解内容（含OCR/公式/图表）</td><td>内置工具</td><td>内置，无需安装</td></tr>
+    <tr><td><strong>PyMuPDF（fitz）</strong></td><td>PDF 文本/表格/图片提取、页面渲染、合并拆分</td><td><code>python -c "import fitz"</code></td><td>① <code>pip install pymupdf</code></td></tr>
+    <tr><td><strong>pdfplumber</strong></td><td>PDF 表格精确提取、文本布局分析</td><td><code>python -c "import pdfplumber"</code></td><td>① <code>pip install pdfplumber</code></td></tr>
+    <tr><td><strong>pypdf</strong></td><td>PDF 基础操作：合并、拆分、加密、元数据</td><td><code>python -c "import pypdf"</code></td><td>① <code>pip install pypdf</code></td></tr>
+    <tr><td><strong>python-docx</strong></td><td>Word（.docx）读取/生成/编辑：段落、表格、图片、样式</td><td><code>python -c "import docx"</code></td><td>① <code>pip install python-docx</code></td></tr>
+    <tr><td><strong>docx2txt</strong></td><td>Word 快速转纯文本</td><td><code>python -c "import docx2txt"</code></td><td>① <code>pip install docx2txt</code></td></tr>
+    <tr><td><strong>openpyxl</strong></td><td>Excel（.xlsx）读取/生成/编辑：单元格、公式、图表、样式</td><td><code>python -c "import openpyxl"</code></td><td>① <code>pip install openpyxl</code></td></tr>
+    <tr><td><strong>python-pptx</strong></td><td>PPT（.pptx）读取/生成/编辑：幻灯片、文本、图片、布局</td><td><code>python -c "import pptx"</code></td><td>① <code>pip install python-pptx</code></td></tr>
+    <tr><td><strong>Pandoc</strong></td><td>万能文档格式转换：md⇄docx⇄pdf⇄html⇄epub⇄latex⇄rst</td><td><code>pandoc input.md -o output.docx</code></td><td>① winget <code>install JohnMacFarlane.Pandoc</code> ② 官方下载 pandoc.org/installing</td></tr>
+    <tr><td><strong>LibreOffice</strong></td><td>批量 doc/docx/ppt/xls → PDF，公式渲染核实</td><td><code>soffice --headless --convert-to pdf file.docx</code></td><td>① winget <code>install TheDocumentFoundation.LibreOffice</code> ② 官方下载 libreoffice.org</td></tr>
+    <tr><td><strong>MarkItDown</strong>（微软）</td><td>任意文件→Markdown：PDF/DOCX/PPTX/XLSX/图片/音频/HTML/EPUB</td><td><code>python -c "from markitdown import MarkItDown"</code></td><td>① <code>pip install markitdown</code></td></tr>
+    <tr><td><strong>Unstructured.io</strong></td><td>非结构化文档解析：正文/表格/图片分区提取，RAG专用</td><td><code>python -c "from unstructured.partition.pdf import partition_pdf"</code></td><td>① <code>pip install unstructured</code></td></tr>
+    <tr><td><strong>pdf2image</strong></td><td>PDF 逐页转图片（PNG/JPEG）</td><td><code>python -c "from pdf2image import convert_from_path"</code></td><td>① <code>pip install pdf2image</code>（需另装 poppler）</td></tr>
+    <tr><td><strong>pdf2docx</strong></td><td>PDF 转可编辑 Word（保留排版）</td><td><code>python -c "from pdf2docx import Converter"</code></td><td>① <code>pip install pdf2docx</code></td></tr>
+    <tr><td><strong>Camelot</strong></td><td>PDF 表格精确提取（比 pdfplumber 更准，需 Ghostscript）</td><td><code>python -c "import camelot"</code></td><td>① <code>pip install camelot-py[cv]</code>（需 Ghostscript）</td></tr>
+    <tr><td><strong>Tabula</strong></td><td>PDF 表格提取（Java 引擎，Python 封装）</td><td><code>python -c "import tabula"</code></td><td>① <code>pip install tabula-py</code>（需 Java）</td></tr>
+    <tr><td><strong>OCRmyPDF</strong></td><td>扫描版 PDF 加 OCR 层，变成可搜索/可复制的 PDF</td><td><code>ocrmypdf input.pdf output.pdf</code></td><td>① <code>pip install ocrmypdf</code> ② apt <code>install ocrmypdf</code></td></tr>
+    <tr><td><strong>xlrd</strong></td><td>老版 .xls（Excel 97-2003）读取（openpyxl 不支持 .xls）</td><td><code>python -c "import xlrd"</code></td><td>① <code>pip install xlrd==1.2.0</code>（2.0+ 仅支持 xlsx）</td></tr>
+    <tr><td><strong>chardet</strong></td><td>文件编码自动检测（GBK/UTF-8/GB2312/Big5 等）</td><td><code>python -c "import chardet"</code></td><td>① <code>pip install chardet</code></td></tr>
+    <tr><td><strong>python-magic</strong></td><td>文件真实类型检测（magic bytes，扩展名不可信时用）</td><td><code>python -c "import magic"</code></td><td>① <code>pip install python-magic</code>（Windows 需 python-magic-bin）</td></tr>
+  </table>
+
+  <h3>17.2 数据处理与清洗</h3>
+  <table>
+    <tr><th>工具</th><th>用途</th><th>调用方式</th><th>安装源（优先级）</th></tr>
+    <tr><td><strong>pandas</strong></td><td>数据分析：DataFrame、清洗、聚合、合并、透视表</td><td><code>python -c "import pandas as pd"</code></td><td>① <code>pip install pandas</code></td></tr>
+    <tr><td><strong>NumPy</strong></td><td>数值计算：数组、矩阵、线性代数、随机数</td><td><code>python -c "import numpy as np"</code></td><td>① <code>pip install numpy</code></td></tr>
+    <tr><td><strong>SciPy</strong></td><td>科学计算：积分、优化、信号处理、统计、稀疏矩阵</td><td><code>python -c "import scipy"</code></td><td>① <code>pip install scipy</code></td></tr>
+    <tr><td><strong>Polars</strong></td><td>高性能 DataFrame（Rust 实现，比 pandas 快 5~10 倍）</td><td><code>python -c "import polars as pl"</code></td><td>① <code>pip install polars</code></td></tr>
+    <tr><td><strong>DuckDB</strong></td><td>嵌入式分析数据库，直接查 CSV/Parquet/JSON，SQL 引擎</td><td><code>python -c "import duckdb"</code> / <code>duckdb</code></td><td>① <code>pip install duckdb</code> ② 官方下载 duckdb.org</td></tr>
+    <tr><td><strong>jq</strong></td><td>命令行 JSON 处理、过滤、转换、格式化</td><td><code>jq '.key' file.json</code></td><td>① winget <code>install jqlang.jq</code> ② apt <code>install jq</code></td></tr>
+    <tr><td><strong>yq</strong></td><td>命令行 YAML/XML/CSV 处理（jq 的多格式版）</td><td><code>yq '.key' file.yaml</code></td><td>① winget <code>install mikefarah.yq</code> ② <code>pip install yq</code></td></tr>
+    <tr><td><strong>xsv</strong></td><td>命令行 CSV 极速处理（索引、统计、合并、切片，Rust 实现）</td><td><code>xsv stats file.csv</code></td><td>① <code>cargo install xsv</code> ② 官方二进制下载 github.com/BurntSushi/xsv</td></tr>
+    <tr><td><strong>Miller（mlr）</strong></td><td>命令行数据处理（CSV/JSON/TSV，类 awk 但更结构化）</td><td><code>mlr --csv filter '$age>30' file.csv</code></td><td>① winget <code>install johnkerl.miller</code> ② apt <code>install miller</code></td></tr>
+    <tr><td><strong>csvkit</strong></td><td>命令行 CSV 工具集：转换、查询、合并、清洗、统计</td><td><code>csvcut -c col1 file.csv</code>, <code>csvgrep</code>, <code>csvstat</code></td><td>① <code>pip install csvkit</code></td></tr>
+    <tr><td><strong>lxml</strong></td><td>XML/HTML 高性能解析（比标准库快，支持 XPath/XSLT）</td><td><code>python -c "from lxml import etree"</code></td><td>① <code>pip install lxml</code></td></tr>
+    <tr><td><strong>xmltodict</strong></td><td>XML ↔ Python dict 双向转换</td><td><code>python -c "import xmltodict"</code></td><td>① <code>pip install xmltodict</code></td></tr>
+    <tr><td><strong>BeautifulSoup4</strong></td><td>HTML 解析、提取、清洗（web.fetch 结果处理主力）</td><td><code>python -c "from bs4 import BeautifulSoup"</code></td><td>① <code>pip install beautifulsoup4</code></td></tr>
+    <tr><td><strong>Trafilatura</strong></td><td>网页正文精确提取（去广告/导航/侧栏，比 BS4 准）</td><td><code>python -c "import trafilatura"</code></td><td>① <code>pip install trafilatura</code></td></tr>
+    <tr><td><strong>readability-lxml</strong></td><td>网页正文提取（Firefox Reader View 同款算法）</td><td><code>python -c "from readability import Document"</code></td><td>① <code>pip install readability-lxml</code></td></tr>
+  </table>
+
+  <h3>17.3 文档生成与排版</h3>
+  <table>
+    <tr><th>工具</th><th>用途</th><th>调用方式</th><th>安装源（优先级）</th></tr>
+    <tr><td><strong>Write（内置）</strong></td><td>直接写文件（HTML/Markdown/Python/JSON/配置等）</td><td>内置工具</td><td>内置，无需安装</td></tr>
+    <tr><td><strong>Jinja2</strong></td><td>模板引擎：从数据+模板生成文档/HTML/代码/配置</td><td><code>python -c "from jinja2 import Template"</code></td><td>① <code>pip install jinja2</code></td></tr>
+    <tr><td><strong>docxtpl</strong></td><td>Word 模板填充：用 .docx 做模板，变量替换生成批量文档</td><td><code>python -c "from docxtpl import DocxTemplate"</code></td><td>① <code>pip install docxtpl</code></td></tr>
+    <tr><td><strong>ReportLab</strong></td><td>纯 Python 生成 PDF（精确控制布局、字体、矢量图表）</td><td><code>python -c "from reportlab.pdfgen import canvas"</code></td><td>① <code>pip install reportlab</code></td></tr>
+    <tr><td><strong>FPDF2</strong></td><td>轻量 PDF 生成（比 ReportLab 简单，支持中文）</td><td><code>python -c "from fpdf import FPDF"</code></td><td>① <code>pip install fpdf2</code></td></tr>
+    <tr><td><strong>WeasyPrint</strong></td><td>HTML/CSS → PDF（矢量输出，支持现代 CSS，无需浏览器）</td><td><code>python -c "import weasyprint"</code></td><td>① <code>pip install weasyprint</code>（Windows 需 GTK 运行库）</td></tr>
+    <tr><td><strong>Playwright</strong></td><td>headless 浏览器 → PDF/截图，MathJax/Mermaid 渲染后导出</td><td><code>python -c "from playwright.sync_api import sync_playwright"</code></td><td>① <code>pip install playwright</code> ② <code>playwright install chromium</code></td></tr>
+    <tr><td><strong>Puppeteer</strong></td><td>Node.js headless 浏览器 → PDF/截图</td><td><code>node -e "const p=require('puppeteer')"</code></td><td>① <code>npm install puppeteer</code></td></tr>
+    <tr><td><strong>wkhtmltopdf</strong></td><td>轻量 HTML→PDF（WebKit 引擎，无需完整浏览器）</td><td><code>wkhtmltopdf input.html output.pdf</code></td><td>① 官方下载 wkhtmltopdf.org ② apt <code>install wkhtmltopdf</code></td></tr>
+    <tr><td><strong>Typst</strong></td><td>新一代排版语言（LaTeX 替代，编译极快，语法简洁）</td><td><code>typst compile input.typ output.pdf</code></td><td>① 官方下载 typst.app ② <code>cargo install typst-cli</code></td></tr>
+    <tr><td><strong>Sphinx</strong></td><td>技术文档生成（reST/Markdown → HTML/PDF/epub，Python 官方文档用）</td><td><code>sphinx-build -b html docs build</code></td><td>① <code>pip install sphinx</code></td></tr>
+    <tr><td><strong>MkDocs</strong></td><td>项目文档站点生成（Markdown → 静态网站，Material 主题）</td><td><code>mkdocs build</code> / <code>mkdocs serve</code></td><td>① <code>pip install mkdocs</code></td></tr>
+    <tr><td><strong>Hugo</strong></td><td>静态网站生成（极快，Go 实现，大量主题）</td><td><code>hugo -D</code></td><td>① winget <code>install Hugo.Hugo</code> ② 官方下载 gohugo.io</td></tr>
+    <tr><td><strong>highlight.js</strong></td><td>代码语法高亮（HTML 中嵌入，支持 190+ 语言）</td><td>CDN <code>&lt;script src="highlight.min.js"&gt;</code></td><td>① CDN 引入 ② <code>npm install highlight.js</code></td></tr>
+    <tr><td><strong>MathJax</strong></td><td>数学公式渲染（HTML 中，支持 LaTeX/MathML，功能全）</td><td>CDN <code>&lt;script src="mathjax.min.js"&gt;</code></td><td>① CDN 引入 ② <code>npm install mathjax</code></td></tr>
+    <tr><td><strong>KaTeX</strong></td><td>数学公式渲染（比 MathJax 快，功能略少，适合大文档）</td><td>CDN <code>&lt;link rel="stylesheet" href="katex.min.css"&gt;</code></td><td>① CDN 引入 ② <code>npm install katex</code></td></tr>
+    <tr><td><strong>ECharts</strong></td><td>交互式数据图表（HTML 内嵌，20+ 图表类型，百度开源）</td><td>CDN <code>&lt;script src="echarts.min.js"&gt;</code></td><td>① CDN 引入 ② <code>npm install echarts</code></td></tr>
+    <tr><td><strong>Chart.js</strong></td><td>轻量交互式图表（HTML 内嵌，8 种基础图表）</td><td>CDN <code>&lt;script src="chart.min.js"&gt;</code></td><td>① CDN 引入 ② <code>npm install chart.js</code></td></tr>
+    <tr><td><strong>D3.js</strong></td><td>数据驱动文档（底层可视化库，自由度最高，学习曲线陡）</td><td>CDN <code>&lt;script src="d3.min.js"&gt;</code></td><td>① CDN 引入 ② <code>npm install d3</code></td></tr>
+  </table>
+
+  <h3>17.4 公式与图表生成</h3>
+  <table>
+    <tr><th>工具</th><th>用途</th><th>调用方式</th><th>安装源（优先级）</th></tr>
+    <tr><td><strong>LaTeX（语法）</strong></td><td>公式排版标准语言（写源码，用 MathJax/KaTeX/XeLaTeX 渲染）</td><td>文本编写，无需安装</td><td>语法无需安装；渲染引擎见 MathJax/KaTeX/XeLaTeX</td></tr>
+    <tr><td><strong>XeLaTeX</strong></td><td>LaTeX 引擎（支持 Unicode/中文，编译完整 PDF 论文/报告）</td><td><code>xelatex input.tex</code></td><td>① TeX Live 官方下载 tug.org/texlive ② MiKTeX miktex.org</td></tr>
+    <tr><td><strong>Mermaid</strong></td><td>文本图表：流程图/时序图/类图/状态图/甘特图/ER图/思维导图/饼图</td><td>CDN 渲染 / <code>mmdc -i input.mmd -o out.svg</code></td><td>① CDN 引入 mermaid.min.js ② <code>npm install -g @mermaid-js/mermaid-cli</code></td></tr>
+    <tr><td><strong>PlantUML</strong></td><td>UML 图：类图/时序图/用例图/活动图/组件图（文本描述）</td><td><code>java -jar plantuml.jar input.puml</code></td><td>① 官方下载 plantuml.com（需 Java） ② apt <code>install plantuml</code></td></tr>
+    <tr><td><strong>Graphviz（dot）</strong></td><td>结构图/有向图/无向图自动布局（DOT 语言）</td><td><code>dot -Tsvg input.dot -o output.svg</code></td><td>① winget <code>install graphviz</code> ② apt <code>install graphviz</code></td></tr>
+    <tr><td><strong>matplotlib</strong></td><td>Python 数据图表：柱状/折线/饼图/散点/直方图/3D/子图</td><td><code>python -c "import matplotlib.pyplot as plt"</code></td><td>① <code>pip install matplotlib</code></td></tr>
+    <tr><td><strong>Plotly</strong></td><td>Python 交互式图表（HTML 输出，可缩放/悬停/导出）</td><td><code>python -c "import plotly.express as px"</code></td><td>① <code>pip install plotly</code></td></tr>
+    <tr><td><strong>seaborn</strong></td><td>统计图表（基于 matplotlib，更美观，适合数据分析）</td><td><code>python -c "import seaborn as sns"</code></td><td>① <code>pip install seaborn</code></td></tr>
+    <tr><td><strong>dvisvgm</strong></td><td>LaTeX 公式/DVI 转 SVG（矢量公式图片，适合嵌入 HTML）</td><td><code>dvisvgm input.dvi</code></td><td>① 随 TeX Live 安装 ② 官方下载 dvisvgm.de</td></tr>
+  </table>
+
+  <h3>17.5 图片处理与生成</h3>
+  <table>
+    <tr><th>工具</th><th>用途</th><th>调用方式</th><th>安装源（优先级）</th></tr>
+    <tr><td><strong>image_gen（内置）</strong></td><td>文生图：从文字描述生成图片（支持尺寸/风格指定）</td><td>内置工具</td><td>内置，无需安装</td></tr>
+    <tr><td><strong>image_edit（内置）</strong></td><td>图生图/编辑：基于参考图编辑、风格迁移、元素替换</td><td>内置工具</td><td>内置，无需安装</td></tr>
+    <tr><td><strong>image_search（内置）</strong></td><td>搜索真实实体图片（人物/地点/产品/建筑等）</td><td>内置工具</td><td>内置，无需安装</td></tr>
+    <tr><td><strong>Pillow（PIL）</strong></td><td>Python 图片处理：裁剪/缩放/滤镜/加文字/合成/格式转换</td><td><code>python -c "from PIL import Image"</code></td><td>① <code>pip install pillow</code></td></tr>
+    <tr><td><strong>ImageMagick</strong></td><td>命令行图片万能处理：格式转换/裁剪/缩放/拼接/加文字/合成/滤镜</td><td><code>convert input.png -resize 50% out.jpg</code> / <code>magick</code></td><td>① winget <code>install ImageMagick.ImageMagick</code> ② apt <code>install imagemagick</code></td></tr>
+    <tr><td><strong>OpenCV</strong></td><td>计算机视觉：图像识别/边缘检测/特征匹配/视频处理/人脸识别</td><td><code>python -c "import cv2"</code></td><td>① <code>pip install opencv-python</code></td></tr>
+    <tr><td><strong>scikit-image</strong></td><td>科学图像处理：滤波/分割/特征提取/形态学操作/几何变换</td><td><code>python -c "import skimage"</code></td><td>① <code>pip install scikit-image</code></td></tr>
+    <tr><td><strong>pyzbar</strong></td><td>二维码/条形码识别与解码（支持 QR/Code128/EAN 等）</td><td><code>python -c "from pyzbar.pyzbar import decode"</code></td><td>① <code>pip install pyzbar</code>（Windows 需 zbar DLL）</td></tr>
+    <tr><td><strong>qrcode</strong></td><td>二维码生成（Python，支持自定义颜色/Logo/样式）</td><td><code>python -c "import qrcode"</code></td><td>① <code>pip install qrcode[pil]</code></td></tr>
+    <tr><td><strong>byted-mediakit-image（Skill）</strong></td><td>图片增强/画质评估/OCR/背景移除/文字识别</td><td>Skill 调用</td><td>内置 Skill，无需安装</td></tr>
+    <tr><td><strong>doubao-creative-design（Skill）</strong></td><td>商业/社交媒体创意图片设计、海报/Banner/封面、系列延展</td><td>Skill 调用</td><td>内置 Skill，无需安装</td></tr>
+  </table>
+
+  <h3>17.6 多媒体处理（音视频）</h3>
+  <table>
+    <tr><th>工具</th><th>用途</th><th>调用方式</th><th>安装源（优先级）</th></tr>
+    <tr><td><strong>FFmpeg</strong></td><td>音视频万能处理：格式转换/剪辑/压缩/提取音轨/截图/转GIF/滤镜/直播</td><td><code>ffmpeg -i input.mp4 -vn output.mp3</code></td><td>① winget <code>install Gyan.FFmpeg</code> ② 官方下载 ffmpeg.org ③ apt <code>install ffmpeg</code></td></tr>
+    <tr><td><strong>moviepy</strong></td><td>Python 视频编辑：剪辑/拼接/加字幕/转场/提取帧/音频处理</td><td><code>python -c "from moviepy import VideoFileClip"</code></td><td>① <code>pip install moviepy</code>（依赖 FFmpeg）</td></tr>
+    <tr><td><strong>yt-dlp</strong></td><td>视频下载（YouTube/B站/抖音等 1000+ 网站，支持选集/字幕/封面）</td><td><code>yt-dlp "https://youtube.com/watch?v=..."</code></td><td>① <code>pip install yt-dlp</code> ② 官方二进制下载 github.com/yt-dlp</td></tr>
+    <tr><td><strong>imageio-ffmpeg</strong></td><td>Python 内嵌 FFmpeg（无需单独安装，moviepy 依赖）</td><td><code>python -c "import imageio_ffmpeg"</code></td><td>① <code>pip install imageio-ffmpeg</code></td></tr>
+    <tr><td><strong>byted-mediakit-video（Skill）</strong></td><td>视频内容分析/字幕提取/语音转字幕/视频增强/场景切分</td><td>Skill 调用</td><td>内置 Skill，无需安装</td></tr>
+    <tr><td><strong>byted-mediakit-audio（Skill）</strong></td><td>音频媒资探测/人声与背景声分离/音频格式处理</td><td>Skill 调用</td><td>内置 Skill，无需安装</td></tr>
+    <tr><td><strong>byted-mediakit-editing（Skill）</strong></td><td>音视频编辑：裁剪/拼接/转场/字幕压制/音视频提取合流</td><td>Skill 调用</td><td>内置 Skill，无需安装</td></tr>
+  </table>
+
+  <h3>17.7 OCR 与语音识别</h3>
+  <table>
+    <tr><th>工具</th><th>用途</th><th>调用方式</th><th>安装源（优先级）</th></tr>
+    <tr><td><strong>Read 多模态（内置）</strong></td><td>图片文字/公式/表格/流程图直接理解（首选，零依赖）</td><td>内置工具</td><td>内置，无需安装</td></tr>
+    <tr><td><strong>Pix2Text（p2t）</strong></td><td>公式/符号/版面 OCR（数学公式识别准确率高，中英文）</td><td><code>p2t predict -i image.png</code></td><td>① <code>pip install pix2text</code>（首次自动下载模型 ~1GB）</td></tr>
+    <tr><td><strong>PaddleOCR</strong></td><td>深度学习 OCR（中文/英文/多语言，支持版面分析/表格识别）</td><td><code>python -c "from paddleocr import PaddleOCR"</code></td><td>① <code>pip install paddleocr paddlepaddle</code></td></tr>
+    <tr><td><strong>Tesseract</strong></td><td>经典 OCR 引擎（100+ 语言，需语言包，中文需 chi_sim）</td><td><code>tesseract image.png stdout -l chi_sim+eng</code></td><td>① winget <code>install UB-Mannheim.TesseractOCR</code> ② apt <code>install tesseract-ocr tesseract-ocr-chi-sim</code></td></tr>
+    <tr><td><strong>EasyOCR</strong></td><td>深度学习 OCR（80+ 语言，含中文，安装即用，比 Tesseract 准）</td><td><code>python -c "import easyocr"</code></td><td>① <code>pip install easyocr</code></td></tr>
+    <tr><td><strong>pytesseract</strong></td><td>Tesseract 的 Python 封装</td><td><code>python -c "import pytesseract"</code></td><td>① <code>pip install pytesseract</code>（需另装 Tesseract 引擎）</td></tr>
+    <tr><td><strong>Whisper</strong>（OpenAI）</td><td>语音转文字（99 种语言，含中文，准确率高，支持翻译）</td><td><code>whisper audio.mp3 --language zh</code></td><td>① <code>pip install openai-whisper</code>（需 FFmpeg）</td></tr>
+    <tr><td><strong>faster-whisper</strong></td><td>Whisper 的 CTranslate2 加速版（比原版快 4 倍，显存占用少）</td><td><code>python -c "from faster_whisper import WhisperModel"</code></td><td>① <code>pip install faster-whisper</code></td></tr>
+    <tr><td><strong>edge-tts</strong></td><td>微软 Edge 在线 TTS（文字转语音，多语言多音色，免费）</td><td><code>edge-tts --text "你好" --write-media out.mp3</code></td><td>① <code>pip install edge-tts</code></td></tr>
+    <tr><td><strong>Coqui TTS</strong></td><td>开源神经 TTS（多语言多音色，支持声音克隆，本地运行）</td><td><code>tts --text "你好" --out_path out.wav</code></td><td>① <code>pip install TTS</code></td></tr>
+    <tr><td><strong>text_to_audio（内置）</strong></td><td>文生音频：人声对话/环境声/音效/背景音乐/复合音频</td><td>内置工具</td><td>内置，无需安装</td></tr>
+  </table>
+
+  <h3>17.8 网络资源获取</h3>
+  <table>
+    <tr><th>工具</th><th>用途</th><th>调用方式</th><th>安装源（优先级）</th></tr>
+    <tr><td><strong>web.fetch（内置）</strong></td><td>抓取网页全文/关键词片段，支持分页</td><td>内置工具</td><td>内置，无需安装</td></tr>
+    <tr><td><strong>general_search（内置）</strong></td><td>通用网络搜索</td><td>内置工具</td><td>内置，无需安装</td></tr>
+    <tr><td><strong>curl</strong></td><td>命令行下载/探测：带 UA 头/代理/Cookie/重定向/超时</td><td><code>curl -L -A "Mozilla/5.0" -o file url</code></td><td>① Windows 10+ 自带 ② apt <code>install curl</code></td></tr>
+    <tr><td><strong>wget</strong></td><td>命令行下载（支持递归/断点续传/镜像）</td><td><code>wget -c url</code></td><td>① apt <code>install wget</code> ② 官方下载 gnu.org/software/wget</td></tr>
+    <tr><td><strong>requests</strong></td><td>Python HTTP 客户端（同步，简单易用）</td><td><code>python -c "import requests"</code></td><td>① <code>pip install requests</code></td></tr>
+    <tr><td><strong>httpx</strong></td><td>Python HTTP 客户端（同步+异步，支持 HTTP/2，比 requests 现代）</td><td><code>python -c "import httpx"</code></td><td>① <code>pip install httpx</code></td></tr>
+    <tr><td><strong>aiohttp</strong></td><td>Python 异步 HTTP 客户端/服务端（高并发爬取）</td><td><code>python -c "import aiohttp"</code></td><td>① <code>pip install aiohttp</code></td></tr>
+    <tr><td><strong>Scrapy</strong></td><td>专业爬虫框架（大规模/分布式/自动限速/管道/中间件）</td><td><code>scrapy crawl spider</code></td><td>① <code>pip install scrapy</code></td></tr>
+    <tr><td><strong>Playwright</strong></td><td>浏览器自动化（JS 渲染页面/登录/交互/截图/PDF）</td><td><code>python -c "from playwright.sync_api import sync_playwright"</code></td><td>① <code>pip install playwright</code> ② <code>playwright install</code></td></tr>
+    <tr><td><strong>Selenium</strong></td><td>浏览器自动化（老牌，多语言，多浏览器驱动）</td><td><code>python -c "from selenium import webdriver"</code></td><td>① <code>pip install selenium</code>（需浏览器驱动）</td></tr>
+    <tr><td><strong>feedparser</strong></td><td>RSS/Atom 订阅源解析</td><td><code>python -c "import feedparser"</code></td><td>① <code>pip install feedparser</code></td></tr>
+    <tr><td><strong>fake-useragent</strong></td><td>随机 User-Agent 生成（反爬，伪装浏览器）</td><td><code>python -c "from fake_useragent import UserAgent"</code></td><td>① <code>pip install fake-useragent</code></td></tr>
+  </table>
+
+  <h3>17.9 质量校验与格式检查</h3>
+  <table>
+    <tr><th>工具</th><th>用途</th><th>调用方式</th><th>安装源（优先级）</th></tr>
+    <tr><td><strong>xmllint</strong></td><td>XML 格式校验/格式化/XPath 查询（随 libxml2）</td><td><code>xmllint --format file.xml</code></td><td>① 随 libxml2 安装 ② apt <code>install libxml2-utils</code></td></tr>
+    <tr><td><strong>jq（JSON校验）</strong></td><td>JSON 格式校验（<code>jq empty file.json</code> 无输出即合法）</td><td><code>jq empty file.json</code></td><td>见 17.2 jq</td></tr>
+    <tr><td><strong>yamllint</strong></td><td>YAML 格式校验/风格检查（缩进/重复键/行宽）</td><td><code>yamllint file.yaml</code></td><td>① <code>pip install yamllint</code></td></tr>
+    <tr><td><strong>html-validate</strong></td><td>HTML 格式校验/可访问性检查/最佳实践</td><td><code>html-validate file.html</code></td><td>① <code>npm install -g html-validate</code></td></tr>
+    <tr><td><strong>HTML Tidy</strong></td><td>HTML 校验/格式化/修复（修复不规范标签）</td><td><code>tidy -validate -indent file.html</code></td><td>① apt <code>install tidy</code> ② 官方下载 html-tidy.org</td></tr>
+    <tr><td><strong>markdownlint</strong></td><td>Markdown 风格检查/格式校验（标题层级/列表/链接/代码块）</td><td><code>markdownlint file.md</code></td><td>① <code>npm install -g markdownlint-cli</code></td></tr>
+    <tr><td><strong>Vale</strong></td><td>文档风格检查（拼写/语法/品牌术语一致性/可读性）</td><td><code>vale file.md</code></td><td>① 官方下载 vale.sh ② brew <code>install vale</code></td></tr>
+    <tr><td><strong>codespell</strong></td><td>代码/文档拼写错误检查（常见拼写错误词典）</td><td><code>codespell file.md</code></td><td>① <code>pip install codespell</code></td></tr>
+    <tr><td><strong>proselint</strong></td><td>英文写作风格检查（简洁性/一致性/常见错误）</td><td><code>proselint file.md</code></td><td>① <code>pip install proselint</code></td></tr>
+    <tr><td><strong>pandoc --check</strong></td><td>文档格式预检（转换前检查源文件是否合法）</td><td><code>pandoc input.md -o /dev/null</code></td><td>见 17.1 Pandoc</td></tr>
+  </table>
+
+  <h3>17.10 开发与构建辅助</h3>
+  <table>
+    <tr><th>工具</th><th>用途</th><th>调用方式</th><th>安装源（优先级）</th></tr>
+    <tr><td><strong>git</strong></td><td>版本控制：提交/分支/差异/回溯/合并/变基</td><td><code>git add/commit/diff/log</code></td><td>① winget <code>install Git.Git</code> ② 官方下载 git-scm.com</td></tr>
+    <tr><td><strong>make</strong></td><td>构建自动化（C/C++ 项目编译，Makefile）</td><td><code>make</code> / <code>make -j4</code></td><td>① Linux/macOS 自带 ② Windows 随 MinGW/w64devkit</td></tr>
+    <tr><td><strong>CMake</strong></td><td>跨平台构建系统生成（生成 Makefile/VS 工程/Ninja）</td><td><code>cmake ..</code> / <code>cmake --build .</code></td><td>① winget <code>install Kitware.CMake</code> ② apt <code>install cmake</code></td></tr>
+    <tr><td><strong>Ninja</strong></td><td>极速构建系统（比 make 快，CMake/Meson 常用后端）</td><td><code>ninja</code> / <code>ninja -j4</code></td><td>① winget <code>install Ninja-build.Ninja</code> ② apt <code>install ninja-build</code></td></tr>
+    <tr><td><strong>gcc / g++</strong></td><td>C/C++ 编译器（GNU 工具链，Linux 默认）</td><td><code>gcc -o output source.c</code></td><td>① apt <code>install build-essential</code> ② Windows w64devkit/MinGW</td></tr>
+    <tr><td><strong>clang / clang++</strong></td><td>C/C++ 编译器（LLVM 工具链，报错更友好，静态分析强）</td><td><code>clang -o output source.c</code></td><td>① apt <code>install clang</code> ② 官方下载 llvm.org</td></tr>
+    <tr><td><strong>ruff</strong></td><td>Python Lint + 格式化（Rust 实现，比 flake8+black 快 10~100 倍）</td><td><code>ruff check file.py</code> / <code>ruff format file.py</code></td><td>① <code>pip install ruff</code> ② winget <code>install astral-sh.ruff</code></td></tr>
+    <tr><td><strong>black</strong></td><td>Python 代码格式化（无配置，统一风格）</td><td><code>black file.py</code></td><td>① <code>pip install black</code></td></tr>
+    <tr><td><strong>isort</strong></td><td>Python import 排序（按标准库/第三方/本地分组）</td><td><code>isort file.py</code></td><td>① <code>pip install isort</code></td></tr>
+    <tr><td><strong>prettier</strong></td><td>多语言格式化：JS/TS/CSS/HTML/Markdown/JSON/YAML</td><td><code>npx prettier --write file.html</code></td><td>① <code>npm install -g prettier</code></td></tr>
+    <tr><td><strong>eslint</strong></td><td>JavaScript/TypeScript 代码检查（规则可配置）</td><td><code>npx eslint file.js</code></td><td>① <code>npm install -g eslint</code></td></tr>
+    <tr><td><strong>shellcheck</strong></td><td>Shell 脚本静态检查（发现常见错误/安全问题/最佳实践）</td><td><code>shellcheck script.sh</code></td><td>① apt <code>install shellcheck</code> ② 官方下载 shellcheck.net ③ winget <code>install koalaman.shellcheck</code></td></tr>
+    <tr><td><strong>python -m py_compile</strong></td><td>Python 语法检查（不执行，仅编译检查）</td><td><code>python -m py_compile script.py</code></td><td>Python 自带，无需安装</td></tr>
+  </table>
+
+  <h3>17.11 交付与分享</h3>
+  <table>
+    <tr><th>工具</th><th>用途</th><th>调用方式</th><th>安装源（优先级）</th></tr>
+    <tr><td><strong>present_files（内置）</strong></td><td>交付最终文件给用户（图片/文档/表格/代码/链接）</td><td>内置工具</td><td>内置，无需安装</td></tr>
+    <tr><td><strong>FileBatchUpload（内置）</strong></td><td>批量上传文件到公网获取 URL（供其他工具引用）</td><td>内置工具</td><td>内置，无需安装</td></tr>
+    <tr><td><strong>lark-doc（Skill）</strong></td><td>飞书文档创建/编辑（在线协作文档交付）</td><td>Skill 调用</td><td>内置 Skill，无需安装</td></tr>
+    <tr><td><strong>lark-sheets（Skill）</strong></td><td>飞书表格创建/编辑（在线协作表格交付）</td><td>Skill 调用</td><td>内置 Skill，无需安装</td></tr>
+    <tr><td><strong>lark-slides-pro（Skill）</strong></td><td>飞书幻灯片创建/编辑（在线协作演示交付）</td><td>Skill 调用</td><td>内置 Skill，无需安装</td></tr>
+    <tr><td><strong>GitHub CLI（gh）</strong></td><td>GitHub 操作：Gist 分享/PR/Issue/仓库管理</td><td><code>gh gist create file.py</code></td><td>① winget <code>install GitHub.cli</code> ② apt <code>install gh</code></td></tr>
+    <tr><td><strong>0x0.st / transfer.sh</strong></td><td>临时文件分享（命令行上传，自动过期，无需注册）</td><td><code>curl -F'file=@file' https://0x0.st</code></td><td>无需安装，curl 即可用</td></tr>
+  </table>
+
+  <h3>17.12 工具链使用频率分级</h3>
+  <div class="callout tip">
+    <p><span class="label">核心洞察：</span>80% 的资料处理和文件生成任务，靠 <strong>Read（多模态）+ Python 解析三件套（PyMuPDF/python-docx/openpyxl）+ pandas + LaTeX/Mermaid + HTML 输出</strong> 就能搞定。剩下 20% 的特殊场景才需要专项工具。工具不在多，在于组合得当。</p>
+  </div>
+  <table>
+    <tr><th>频率级别</th><th>工具清单</th><th>说明</th></tr>
+    <tr><td><strong>每天用（核心）</strong></td><td>Read、Write、Edit、Bash、present_files、web.fetch、general_search、image_gen、MathJax、Mermaid、pandas、PyMuPDF</td><td>几乎每个任务都涉及</td></tr>
+    <tr><td><strong>经常用（主力）</strong></td><td>python-docx、openpyxl、Pillow、requests、BeautifulSoup、Playwright、weasyprint、Jinja2、Pix2Text、FFmpeg、ImageMagick、chardet</td><td>特定类型任务高频使用</td></tr>
+    <tr><td><strong>偶尔用（专项）</strong></td><td>python-pptx、ReportLab、Pandoc、LibreOffice、Scrapy、OpenCV、Whisper、MarkItDown、Unstructured、DuckDB、Polars、matplotlib、Plotly</td><td>特定需求触发</td></tr>
+    <tr><td><strong>很少用（兜底）</strong></td><td>xlrd、Antiword、OCRmyPDF、Camelot、Tesseract、wkhtmltopdf、Typst、Sphinx、scikit-image、moviepy、PlantUML、Graphviz</td><td>极端场景或 legacy 格式才用</td></tr>
+  </table>
+
+  <h3>17.13 从原始资料到最终文档的完整工具链路</h3>
+  <div class="diagram">
+原始资料（PDF/Word/图片/网页/音频/数据）
+    │
+    ▼
+【1. 获取】 web.fetch / curl / requests / Playwright / yt-dlp
+    │
+    ▼
+【2. 解析】 Read（多模态）/ PyMuPDF / python-docx / openpyxl / MarkItDown
+            / Unstructured / Pix2Text / PaddleOCR / Whisper / BeautifulSoup
+    │
+    ▼
+【3. 清洗】 chardet（编码）/ pandas / Polars / DuckDB / jq / xsv / csvkit
+            / Trafilatura（正文提取）/ xmltodict
+    │
+    ▼
+【4. 分析】 NumPy / SciPy / calculator / LLM 推理
+    │
+    ▼
+【5. 生成内容】
+    ├── 公式 → LaTeX（MathJax/KaTeX 渲染）
+    ├── 图表 → Mermaid / ECharts / matplotlib / Plotly
+    ├── 图片 → image_gen / image_edit / Pillow / ImageMagick
+    ├── 表格 → Markdown / HTML table / pandas
+    ├── 代码 → 直接生成 + highlight.js 渲染
+    └── 文档主体 → Jinja2 模板 + Markdown/HTML
+    │
+    ▼
+【6. 排版输出】
+    ├── HTML → Write 直接写（MathJax + Mermaid + CSS + highlight.js）
+    ├── Word → lark-doc / python-docx / docxtpl / pandoc
+    ├── PDF → Playwright（HTML→PDF）/ weasyprint / ReportLab / LibreOffice
+    ├── Excel → lark-sheets / openpyxl / pandas
+    ├── PPT → lark-slides-pro / python-pptx
+    └── 图片 → image_gen / Pillow / Mermaid CLI（mmdc）
+    │
+    ▼
+【7. 校验】 xmllint / jq / yamllint / html-validate / markdownlint / pandoc --check
+    │
+    ▼
+【8. 交付】 present_files / FileBatchUpload / 飞书文档 / GitHub Gist
+  </div>
+
+  <h3>17.14 内置 Skill 背后的第三方依赖推断</h3>
+  <p>"内置 Skill"指 Skill 本身无需用户手动安装，但其执行时底层大概率依赖第三方库或工具。以下基于 Skill 功能描述和行业通用实践推断其背后的依赖（非内部实现确认）。</p>
+  <table>
+    <tr><th>内置 Skill</th><th>功能</th><th>推断的底层第三方依赖</th><th>安装源（优先级）</th></tr>
+    <tr><td><strong>lark-doc</strong></td><td>飞书文档创建/编辑/读取</td><td>飞书开放平台 API（HTTP）、python-docx（docx 解析）、requests/httpx（API 调用）</td><td>① <code>pip install python-docx requests</code> ② 飞书应用凭证需在开放平台申请</td></tr>
+    <tr><td><strong>lark-sheets</strong></td><td>飞书表格创建/编辑/读写</td><td>飞书开放平台 API、openpyxl（xlsx 解析）、pandas（数据处理）</td><td>① <code>pip install openpyxl pandas</code> ② 飞书应用凭证</td></tr>
+    <tr><td><strong>lark-slides-pro</strong></td><td>飞书幻灯片创建/编辑</td><td>飞书开放平台 API、python-pptx（pptx 解析）、Pillow（图片处理）</td><td>① <code>pip install python-pptx pillow</code> ② 飞书应用凭证</td></tr>
+    <tr><td><strong>doubao-pdf</strong></td><td>PDF 读取/生成/编辑/转换</td><td>PyMuPDF（fitz，核心解析）、pdfplumber（表格提取）、pypdf（基础操作）、ReportLab（PDF 生成）、pdf2image（转图片，需 Poppler）</td><td>① <code>pip install pymupdf pdfplumber pypdf reportlab pdf2image</code> ② Poppler：winget 或 apt <code>install poppler-utils</code></td></tr>
+    <tr><td><strong>byted-mediakit-image</strong></td><td>OCR/增强/去背景/画质评估</td><td>Pillow（基础处理）、OpenCV（cv2，视觉算法）、PaddleOCR 或 EasyOCR（OCR）、rembg（背景移除，依赖 ONNX Runtime）、scikit-image（质量评估）</td><td>① <code>pip install pillow opencv-python paddleocr rembg scikit-image</code> ② rembg 首次运行自动下载 U2Net 模型</td></tr>
+    <tr><td><strong>byted-mediakit-video</strong></td><td>视频分析/字幕/增强/场景切分</td><td><strong>FFmpeg</strong>（核心，编解码/滤镜）、moviepy（Python 封装）、OpenCV（帧处理）、Whisper（语音转字幕）</td><td>① winget <code>install Gyan.FFmpeg</code> ② <code>pip install moviepy opencv-python openai-whisper</code></td></tr>
+    <tr><td><strong>byted-mediakit-audio</strong></td><td>人声分离/媒资探测/格式处理</td><td><strong>FFmpeg</strong>（音频编解码/格式转换）、librosa（音频分析）、Demucs 或 Spleeter（人声伴奏分离，基于 PyTorch）</td><td>① winget <code>install Gyan.FFmpeg</code> ② <code>pip install librosa demucs</code></td></tr>
+    <tr><td><strong>byted-mediakit-editing</strong></td><td>裁剪/拼接/转场/字幕压制</td><td><strong>FFmpeg</strong>（核心剪辑引擎）、moviepy（高级编辑）、Pillow（字幕图片合成）</td><td>① winget <code>install Gyan.FFmpeg</code> ② <code>pip install moviepy pillow</code></td></tr>
+    <tr><td><strong>doubao-creative-design</strong></td><td>海报/Banner/封面生成</td><td>图像生成模型 API（后端调用）、Pillow（图片后处理/合成/加文字）、numpy（像素处理）</td><td>① <code>pip install pillow numpy</code> ② 图像生成模型为后端 API，无需本地安装</td></tr>
+    <tr><td><strong>doubao-visualization</strong></td><td>图表/信息图/流程图</td><td>matplotlib（静态图表）、Plotly（交互图表）、graphviz（结构图，需 Graphviz 引擎）、Pillow（图片合成）、ECharts/Chart.js（HTML 内嵌，CDN）</td><td>① <code>pip install matplotlib plotly graphviz pillow</code> ② Graphviz 引擎：winget <code>install graphviz</code> ③ ECharts/Chart.js：CDN 引入</td></tr>
+    <tr><td><strong>browser-task</strong></td><td>网页操作/登录/抓取</td><td><strong>Playwright</strong> 或 Puppeteer（浏览器驱动）、Chromium 浏览器（Playwright 自动下载）</td><td>① <code>pip install playwright</code> ② <code>playwright install chromium</code></td></tr>
+    <tr><td><strong>computer-use</strong></td><td>桌面应用/系统设置/GUI 操作</td><td>系统级 GUI 自动化框架（pyautogui 截图+键鼠模拟、pywinauto Windows UI 自动化）、Pillow（截图分析）</td><td>① <code>pip install pyautogui pywinauto pillow</code> ② 系统级权限需用户授权</td></tr>
+    <tr><td><strong>doubao-app-builder</strong></td><td>生成可交互网页应用</td><td>Node.js 运行时（预览服务）、HTML/CSS/JS 生成（无需额外库）、可能用 Vite 或静态服务器预览</td><td>① winget <code>install OpenJS.NodeJS</code> ② 预览用 Python <code>http.server</code> 或 Node <code>serve</code></td></tr>
+    <tr><td><strong>doubao-data-analysis</strong></td><td>数据清洗/分析/可视化</td><td>pandas（核心）、NumPy（数值计算）、SciPy（统计）、matplotlib/Plotly（图表）、openpyxl（Excel 读写）、DuckDB（SQL 分析）</td><td>① <code>pip install pandas numpy scipy matplotlib plotly openpyxl duckdb</code></td></tr>
+  </table>
+
+  <h4>关键发现</h4>
+  <div class="card-grid">
+    <div class="card">
+      <div class="icon">🎬</div>
+      <h4>FFmpeg 是多媒体通用底层</h4>
+      <p>byted-mediakit-video/audio/editing 三个多媒体 Skill 都依赖 FFmpeg，是音视频处理的行业标准工具。</p>
+    </div>
+    <div class="card">
+      <div class="icon">🐍</div>
+      <h4>Python 生态是文档/数据主力</h4>
+      <p>文档处理、数据分析、可视化几乎全部基于 Python 库：PyMuPDF、python-docx、pandas、matplotlib。</p>
+    </div>
+    <div class="card">
+      <div class="icon">🖼️</div>
+      <h4>图像 Skill 依赖最重</h4>
+      <p>byted-mediakit-image 依赖最复杂：OCR 需 PaddleOCR（含深度学习模型）、去背景需 rembg（含 ONNX 模型），合计可能数 GB。</p>
+    </div>
+    <div class="card">
+      <div class="icon">🌐</div>
+      <h4>浏览器 Skill 依赖完整浏览器</h4>
+      <p>browser-task 和 computer-use 需要 Playwright + Chromium，安装体积约 300~500MB，无法用轻量库替代。</p>
+    </div>
+    <div class="card">
+      <div class="icon">🔑</div>
+      <h4>飞书 Skill 依赖外部 API</h4>
+      <p>lark-doc/sheets/slides 的核心是调用飞书开放平台 HTTP API，本地只需 requests 和文件解析库，最重的依赖是访问凭证。</p>
+    </div>
+    <div class="card">
+      <div class="icon">⚠️</div>
+      <h4>推断而非确认</h4>
+      <p>以上基于功能描述和行业通用实践推断，不代表精确内部实现。实际 Skill 可能用更轻量/专用的库，或将部分计算放在后端服务。</p>
+    </div>
+  </div>
+
+  <h4>干净环境复现核心依赖清单</h4>
+  <pre><code># 系统级工具（必须）
+FFmpeg          → winget install Gyan.FFmpeg
+Graphviz        → winget install graphviz
+Poppler         → winget install oschwartz10612.pdf2image.poppler
+Node.js         → winget install OpenJS.NodeJS
+Git             → winget install Git.Git
+
+# Python 库（核心）
+pip install pymupdf pdfplumber pypdf reportlab python-docx openpyxl python-pptx
+pip install pandas numpy scipy matplotlib plotly duckdb
+pip install pillow opencv-python scikit-image
+pip install requests httpx beautifulsoup4 lxml
+pip install jinja2
+
+# Python 库（专项，按需）
+pip install paddleocr easyocr rembg          # OCR/去背景
+pip install moviepy openai-whisper            # 视频/语音
+pip install playwright && playwright install chromium  # 浏览器
+pip install pyautogui pywinauto               # GUI 自动化</code></pre>
+</section>
+
+<!-- ==================== Footer ==================== -->
+<footer>
+  <div class="divider"></div>
+  <p>AI Agent 系统框架设计白皮书 · 基于行业通用架构范式整理</p>
+  <p style="margin-top:6px; opacity:0.6;">从核心概念到八层架构，从规划推理到自我进化——一份面向工程实践的完整指南</p>
+</footer>
+
+</div>
+</body>
+</html>
