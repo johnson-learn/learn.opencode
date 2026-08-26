@@ -13,7 +13,7 @@
 - **注入任务为强制清单，不可跳过、不可精简**：① 经验固化（五步流程）；② 工具登记（本会话用到的任何新工具/脚本/库必须登记 tools-manifest.md）；③ 总表同步（skill 依赖或本机配置变更）；④ 校验自测（skill_validate.py + 行为自测）；⑤ 合并/拆分/迁移只出建议；⑥ 完成后回复固化项清单或"无固化项"
 - **机制缺陷教训（2026-08-26 实测）**：协议写在不加载进上下文的文件（instructions.md 的 opencode.jsonc instructions 字段引用无效）= 模型看不见 = 框架从不执行。任何规则若要模型执行，必须先确认它在每次会话的系统提示中可见（唯一可靠位置：全局/项目 AGENTS.md；其次 skill description 进入 skill 列表）
 - 每次任务回答过程中如遇踩坑/新发现，可即时记录（额外触发点）
-- 轨迹记录：插件同时把会话轨迹追加到 `~\.config\opencode\skills\evolution_skill\evolution_trace.jsonl`（供合并/拆分分析用）
+- 轨迹记录：插件同时把会话轨迹追加到 `~\.config\opencode\skills\default\evolution_skill\evolution_trace.jsonl`（供合并/拆分分析用）
 
 ### 五大自动进化能力（判定规则）
 
@@ -25,7 +25,7 @@
 
 **执行分级铁律**：更新/生成=直接执行；合并/拆分/迁移=只出建议，用户说"执行"才动手；任何进化动作都不得附带 git 同步（同步边界铁律）。
 
-**轨迹分析时机**：执行 update_skill 时附带分析 `~\.config\opencode\skills\evolution_skill\evolution_trace.jsonl` 与各 skill 调用记录——若发现共现频率高/职责混乱的模式，在同步报告中附「进化建议」清单。
+**轨迹分析时机**：执行 update_skill 时附带分析 `~\.config\opencode\skills\default\evolution_skill\evolution_trace.jsonl` 与各 skill 调用记录——若发现共现频率高/职责混乱的模式，在同步报告中附「进化建议」清单。
 
 ### 可移植性要求（固化内容强制标准）
 - **经验表述必须通用化、可移植，不得局限本机**：
@@ -38,7 +38,7 @@
 1. **归纳**：从本次会话提取可复用的新经验，用一两句话精确表述（按可移植性要求通用化）
 2. **归属**：判断更新到哪个 skill 的哪个章节（工具依赖清单/处理流程/铁律/环境注意/路由表/访问技巧）或 instructions.md
 3. **更新**：用 edit 工具增补/修订对应章节，保持既有结构，不重写全文；新经验标注来源与验证状态
-4. **记录**：追加到 `~\.config\opencode\skills\evolution_skill\evolution_log.txt`（日期 + 来源 + 更新点，只增不改）；规则/机制类经验同时提炼写入 `~\.config\opencode\skills\evolution_skill\evolution.md`（进化规则，更新前须弹窗确认）
+4. **记录**：追加到 `~\.config\opencode\skills\default\evolution_skill\evolution_log.txt`（日期 + 来源 + 更新点，只增不改）；规则/机制类经验同时提炼写入 `~\.config\opencode\skills\default\evolution_skill\evolution.md`（进化规则，更新前须弹窗确认）
 5. **校验与自测（每条进化强制，不得跳过）**：
    - **内容正确性核查**：命令/路径/参数是否准确可执行；与既有条目有无矛盾重复；来源标注与验证状态标注是否齐全；通用性达标（无硬编码本机路径）
    - **结构化自测**：跑 `python <项目目录>\temp\skill_validate.py <opencode配置目录>\skills`——frontmatter 合法、name 匹配目录、description ≤1024、路由表引用路径存在

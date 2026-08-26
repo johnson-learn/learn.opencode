@@ -9,7 +9,8 @@
 ## 现行进化规则（按固化时间倒序，均来自 evolution_log.txt 沉淀）
 
 ### 2026-08-26
-1. **本文件定位**：进化规则文件（非历史流水）；历史流水独立于 evolution_log.txt
+1. **进化门禁机制（evolution_gate.py）**：机制步骤（流水兜底追加/自动测试/一致性校验/改动检测）由脚本确定性执行——插件 session.created 调 --snapshot、session.idle 调 --check；模型只负责智能部分（经验归纳/归属判定/edit 固化）。解决"提示语体系无法 100% 保证必须步骤执行"的物理上限
+2. **本文件定位**：进化规则文件（非历史流水）；历史流水独立于 evolution_log.txt
 2. **进化规则更新流程**：核对历史（evolution_log.txt）→ 弹窗确认 → 更新本文件 → 校验自测
 3. **evolution_log.txt 只增不改**：追加尾部，禁止替换既有条目
 4. **弹窗确认**：update_skill 第五步前强制（question 工具弹窗，禁止文字提问代替；未确认前禁 commit/push）
