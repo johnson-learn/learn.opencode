@@ -96,15 +96,10 @@ def convert(text, pairs):
 # 状态文件保护：这些本机特定文件不参与任何转换（防止 path_map 自我指涉；path_convert.py 自身含占位符键，转换会自毁）
 STATE_FILES = {"path_map.txt", "sync_target.txt", "path_convert.py"}
 
-# 测试固件目录：tests 内测试源码含占位符 token（用于测试转换逻辑），转换会破坏测试期望值
-STATE_DIRS = ("tests", "tools" + os.sep + "archive")
-
 def walk_convert(root, pairs, suffix):
     count = 0
     for dirpath, dirnames, filenames in os.walk(root):
         if ".git" in dirpath.split(os.sep):
-            continue
-        if any(s in dirpath.replace("/", os.sep) for s in STATE_DIRS):
             continue
         for fn in filenames:
             if fn.lower() in STATE_FILES:
@@ -131,8 +126,6 @@ def scan_unknown_placeholders(root):
     pat = re.compile(r"<[^<>\s]{2,40}>")
     for dirpath, dirnames, filenames in os.walk(root):
         if ".git" in dirpath.split(os.sep):
-            continue
-        if any(s in dirpath.replace("/", os.sep) for s in STATE_DIRS):
             continue
         for fn in filenames:
             if fn.lower() in STATE_FILES:
