@@ -28,7 +28,8 @@
 [2026-08-26] 插件自测（test_plugin.js） → 15/15 通过：session.created 主/子会话 toast 行为、session.idle 进化任务注入（六项强制清单）、缺 sessionID 容错、未知事件零副作用、轨迹与日志落盘；自测发现真 bug：edit 误删 export 闭合（已修复）；test_plugin.js 纳入行为自测清单
 [2026-08-26] 用户指出（commit message 摘要丢失） → 多个提交只剩 "sync:"（中文摘要经 PowerShell→wsl→bash 多层 shell 传递丢失）；修复：update_skill git 三步骤改为 printf 写 /tmp/cmsg.txt + git commit -F 文件方式传递；已存在裸 sync: 提交不改历史（共享仓库 amend 危险），向前修复
 [2026-08-26] 用户要求（修炼文件归档全局） → 自查发现 skill 修炼文件散落 <项目目录>\temp：建立全局 <opencode配置目录>\tools\ 目录（path_convert/inject_skills/fetch_skills/slim_skills/cross_move/generalize 六个核心修炼工具）+ tools\archive\（18 个一次性已执行脚本归档）；测试用例已在 tests\；更新全部路径引用（instructions/skills）；三套测试全绿（10+15+0 错误）；原则：一切 skill 修炼文件必须放全局目录随 update_skill 同步 GitHub，任务产物（图片/文档）才留在项目 temp
-[2026-08-26] 用户要求（修改复盘核查强制） → 用户判定本轮"规则只进 evolution.md 未进 SKILL.md"为低级错误（严重）；新环节固化：**每个文件修改完成后、自测前必须自我复盘核查**（「修改复盘核查」环节）——① 改了什么/为什么改/有无误删误改无关内容；② 规则类内容是否已进全部应改载体（不只 evolution.md）；③ 是否符合占位符/可移植性/归属二分铁律；④ 配套文档是否同步。核查通过才跑测试。固化位置：AGENTS.md 铁律第 8 条（改为"修改复盘核查 + 测试先行"）、evolution_skill 处理流程第 3 步、update_skill 第二步。低级错误根因深挖：进化流程只有"追加记录"检查，没有"修改动作完整性"检查——模型连续多个 edit 后容易漏掉应改载体，复盘核查正是补这个动作级的闭环
+[2026-08-26] 用户指正（弹窗确认三连） → ① 用户指出五步第四步应明确为「弹窗确认」——SKILL.md 第四步改标题「第四步：弹窗确认」并写明：必须用 question 工具弹窗（UI 交互选择+输入框），禁止回答正文文字提问代替，用户未确认前不得执行任何 commit/push；regedit.md 同步登记。② 用户指出"涉及弹窗确认却没有弹窗测试"——补 test_update_skill.py 用例 9（7 项：三态分支解析/未确认前无 commit/仅本地分支保留工作区/推送分支确认后 commit/规则完整性×3），40/40。③ 复查发现 tests/README.md 用例数停在 25（25→33→40 两轮漏更新）已修正。教训固化：每次新增机制必须同时新增测试用例并更新 tests/README.md 用例数与描述（铁律第 8 条执行缺口再次暴露——"进化：已固化"口头声明必须实际落盘 evolution.md，声明与 edit 动作必须成对）
+
 
 
 

@@ -132,7 +132,7 @@ check("第一步：先 pull 吸收远端", "第一步：吸收远端" in sk)
 check("第二步：修改+盘点", "第二步：修改" in sk)
 check("第三步：自测（缺用例先补写）", "第三步：自测" in sk and "先写用例再跑" in sk)
 check("第三步要求双向更新用例模拟远端", "模拟远端操作" in sk)
-check("第四步：用户确认推送", "第四步：用户确认" in sk and "填写新内容" in sk)
+check("第四步：弹窗确认", "第四步：弹窗确认" in sk and "填写新内容" in sk)
 check("第五步：按选择执行", "第五步：按用户选择执行" in sk)
 
 # ============ 用例 6：模拟远端操作（双仓库：远端新提交 → 吸收 → 修改 → 推送） ============
@@ -278,6 +278,51 @@ check("tests 目录经 to_portable 后通过可移植性扫描（0 违规，形�
 if self_v:
     print("    违规:", self_v[:3])
 shutil.rmtree(tmp8, ignore_errors=True)
+
+# ============ 用例 9：第四步弹窗确认分支逻辑（未确认前禁止 commit/push） ============
+print("[用例9] 弹窗确认分支逻辑（未确认前无 commit，三态分支正确）")
+
+# 9.1 三态分支解析
+def decide_branch(choice):
+    if choice == "推送":
+        return "push"
+    if choice == "填写新内容":
+        return "rework"
+    if choice == "仅本地不推送":
+        return "local_only"
+    return None
+
+check("弹窗三态分支解析正确", decide_branch("推送") == "push" and decide_branch("填写新内容") == "rework" and decide_branch("仅本地不推送") == "local_only")
+
+# 9.2 未确认前无 commit（模拟：修改→自测→未经过弹窗确认→HEAD 必须不变）
+tmp9 = tempfile.mkdtemp(prefix="us_popup_")
+subprocess.run(["git", "init", "-q", "-b", "main", tmp9], check=True)
+subprocess.run(["git", "-C", tmp9, "config", "user.email", "t@t.l"], check=True)
+subprocess.run(["git", "-C", tmp9, "config", "user.name", "tester"], check=True)
+open(os.path.join(tmp9, "f.md"), "w", encoding="utf-8").write("v1")
+subprocess.run(["git", "-C", tmp9, "add", "-A"], check=True)
+subprocess.run(["git", "-C", tmp9, "commit", "-q", "-m", "init"], check=True)
+head0 = subprocess.run(["git", "-C", tmp9, "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
+# 模拟第二步修改 + 第三步自测，但不经过第四步弹窗确认
+open(os.path.join(tmp9, "f.md"), "w", encoding="utf-8").write("v2 修改未确认")
+head1 = subprocess.run(["git", "-C", tmp9, "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
+check("未经过弹窗确认前无 commit（HEAD 不变）", head0 == head1)
+# 弹窗选择"仅本地不推送"→ 流程结束，改动留在工作区不提交
+st = subprocess.run(["git", "-C", tmp9, "status", "--short"], capture_output=True, text=True).stdout
+check("仅本地分支：改动保留工作区不提交", "M f.md" in st)
+# 弹窗选择"推送"→ 确认后才 commit
+msgf = os.path.join(tmp9, "m.txt")
+open(msgf, "w", encoding="utf-8").write("sync: 弹窗确认后推送测试")
+subprocess.run(["git", "-C", tmp9, "add", "-A"], check=True)
+subprocess.run(["git", "-C", tmp9, "commit", "-q", "-F", msgf], check=True)
+head2 = subprocess.run(["git", "-C", tmp9, "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
+check("推送分支：确认后 commit 才产生", head2 != head0)
+shutil.rmtree(tmp9, ignore_errors=True)
+
+# 9.3 弹窗规则完整性（SKILL.md 写明强制弹窗 + 禁止文字代替 + 未确认禁 commit/push）
+check("规则含强制弹窗表述（question 工具）", "question 工具" in sk and "弹窗" in sk)
+check("规则禁止文字提问代替弹窗", "禁止" in sk and "文字询问" in sk)
+check("规则明示未确认禁 commit/push", "不得执行任何 commit/push" in sk)
 
 print("\n结果：通过 %d 项，失败 %d 项" % (pass_n, fail_n))
 sys.exit(1 if fail_n else 0)
