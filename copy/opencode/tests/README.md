@@ -11,7 +11,7 @@
 | skill_validate 配置机制（门限修改/忽略/持久化） | `test_skill_validate_config.py` | `python tests\test_skill_validate_config.py` | ✓ 7/7 |
 | skill-banner 插件（事件处理/任务注入/日志落盘） | `test_plugin.js` | `node tests\test_plugin.js`（需 node） | ✓ 20/20 |
 | path_convert.py（往返转换/STATE_FILES/残留扫描） | `test_path_convert.py` | `python tests\test_path_convert.py` | ✓ 9/9 |
-| update_skill 双向同步（调用解析/commit 摘要/状态保护/对称回退判定/五步流程要素/模拟远端操作） | `test_update_skill.py` | `python tests\test_update_skill.py`（需 Windows git，隔离临时仓库） | ✓ 25/25 |
+| update_skill 双向同步（调用解析/commit 摘要/状态保护/对称回退判定/五步流程要素/模拟远端操作/可移植性校验/弹窗确认分支） | `test_update_skill.py` | `python tests\test_update_skill.py`（需 Windows git，隔离临时仓库） | ✓ 40/40 |
 | 注册表一致性（regedit.md ↔ 文件系统 ↔ AGENTS.md 互查） | `test_regedit.py` | `python tests\test_regedit.py` | ✓ 47/47 |
 | tools-manifest 完整性（分类计数吻合/待补充无重复/包可导入/表结构） | `test_tools_manifest.py` | `python tests\test_tools_manifest.py` | ✓ 21/21 |
 | instructions.md 规则一致性（章节/铁律互查/引用存在/技能清单与目录一致/编写规范） | `test_instructions.py` | `python tests\test_instructions.py` | ✓ 31/31 |

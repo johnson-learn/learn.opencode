@@ -40,7 +40,7 @@ if missing:
 check("「对端修改评审」环节已固化入 update_skill SKILL.md", "对端修改评审" in us_skill)
 check("回退注释三要素格式已固化", "提交 commit" in us_skill and "时间" in us_skill and "回退原因" in us_skill)
 check("可移植性校验环节已固化入 SKILL.md", "可移植性校验" in us_skill)
-check("五步框架已固化入 SKILL.md", "第一步：吸收远端" in us_skill and "第四步：用户确认" in us_skill)
+check("五步框架已固化入 SKILL.md", "第一步：吸收远端" in us_skill and "第四步：弹窗确认" in us_skill)
 
 print("\n结果：通过 %d 项，失败 %d 项" % (pass_n, fail_n))
 sys.exit(1 if fail_n else 0)
