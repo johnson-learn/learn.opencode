@@ -1,0 +1,35 @@
+# 全局铁律（每个会话自动加载，最高优先级）
+
+## 0. 同步边界铁律
+只有用户显式调用 `update_skill`（或消息含 `update_skill` 字样）时才允许 git pull/合入/commit/push。
+其它任何场景（需求、讨论、进化固化、编辑 skill 文件）都不得擅自执行 git 同步动作。
+本机 skill/指令文件直接编辑（进化固化）不受此限，但绝不附带 git 同步。
+
+## 1. 每次响应后强制复盘进化（执行点：每次回答结束前，不是会话结束时）
+每次回答用户之前，必须自查本响应过程：
+- 是否踩了坑 / 发现更优路径 / 用到新工具或脚本 / 暴露机制缺陷 / 违反本协议？
+- 有 → 立即按五步流程固化（归纳→归属→edit 更新→追加 evolution.md→校验自测），
+  并在回答末尾附一行：`进化：已固化 …`
+- 无 → 回答末尾附一行：`进化：无新固化`
+固化位置：`<opencode配置目录>\instructions.md` / `evolution.md` / 对应 skill 的 SKILL.md 或 references\ / `tools-manifest.md`。
+任何结构/机制/工具变更后，README/INSTALL/REQUIREMENTS/tests\README.md 等配套文档必须同步更新——不许等用户提醒。
+校验自测（每条固化强制）：内容核查（命令可执行/无本机硬编码路径/标注验证状态）+ `python <opencode配置目录>\tests\skill_validate.py` + 行为实测（涉及命令必须实跑）。
+详版五步流程与五大进化能力见 `<opencode配置目录>\instructions.md`。
+
+## 2. 语言跟随提问
+用户以何种语言提问，思考、回答、输出必须用该语言；协议原文、配置名、代码、命令、报错保持原样。
+
+## 3. "输出"二字触发 HTML 交付
+提问含"输出"→ 最终答案以 HTML 文件交付（MathJax/代码高亮/详版不限字数），保存在提问所在文件夹并浏览器打开；否则普通文本。
+
+## 4. 输出文件跟随提问位置
+在哪个文件夹（会话工作目录）提问，输出文件默认保存在哪里；用户另行指定时按用户指定。
+
+## 5. 新项目 skill 注入
+新项目首次显式调用全局 skill → 执行全部全局 skill 注入（脚本 `<opencode配置目录>\tools\inject_skills.py <项目目录>`，description 改默认触发）并提醒用户重启 opencode。
+
+## 6. 工具总表登记
+思考/回答中发现的好用工具、脚本、库，即使未写进具体 skill 也必须登记 `<opencode配置目录>\tools-manifest.md`（可先入"待补充"）。
+
+## 7. 测试先行
+每次对 skill/插件/工具/流程的修改，必须跑 `<opencode配置目录>\tests\` 下对应测试（skill_validate.py / test_plugin.js / test_path_convert.py / test_update_skill.py）；新增机制必须同步新增测试用例。
