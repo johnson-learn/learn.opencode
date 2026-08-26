@@ -2,9 +2,7 @@
 name: update_skill
 description: 技能双向同步更新技能（全局 skill，仅显式触发，不靠关键词自动调用）。Use ONLY when 用户消息显式包含 "update_skill" 字样（"update_skill：" 带冒号+片段序列、或裸 "update_skill" 无冒号、或 "update_skill&" 与其它技能名并列）。加载后执行任务：消息按中文冒号（英文冒号同）分割为片段序列，从左到右依次执行——片段四分类：① update_skill 标记片段=执行双向同步（功能1：本机全局 opencode 配置的新改动差异合入仓库并 commit/push；功能2：检查远端新提交并反向合入本机）；② 路径片段=记录目标目录；③ 约束片段（含"别/不要/禁止/只"等词，如"别反复修改"）=约束其后双向更新为零修改模式（噪音恢复不提交、无实质进化不 push）；④ 问题片段=按全局回答规则回答。多标记意义：首轮更新吸收远端→中间问题基于最新状态回答→末轮更新对齐收尾。裸 "update_skill"=仅双向更新。普通消息仅提及同步/git 但无 "update_skill" 字样时，不调用本技能。
 ---
-
 # update_skill —— 技能同步更新技能
-
 
 ## 核心准则（一句话，执行时必须全部保证）
 
@@ -12,33 +10,7 @@ description: 技能双向同步更新技能（全局 skill，仅显式触发，�
 
 本技能负责把本机 opencode 配置（全局 skill + 规则 + 脚本）同步到 GitHub 仓库，实现"本机进化 → 云端同步 → 其它机器移植"闭环。
 
-## 🛠 工具依赖清单（移植到新机器时先逐项检查）
 
-| 工具 | 用途 | 本机位置/版本 | 检查命令 | 缺失时安装 |
-|---|---|---|---|---|
-| git | 版本同步 | WSL Ubuntu 内 git 2.34 | `wsl -d Ubuntu -e bash -c "git --version"` | `apt install git` |
-| SSH 密钥 | GitHub 推送认证（SSH 远程） | `~/.ssh/id_*`（github.com 已授权） | `wsl -d Ubuntu -e bash -c "ssh -T git@github.com"` | 生成密钥并添加到 GitHub 账号 |
-| 同步源（本机全局配置） | 进化后的最新内容 | `<opencode配置目录>\`（skills/instructions.md/evolution.md/opencode.jsonc/plugins） | `Test-Path <opencode配置目录>\instructions.md` | — |
-| 同步源（本机脚本） | 配套 PS/Python 脚本 | `<用户临时目录>\opencode\*.ps1`、项目 temp 的 inject_skills.py/fetch_skills.py | `Test-Path` | — |
-| 目标 Git 仓库 | 云端同步落点 | `/home/github/learn.opencode/copy`（WSL 内；Windows 访问 `\\wsl.localhost\Ubuntu\home\github\learn.opencode\copy`） | `wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git remote -v"` | 从 GitHub clone：`git clone git@github.com:johnson-learn/learn.opencode.git copy` |
-
-## 路径可移植层（双向同步必须执行的转换）
-
-> 仓库（GitHub）里的文件必须保持**占位符形式**（可移植）；本机源文件保持**真实路径**（本机使用）。双向同步时自动转换，禁止把本机真实路径推上 GitHub。
-
-### 占位符体系
-- **自动类**（转换时自动推导，无需用户填写）：`<用户目录>`、`<opencode配置目录>`、`<opencode数据目录>`、`<用户临时目录>`、`<用户AppData目录>`、`<用户桌面目录>`、`<WSL用户映射>`、`<Python脚本目录>`
-- **工具类**（安装脚本自动探测本机实际安装目录并写入 path_map.txt，无需用户填写）：`<LibreOffice目录>`（找 soffice.com）、`<Chrome目录>`（找 chrome.exe）、`<Node目录>`（PATH 中 node 位置）、`<工具目录>`（找 w64devkit\bin\gcc.exe）、`<WSL安装目录>`（注册表 Lxss BasePath）
-- **数据类**（安装脚本交互选择：直接回车=默认目录，输入路径=用户定制；存于 path_map.txt）：`<资料目录>`（默认 `D:\opencode\doc\default`）、`<3GPP文档库目录>`（默认 `D:\opencode\doc\3gpp`）、`<项目目录>`（默认 `D:\opencode\project\default`）、`<源码目录>`（默认 `D:\opencode\code\default`）、`<离线安装包目录>`（默认 `D:\opencode\tool\default`）
-
-### 转换流程（集成进同步三环节）
-1. **本机 → 仓库**：合入前先对仓库文件跑 `python3 <仓库>/copy/scripts/path_convert.py to_portable --home="<本机用户目录正斜杠>" <仓库>/copy/opencode`（及 scripts 目录）——把本机合入内容中的真实路径转为占位符
-2. **仓库 → 本机**（反向合入，第 0.5 步与第 4 步均适用）：把仓库文件复制回本机后，对本机文件跑 `python3 <仓库>/copy/scripts/path_convert.py to_local --home="<本机用户目录正斜杠>" <本机opencode配置目录>`（及 Temp\opencode）——把占位符转回本机真实路径
-3. **远端路径技巧的防御（关键）**：远端文件全部是占位符形式，反向合入到本机时**必须经 to_local 转换**，否则本机 skill 出现占位符导致工具路径失效；to_local 结束自动输出"残留未转换占位符"清单——**出现未知占位符（远端新定义的填写类）时，提示用户补充本机 path_map.txt 后重跑 to_local，不得带着占位符继续使用**
-4. 转换前后各跑一次 `grep -rl "<本机用户名>" <目录>`（正向）与占位符残留扫描（反向）残留检查，为 0 才可提交/合入
-5. 本机状态文件：`<opencode配置目录>\skills\update_skill\path_map.txt`（填写类占位符→本机真实路径映射，**不进仓库**，同步排除）；远端新增占位符时同步更新该文件
-6. **状态文件保护（✓ 踩坑固化）**：path_map.txt 与 sync_target.txt 是本机状态文件——① 反向合入（第 0.5/4 步）复制仓库文件回本机时**必须跳过这两个文件**，否则本机真实映射会被仓库占位符版覆盖（导致 to_portable 失去映射、E: 盘真实路径泄漏进仓库、远端机器收到他机路径）；② path_convert 的 walk_convert 已内置跳过（STATE_FILES 保护，含 path_convert.py 自身，防 to_local 自毁——其源码含占位符键）；③ 每次转换前检查 path_map.txt 完整性（值必须是真实路径，不得是 `<X>=<X>` 自我指涉）；④ 同理会话内先跑 to_local 再核对 path_map.txt 键是否原样，**勿删该跳过逻辑**；⑤ **正向同步 cp（本机→仓库）同样必须显式跳过这两个文件**——`cp -r skills/*` 会把他机真实映射带进仓库工作树（虽被 .gitignore 挡住提交，但污染工作树、可能被其它机器反向合入时误复制）
-7. **教学列表保护（✓ 本机实测踩坑）**：本技能「占位符体系」章节中列举占位符名的三行（自动类/工具类/数据类枚举）会被 to_local 转换为本机真实路径，使教学文档失真——反向合入后**按仓库版本恢复这三行**（占位符名必须保持原样，不能变成本机路径）；**to_portable 同样会误伤**：教学行默认值（如 `D:\opencode\doc\default`）若与某机 path_map 值前缀相同，会被转成自指涉（`<资料目录>\default`）——正向提交前必须 git diff 检查教学行，被误伤即恢复仓库版
 
 ## 处理流程（目标目录确定 → git 五步 + 同步三环节，按序执行）
 
@@ -128,10 +100,14 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 ### 收尾报告
 输出：pull 结果、本机→git 变更清单与 commit hash、push 结果、git→本机 反向合入清单（若有）；若仓库内 README/INSTALL 提及的技能清单与现状不符，提醒用户是否一并更新
 
+
+
 ## 通用输出规则（全部任务遵守）
 
 - **语言跟随提问**：用户以何种语言提问，思考、回答、输出就以何种语言；命令、路径、字段名等必要原文保持原样
 - **含"输出"二字 → HTML 交付**：提问中出现"输出"二字时，最终答案必须以 HTML 文件输出（规范排版），内容详细、不限字数篇幅；HTML 保存到提问时所在工作目录并浏览器打开（用户另行指定目录时按用户指定）
+
+
 
 ## 环境注意
 
@@ -143,6 +119,15 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 - 本机配置类内容（绝对路径/版本）集中在各 skill 的工具依赖清单，新机器按清单重配即可
 - 新增 skill 后记得手动跑一次本技能，把新 skill 同步到 GitHub
 
+
+
 ## 智能进化
 
 每次执行本技能后，按 instructions.md「智能进化协议」检查：同步流程中的新踩坑（SSH 失败、pull 冲突、路径变化、新文件类型）立即固化到本技能；经验表述保持可移植（本机路径用占位符）。
+
+
+
+## 详细知识（按需读取 references/，不随入口加载）
+
+- 详见 `references/tools.md`
+- 详见 `references/portable-paths.md`
