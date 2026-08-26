@@ -25,7 +25,7 @@ for item in ["tools\\inject_skills.py", "tools\\path_convert.py", "tools\\slim_s
              "tools\\fetch_skills.py", "tools\\cross_move.py", "tools\\generalize.py",
              "tests\\skill_validate.py", "tests\\test_plugin.js", "tests\\test_path_convert.py",
              "tests\\test_update_skill.py", "tests\\test_regedit.py", "tests\\README.md",
-             "plugins\\skill-banner.js", "instructions.md", "evolution.md", "tools-manifest.md"]:
+              "plugins\\skill-banner.js", "instructions.md", "skills\\evolution_skill\\evolution.md", "tools-manifest.md"]:
     key = item.split("\\")[-1].split(".")[0]
     check("注册表条目存在: " + item, item in reg)
 
@@ -36,8 +36,9 @@ for name in ["3gpp_skill", "files_skill", "find_skill", "program_skill", "update
              "skill-banner.js", "inject_skills.py", "path_convert.py", "slim_skills.py",
              "fetch_skills.py", "cross_move.py", "generalize.py", "skill_validate.py",
              "test_plugin.js", "test_path_convert.py", "test_update_skill.py", "test_regedit.py",
-             "tools-manifest.md", "path_map.txt", "sync_target.txt", "evolution_trace.jsonl",
-             "plugin-evolution.log", "instructions.md", "evolution.md"]:
+              "tools-manifest.md", "path_map.txt", "sync_target.txt", "evolution_trace.jsonl",
+              "plugin-evolution.log", "instructions.md", "evolution.md",
+              "evolution_log.txt"]:
     check("组件已登记: " + name, registered(name))
 
 # 5. 生效方式代号合法性（A~H）
@@ -60,7 +61,7 @@ fs_checks = [
     ("tests/test_update_skill.py", "test_update_skill.py"),
     ("AGENTS.md", "AGENTS.md"),
     ("instructions.md", "instructions.md"),
-    ("evolution.md", "evolution.md"),
+    ("skills/evolution_skill/evolution.md", "evolution.md"),
     ("tools-manifest.md", "tools-manifest.md"),
     ("regedit.md", "regedit.md"),
 ]

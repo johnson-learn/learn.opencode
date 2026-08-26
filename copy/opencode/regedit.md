@@ -24,7 +24,8 @@
 | AGENTS.md（8 条铁律） | `<opencode配置目录>\AGENTS.md` | A | 每会话系统提示必达，最高优先级；0=读注册表、1=每次响应复盘进化、2=同步边界、3=语言、4=输出HTML、5=输出位置、6=注入、7=工具登记、8=测试先行 |
 | regedit.md（本注册表） | `<opencode配置目录>\regedit.md` | B | 铁律第 0 条强制每会话开始读取 |
 | instructions.md（详版协议） | `<opencode配置目录>\instructions.md` | F | 五步进化流程/五大进化能力/skill 编写规范/通用回答规则详版 |
-| evolution.md（进化史） | `<opencode配置目录>\evolution.md` | H | 每次进化固化强制追加（铁律第 1 条五步流程第 4 步） |
+| evolution.md（进化规则文件） | `<opencode配置目录>\skills\evolution_skill\evolution.md` | H | **最新进化规则权威文件**（规则类经验可执行载体）；更新前必须结合 evolution_log.txt 核对 + **弹窗让用户确认**；更新后跑 test_evolution_consistency.py |
+| evolution_log.txt（进化历史流水） | `<opencode配置目录>\skills\evolution_skill\evolution_log.txt` | H | 历史流水，**只增不改**（追加尾部）；test_evolution_consistency.py 的程序化校验数据源（近 5 条「」声明须落入规则文件） |
 
 ## 技能层（全局 6 个）
 
@@ -82,8 +83,8 @@
 | tools-manifest.md（工具总表） | `<opencode配置目录>\` | H | 工具登记铁律（第 7 条）；唯一权威工具表 |
 | path_map.txt | `skills\update_skill\` | G | update_skill 流程；STATE_FILES 保护对象 |
 | sync_target.txt | `skills\update_skill\` | G | 同步目标记忆；STATE_FILES 保护对象 |
-| evolution_trace.jsonl | `<opencode配置目录>\` | E | 插件写（供合并/拆分分析） |
-| plugin-evolution.log | `<opencode配置目录>\` | E | 插件日志（验证兜底机制实跑） |
+| evolution_trace.jsonl | `<opencode配置目录>\skills\evolution_skill\` | E | 插件写（供合并/拆分分析） |
+| plugin-evolution.log | `<opencode配置目录>\plugins\` | E | 插件日志（验证兜底机制实跑） |
 | skill_validate_config.json | `tests\` | G | skill_validate 体积门限用户选择持久化（--set-limit/--ignore/--ignore-all 写入，后续一致性生效，随同步跨机器） |
 
 ## 同步层
@@ -104,8 +105,8 @@
 |---|---|---|---|
 | evolution_skill（进化执行器） | `skills\evolution_skill\SKILL.md` | C | 铁律第 2 条复盘进化发现需固化时自动调用；五步固化 / 注册表更新 / 工具登记 / 配套文档 / 校验自测全流程封装 |
 | 进化协议详版 | `instructions.md` 智能进化协议章节 | F | 五步流程 / 五能力 / 校验标准 / 风险规避详版 |
-| 进化史 | `evolution.md` | H | 每次固化强制追加（五步流程第 4 步） |
-| 会话轨迹 | `evolution_trace.jsonl` | E | 插件写，供合并/拆分分析 |
+| 进化规则 | `evolution.md`（在 skills\evolution_skill\ 下） | H | 规则类经验可执行载体（更新前核对 evolution_log.txt + 弹窗确认，见铁律层登记） |
+| 会话轨迹 | `evolution_trace.jsonl`（在 skills\evolution_skill\ 下） | E | 插件写，供合并/拆分分析 |
 | 进化检查注入 | skill-banner.js session.idle | E | 会话结束兜底注入 6 项强制清单（幂等去重） |
 | 注册表自我进化 | `regedit.md` 本身 | B+G | 本表条目/生效分类变更按五步固化 + test_regedit.py 校验；**生效方式分类可新增**（保证等级机制自身可进化） |
 
