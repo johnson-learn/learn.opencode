@@ -78,7 +78,8 @@
 | test_evolution_gate.py | `tests\test_evolution_gate.py` | G | evolution_gate 改动后强制（快照/改动检测/流水兜底/自动测试触发/待补充清单/--drain 自愈补跑/max_n 限流，14/14） |
 | test_docs_sync.py | `tests\test_docs_sync.py` | G | docs-sync.md 改动后强制（变更类型/校验测试存在/被 regedit+AGENTS 引用，19/19） |
 | test_audit_references.py | `tests\test_audit_references.py` | G | 框架引用审计（引用存在性/旧术语残留/README 双向一致，3/3） |
-| test_repo_face.py | `tests\test_repo_face.py` | G | 仓库门面一致性（门面文件与框架现状对照，14/14；WSL 不可达时跳过） |
+| test_repo_face.py | `tests\test_repo_face.py` | G | 仓库门面一致性（门面文件与框架现状对照，14/14；WSL 不可达回退 tests\repo_face\ 镜像） |
+| test_setup_ps1.py | `tests\test_setup_ps1.py` | G | setup-windows.ps1 自动化测试（开关/部署范围/path_convert 体系/AST 语法，21/21；首跑即抓出 SkipDeploy 块缺 } 语法错误与 tests/tools 漏部署） |
 | README.md（测试清单） | `tests\README.md` | F | 查测试入口与运行命令 |
 
 ## 数据层
