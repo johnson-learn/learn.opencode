@@ -7,13 +7,16 @@
 
 | 被测对象 | 测试文件 | 运行命令 | 状态 |
 |---|---|---|---|
-| skill 结构（frontmatter/name/description/路由引用） | `skill_validate.py` | `python tests\skill_validate.py <opencode配置目录>\skills` | ✓ 已建 |
-| skill-banner 插件（事件处理/任务注入/日志落盘） | `test_plugin.js` | `node tests\test_plugin.js`（需 node） | ✓ 19/19 |
+| skill 结构（frontmatter/name/description/路由引用/体积门限） | `skill_validate.py` | `python tests\skill_validate.py <opencode配置目录>\skills` | ✓ 已建（门限可配置，见 skill_validate_config.json） |
+| skill_validate 配置机制（门限修改/忽略/持久化） | `test_skill_validate_config.py` | `python tests\test_skill_validate_config.py` | ✓ 7/7 |
+| skill-banner 插件（事件处理/任务注入/日志落盘） | `test_plugin.js` | `node tests\test_plugin.js`（需 node） | ✓ 20/20 |
 | path_convert.py（往返转换/STATE_FILES/残留扫描） | `test_path_convert.py` | `python tests\test_path_convert.py` | ✓ 9/9 |
 | update_skill 双向同步（调用解析/commit 摘要/状态保护/对称回退判定） | `test_update_skill.py` | `python tests\test_update_skill.py`（需 Windows git，隔离临时仓库） | ✓ 14/14 |
-| 注册表一致性（regedit.md ↔ 文件系统 ↔ AGENTS.md 互查） | `test_regedit.py` | `python tests\test_regedit.py` | ✓ 46/46 |
+| 注册表一致性（regedit.md ↔ 文件系统 ↔ AGENTS.md 互查） | `test_regedit.py` | `python tests\test_regedit.py` | ✓ 47/47 |
 | tools-manifest 完整性（A~G 分类检查命令可执行） | `test_tools_manifest.py` | 待新增 | ○ |
 | instructions.md 规则一致性（与各 skill 引用互查） | `test_instructions.py` | 待新增 | ○ |
+
+> skill_validate 体积门限：默认 8KB，超限输出「待决清单」，用户选择（--set-limit 改门限 / --ignore 忽略指定 / --ignore-all 忽略全部）写入 `skill_validate_config.json` 持久化，后续一致性生效（当前本机门限 15KB，用户 2026-08-26 设定）。
 
 ## 新增测试用例规范
 
