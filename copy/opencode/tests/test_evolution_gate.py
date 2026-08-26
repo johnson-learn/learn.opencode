@@ -50,6 +50,28 @@ import glob
 snaps = glob.glob(os.path.join(tempfile.gettempdir(), "opencode_gate", "gate_" + sid + ".json"))
 check("check 后快照文件已清理", len(snaps) == 0)
 
+# 5. 自愈机制 --drain：残留快照自动补跑
+r = run("--snapshot", sid)  # 建快照但不 check（模拟 idle 未触发）
+snaps_before = glob.glob(os.path.join(tempfile.gettempdir(), "opencode_gate", "gate_" + sid + ".json"))
+check("模拟：快照残留（门禁未执行）", len(snaps_before) == 1)
+r = run("--drain")
+check("drain 检测到残留快照", "残留快照" in r.stdout and sid in r.stdout)
+snaps_after = glob.glob(os.path.join(tempfile.gettempdir(), "opencode_gate", "gate_" + sid + ".json"))
+check("drain 补跑后快照清理", len(snaps_after) == 0)
+r = run("--drain")
+check("无残留时 drain 正常返回", "无残留快照" in r.stdout)
+
+# 6. drain max_n 限制：残留超过上限仅审计不阻塞
+for i in range(4):
+    r = run("--snapshot", sid + "-m" + str(i))  # 4 个残留快照
+r = run("--drain", "1")  # 只补跑 1 个
+check("max_n=1 时超限跳过审计", "超限跳过 3 个残留快照" in r.stdout)
+snaps_left = glob.glob(os.path.join(tempfile.gettempdir(), "opencode_gate", "gate_" + sid + "-m*.json"))
+check("超限快照保留待下次 drain", len(snaps_left) == 3)
+# 清理剩余
+r = run("--drain", "10")
+check("提高 max_n 后全部补跑清理", "残留快照" in r.stdout)
+
 # 清理临时 skill + 从 log 移除测试追加？（log 只增不改——测试追加的骨架留在 log 是污染，但"只增不改"禁删。处理：测试使用独立 log？gate 的 LOG 固定。为不污染，测试后把刚追加的骨架条目标记为测试条目？不能删。折中：保留（它记录了 gate 机制验证事实，无害））
 import shutil
 shutil.rmtree(tmp_skill, ignore_errors=True)

@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, existsSync, appendFileSync } from "fs"
 import { join } from "path"
 import { homedir } from "os"
-import { execSync } from "child_process"
+import { execSync, spawn } from "child_process"
 
 const HOME = homedir()
 const SKILLS_DIR = join(HOME, ".config", "opencode", "skills")
@@ -19,6 +19,19 @@ function runGate(action, sid) {
   } catch (e) {
     log("evolution_gate " + action + " 执行失败：" + (e && e.message ? String(e.message).slice(0, 200) : ""))
     return ""
+  }
+}
+
+function runGateAsync(action) {
+  // 异步后台执行（不阻塞会话创建）：drain 补跑残留快照可能耗时，输出写入插件日志
+  try {
+    const child = spawn("python", [GATE, action], {
+      windowsHide: true, detached: false, stdio: "ignore",
+    })
+    child.on("error", (e) => log("evolution_gate " + action + " 异步启动失败：" + String(e && e.message).slice(0, 150)))
+    log("evolution_gate " + action + " 已异步启动（后台补跑，不阻塞会话）")
+  } catch (e) {
+    log("evolution_gate " + action + " 异步启动异常：" + (e && e.message ? String(e.message).slice(0, 150) : ""))
   }
 }
 
@@ -67,6 +80,8 @@ export const SkillBanner = async ({ client }) => {
             body: { message: `本机全局技能（${skills.length} 个）\n` + lines, variant: "info" },
           })
           recordTrace(props.sessionID || "unknown", {})
+          // 自愈：异步后台补跑上次会话残留快照的门禁（防 idle 未触发单点故障；不阻塞会话创建）
+          runGateAsync("--drain")
           runGate("--snapshot", props.sessionID || "unknown")
           // 双通道：程序化注入「读注册表」提醒，保证模型会话开始必读 regedit.md
           const sid = props.sessionID
