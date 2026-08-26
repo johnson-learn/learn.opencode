@@ -90,6 +90,7 @@
 | WSL 工作副本 | `\\wsl.localhost\Ubuntu\home\github\learn.opencode\` | G | 同上 |
 | 占位符体系 | path_map.txt + path_convert.py | G | 三级占位符（自动/工具/数据），双向转换 |
 | 同步过滤规则 | update_skill SKILL.md「同步过滤规则」章节 + 仓库 .gitignore | G | 判断标准：其它机器使用框架/skill/功能时需要的才同步；临时文件（编译产物/测试样本/日志/状态文件/大资产）由 .gitignore 自动过滤 |
+| 项目资产盘点 | update_skill SKILL.md「第 0.9 步」+ project_list.txt | G | 同步前遍历项目（当前目录 + project_list.txt 清单 + 显式指定），提取通用资产（新 skill/通用脚本）到全局并随同步上 GitHub；拿不准的列建议清单 |
 
 ## 进化层（第八层：保证智能自我进化）
 

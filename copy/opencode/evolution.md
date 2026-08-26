@@ -28,7 +28,9 @@
 [2026-08-26] 插件自测（test_plugin.js） → 15/15 通过：session.created 主/子会话 toast 行为、session.idle 进化任务注入（六项强制清单）、缺 sessionID 容错、未知事件零副作用、轨迹与日志落盘；自测发现真 bug：edit 误删 export 闭合（已修复）；test_plugin.js 纳入行为自测清单
 [2026-08-26] 用户指出（commit message 摘要丢失） → 多个提交只剩 "sync:"（中文摘要经 PowerShell→wsl→bash 多层 shell 传递丢失）；修复：update_skill git 三步骤改为 printf 写 /tmp/cmsg.txt + git commit -F 文件方式传递；已存在裸 sync: 提交不改历史（共享仓库 amend 危险），向前修复
 [2026-08-26] 用户要求（修炼文件归档全局） → 自查发现 skill 修炼文件散落 <项目目录>\temp：建立全局 <opencode配置目录>\tools\ 目录（path_convert/inject_skills/fetch_skills/slim_skills/cross_move/generalize 六个核心修炼工具）+ tools\archive\（18 个一次性已执行脚本归档）；测试用例已在 tests\；更新全部路径引用（instructions/skills）；三套测试全绿（10+15+0 错误）；原则：一切 skill 修炼文件必须放全局目录随 update_skill 同步 GitHub，任务产物（图片/文档）才留在项目 temp
-[2026-08-26] 用户要求（新增进化层：保证智能自我进化） → 体系新增第八层「进化层」：① 新建全局第 6 个 skill evolution_skill（进化执行器，C 类默认触发）——封装五步固化/注册表更新/工具登记/配套文档/校验自测全流程 + 五大进化能力判定表 + 铁律；② AGENTS.md 铁律第 2 条升级：复盘进化发现需固化 → 加载 evolution_skill 执行（固化位置清单加 regedit.md）；③ regedit.md 技能层 5→6 个、新增「进化层」章节（注册执行器/协议详版/进化史/轨迹/检查注入/注册表自我进化六项 + 进化层闭环图）；④ 注册表自我进化规则：条目与生效方式分类均可按五步固化进化，test_regedit.py 校验闭环；⑤ 项目级副本重注入（6 个 skill，update_skill 项目副本 description 保留严格显式触发约束，同步边界安全）；⑥ test_regedit.py 更新 47/47（6 个 skill 一致性 + evolution_skill 登记）；skill_validate 0 错误
+[2026-08-26] 用户规则（项目资产盘点反哺全局） → update_skill 新增「第 0.9 步：项目资产盘点」：同步前遍历项目（当前工作目录 + project_list.txt 状态清单 + 用户显式指定目录），扫描三类资产（项目级 skill / 项目脚本 / tools 目录），按通用性判定（可复用+职责独立+非项目特定+其它机器使用框架功能时需要）提取到全局 skills\ 或 tools\，regedit.md 注册 + tools-manifest 登记 + 校验自测，随本次同步上 GitHub；拿不准的列「提取建议清单」待确认（与进化协议分级铁律一致）。本轮盘点 <项目目录>：6 个项目级 skill 均为全局同名副本（跳过）、无通用脚本（temp 为任务产物）——无提取项
+
+
 
 
 
