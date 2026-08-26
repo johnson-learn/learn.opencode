@@ -77,14 +77,14 @@ def do_check(sid):
         return 0
     print("[gate] 检测到 %d 个规则文件改动：" % len(changed))
     for fp in changed:
-        print("  -", fp.replace(CFG, r"<opencode配置目录>"))
+        print("  -", fp.replace(CFG, "<opencode配置目录>"))
     # 1. 流水自动追加（若本会话模型未正常追加记录）
     log_size_now = os.path.getsize(LOG) if os.path.exists(LOG) else 0
     appended = False
     if log_size_now == snap["log_size"]:
         entry = ("[%s] 会话自动门禁（%s） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 %d 个规则文件（清单见下）；"
                  "智能归纳待模型补充\n" % (datetime.date.today().isoformat(), sid, len(changed)))
-        entry += "".join("- " + fp.replace(CFG, r"<opencode配置目录>") + "\n" for fp in changed)
+        entry += "".join("- " + fp.replace(CFG, "<opencode配置目录>") + "\n" for fp in changed)
         with open(LOG, "a", encoding="utf-8") as f:
             f.write(entry + "\n")
         appended = True
@@ -118,10 +118,40 @@ def do_check(sid):
     return 0
 
 
+def do_drain(max_n=3):
+    """自愈机制：扫描 SNAP_DIR 中残留快照（上次会话 idle 未触发 --check 的遗留），逐个补跑门禁。
+    解决"门禁依赖插件正确调用 session.idle"的单点故障——即使 idle 断了，下次会话开始时自动补执行。
+    max_n：最多补跑快照数（防残留过多时长时间阻塞，超出部分仅审计记录）"""
+    if not os.path.isdir(SNAP_DIR):
+        print("[gate] 无快照目录，无残留快照")
+        return 0
+    snaps = sorted(f for f in os.listdir(SNAP_DIR) if f.startswith("gate_") and f.endswith(".json"))
+    if not snaps:
+        print("[gate] 无残留快照（上次会话门禁正常执行）")
+        return 0
+    skipped = snaps[max_n:]
+    snaps = snaps[:max_n]
+    if skipped:
+        audit = os.path.join(SNAP_DIR, "gate_audit.log")
+        with open(audit, "a", encoding="utf-8") as f:
+            f.write("[%s] drain 跳过 %d 个超限残留快照（max_n=%d）: %s\n"
+                    % (datetime.datetime.now().isoformat(), len(skipped), max_n, ", ".join(skipped)))
+        print("[gate] 超限跳过 %d 个残留快照（仅审计，见 gate_audit.log）" % len(skipped))
+    print("[gate] 检测到 %d 个残留快照（上次会话门禁未执行），自动补跑：" % len(snaps))
+    for f in snaps:
+        sid = f[len("gate_"):-len(".json")]
+        print("[gate] 补跑会话 %s" % sid)
+        do_check(sid)
+    return 0
+
+
 if __name__ == "__main__":
     if len(sys.argv) >= 3 and sys.argv[1] == "--snapshot":
         sys.exit(do_snapshot(sys.argv[2]))
     if len(sys.argv) >= 3 and sys.argv[1] == "--check":
         sys.exit(do_check(sys.argv[2]))
+    if len(sys.argv) >= 2 and sys.argv[1] == "--drain":
+        mn = int(sys.argv[2]) if len(sys.argv) >= 3 else 3
+        sys.exit(do_drain(mn))
     print(__doc__)
     sys.exit(1)

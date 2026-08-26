@@ -60,7 +60,7 @@
 | fetch_skills.py | `tools\fetch_skills.py` | F | 从技能目录网站获取 skill |
 | cross_move.py | `tools\cross_move.py` | F | 跨 skill 归位 |
 | generalize.py | `tools\generalize.py` | F | 经验通用化改写 |
-| evolution_gate.py | `tools\evolution_gate.py` | E | 进化门禁脚本：session.created 时插件调 --snapshot、session.idle 时 --check——机制步骤（流水兜底追加/自动测试/一致性校验）确定性执行，不依赖模型自觉 |
+| evolution_gate.py | `tools\evolution_gate.py` | E | 进化门禁脚本：session.created 时插件调 --drain（**异步后台**自愈补跑残留快照，max_n=3 限流防阻塞会话启动）+ --snapshot；session.idle 时 --check——机制步骤（流水兜底追加/自动测试/一致性校验）确定性执行，不依赖模型自觉 |
 | archive\（18 个） | `tools\archive\` | F | 历史一次性脚本存档，不执行 |
 
 ## 测试层
