@@ -18,3 +18,9 @@ opencode/skills/*/modules/*/assets/fonts/
 opencode/skills/update_skill/sync_target.txt
 opencode/skills/update_skill/path_map.txt
 opencode/skills/update_skill/path_map.txt
+
+# ===== 同步过滤规则（判断标准：其它机器使用框架/skill/功能时需要的才同步）=====
+# 运行时轨迹与日志（本机专属，不入仓库）
+*.jsonl
+# 参考模块内的测试数据/样本（baselines 等，使用框架功能不需要）
+**/modules/*/tests/

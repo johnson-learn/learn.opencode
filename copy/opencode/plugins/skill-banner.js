@@ -38,6 +38,7 @@ function recordTrace(sessionId, agentInfo) {
 }
 
 export const SkillBanner = async ({ client }) => {
+  const injectedSessions = new Set()
   return {
     event: async ({ event }) => {
       try {
@@ -51,12 +52,36 @@ export const SkillBanner = async ({ client }) => {
             body: { message: `本机全局技能（${skills.length} 个）\n` + lines, variant: "info" },
           })
           recordTrace(props.sessionID || "unknown", {})
+          // 双通道：程序化注入「读注册表」提醒，保证模型会话开始必读 regedit.md
+          const sid = props.sessionID
+          if (sid) {
+            try {
+              await client.session.prompt({
+                path: { id: sid },
+                body: {
+                  noReply: true,
+                  parts: [{
+                    type: "text",
+                    text:
+                      "【注册表必读·铁律第0条·程序化提醒】会话开始第一动作：读取 " + join(HOME, ".config", "opencode", "regedit.md") +
+                      "（全体系注册表），按其中生效方式分类（A~H）确定各组件何时加载、何时执行。组件新增/变更必须同步更新注册表并跑 python " +
+                      join(HOME, ".config", "opencode", "tests", "test_regedit.py") + "。",
+                  }],
+                },
+              })
+              log("session.created 注册表提醒注入成功，会话 " + sid)
+            } catch (e) {
+              log("session.created 注册表提醒注入失败：" + (e && e.message ? e.message : String(e)))
+            }
+          }
           return
         }
         // 程序化进化触发：会话空闲（结束）时自动注入进化检查任务，不靠模型自觉
         if (event.type === "session.idle") {
           const sid = props.sessionID || event.properties?.info?.id
           if (!sid) { log("session.idle 未取得 sessionID，props=" + JSON.stringify(props)); return }
+          if (injectedSessions.has(sid)) { log("session.idle 幂等跳过：会话 " + sid + " 已注入过进化检查"); return }
+          injectedSessions.add(sid)
           recordTrace(sid, { phase: "idle" })
           log("session.idle 触发，向会话 " + sid + " 注入进化检查任务")
           try {
