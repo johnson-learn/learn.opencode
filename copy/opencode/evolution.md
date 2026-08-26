@@ -16,3 +16,8 @@
 [2026-08-26] 用户规则 → update_skill 调用方式扩展：冒号后为路径（含盘符/UNC/斜杠特征）按目录指定处理；冒号后为问题任务（无路径特征）先执行问题再执行双向更新；无内容仅双向更新
 [2026-08-26] 远端实测（对称回退重大教训） → 双方各持旧工作树 cp 覆盖导致对方修复被对称回退（path_convert 两处 STATE_FILES 保护被回退删除，远端恢复后推 74e35ea）；固化 update_skill 0.5 步「对称回退防护」：同名文件先查 git log 最后修改者判断差异方向，仓库 HEAD 含本机没有的修复 = 本机落后 = 先吸收后同步，严禁本机旧文件覆盖远端新修复
 [2026-08-26] 用户规则 → update_skill 调用解析升级为顺序标记序列：消息按冒号分割片段，update_skill 标记=执行双向更新，其它片段=问题；按顺序交替执行（update_skill：问题=先更新后问题；问题：update_skill=先问题后更新；多标记依次类推）
+[2026-08-26] 豆包外部分析（参考资料学习） → 提取 3 项改进：① 编写规范新增"入口 SKILL.md 精炼原则"（≤5KB 目标，大块知识移 references/，防单次加载上万 token）；② 新增 skill_validate.py 自检脚本（frontmatter/name/description/路由引用校验，兼容 BOM）；③ 已知短板清单（SKILL.md 过大/缺回归校验/进化靠自觉）作为后续改进方向；首测结果：3gpp 23KB、files 18KB、update_skill 10.5KB 超 8KB 阈值待瘦身
+[2026-08-26] 用户要求（体系升级） → 自我进化从"靠自觉"升级为"程序化强制 + 轨迹驱动"：① skill-banner 插件监听 session.idle 自动注入进化检查任务（不靠模型自觉）；② evolution_trace.jsonl 轨迹记录；③ 五大自动进化能力判定规则（更新/生成=直接执行；合并/拆分/迁移=产出建议待用户确认）；④ 执行分级铁律（建议类不自动动手）；⑤ update_skill 附带轨迹分析产出进化建议
+[2026-08-26] 用户规则 → 每条进化强制"校验+自测"（升级五步流程第 5 步）：① 内容正确性核查（命令/路径/参数可执行、无矛盾、标注齐全、通用性达标）；② 结构化自测（skill_validate.py：frontmatter/name/description/路由引用）；③ 行为自测（涉及可执行内容实际跑一遍验证，无法实测标注"未实测"）；④ 校验不通过立即修正才进入下一条
+[2026-08-26] 瘦身执行（豆包短板落地） → 三个大 SKILL.md 拆 references：3gpp 23KB→13.2KB（-46%，6 个参考文件）、files 18KB→10KB（-44%，4 个）、update 13.9KB（2 个）；入口保留 frontmatter/流程/路由/铁律+引用行；skill_validate 自测 0 错误；踩坑：章节标题与关键词不一致导致首轮 2 章未移出（配置链梳理输出模板≠教学输出模板）
+[2026-08-26] 用户要求（跨 skill 归位） → files_skill 的 3GPP 相关内容合并到 3gpp_skill，3gpp_skill 的文件处理内容合并到 files_skill：①「示意图绘制（NR-f40 教学专属）」→ 3gpp_skill/references/figure-svg.md；②「双轨提取」（通用文件处理能力）→ files_skill/references/dual-track-extraction.md 并通用化表述（一切含 OLE 公式文档，3GPP 为例）；③ files 残留 3 处 3GPP 特指措辞通用化（NR-f40 验证→实战验证、check-pdcch→通用表述）；踩坑：标题"示意图"非"示例图"导致首轮未命中
