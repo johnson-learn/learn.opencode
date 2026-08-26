@@ -75,7 +75,8 @@
 | test_regedit.py | `tests\test_regedit.py` | G | 注册表改动后强制（本表与实际文件系统一致性） |
 | test_tools_manifest.py | `tests\test_tools_manifest.py` | G | 工具总表改动后强制（分类计数吻合/待补充无重复/包可导入/表结构，21/21） |
 | test_instructions.py | `tests\test_instructions.py` | G | instructions.md 改动后强制（章节/铁律互查/引用存在/技能清单与目录一致/编写规范，31/31） |
-| test_evolution_gate.py | `tests\test_evolution_gate.py` | G | evolution_gate 改动后强制（快照/改动检测/流水兜底/自动测试触发，7/7） |
+| test_evolution_gate.py | `tests\test_evolution_gate.py` | G | evolution_gate 改动后强制（快照/改动检测/流水兜底/自动测试触发/待补充清单/--drain 自愈补跑/max_n 限流，14/14） |
+| test_docs_sync.py | `tests\test_docs_sync.py` | G | docs-sync.md 改动后强制（变更类型/校验测试存在/被 regedit+AGENTS 引用，19/19） |
 | README.md（测试清单） | `tests\README.md` | F | 查测试入口与运行命令 |
 
 ## 数据层
@@ -83,6 +84,7 @@
 | 注册项 | 位置 | 生效 | 说明 |
 |---|---|---|---|
 | tools-manifest.md（工具总表） | `<opencode配置目录>\` | H | 工具登记铁律（第 7 条）；唯一权威工具表 |
+| docs-sync.md（配套同步映射表） | `<opencode配置目录>\` | G | 变更类型→必须同步更新文件清单的权威映射（铁律第 8 条引用）；evolution_gate 改动检测后按本表跑校验测试 |
 | path_map.txt | `skills\update_skill\` | G | update_skill 流程；STATE_FILES 保护对象 |
 | sync_target.txt | `skills\update_skill\` | G | 同步目标记忆；STATE_FILES 保护对象 |
 | evolution_trace.jsonl | `<opencode配置目录>\skills\default\evolution_skill\` | E | 插件写（供合并/拆分分析） |
