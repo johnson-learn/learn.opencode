@@ -1,3 +1,5 @@
+# 工具权威源：`opencode\tools-manifest.md`（分类 A~G + 本机配置 + 待补充），本文件为历史详细清单，冲突以 tools-manifest.md 为准。
+
 # REQUIREMENTS.md — 新电脑环境依赖清单与下载途径
 
 > 本清单覆盖本仓库 5 个全局 skill（3gpp_skill / files_skill / find_skill / program_skill / update_skill）与 AGENTS.md 工作约定的全部工具依赖。
