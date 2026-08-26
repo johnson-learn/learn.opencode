@@ -5,6 +5,15 @@ description: 智能进化协议执行技能（全局 skill，默认触发）。U
 
 # 智能进化协议执行技能（evolution_skill）
 
+## 🛠 工具依赖清单
+
+| 工具 | 用途 | 检查命令 |
+|---|---|---|
+| skill_validate.py | skill 结构校验（五步流程第 5 步） | `python <opencode配置目录>\tests\skill_validate.py <opencode配置目录>\skills` |
+| test_regedit.py | 注册表一致性校验 | `python <opencode配置目录>\tests\test_regedit.py` |
+
+无额外外部依赖；进化固化本身只用 edit/read 工具与上述校验脚本。
+
 ## 职责
 
 本 skill 是进化协议的**执行器**。铁律第 2 条（每次响应复盘进化）发现需固化时，按本 skill 流程执行；详版协议见 `<opencode配置目录>\instructions.md` 智能进化协议章节。
