@@ -34,10 +34,10 @@ $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIden
 function Test-Soffice {
   if (Test-Cmd "soffice") { return $true }
   foreach ($p in @(
-    "C:\Program Files\LibreOffice\program\soffice.exe",
-    "C:\Program Files\LibreOffice\program\soffice.com",
-    "C:\Program Files (x86)\LibreOffice\program\soffice.exe",
-    "C:\Program Files (x86)\LibreOffice\program\soffice.com"
+    "<LibreOffice目录>\program\soffice.exe",
+    "<LibreOffice目录>\program\soffice.com",
+    "<工具目录>Program Files (x86)\LibreOffice\program\soffice.exe",
+    "<工具目录>Program Files (x86)\LibreOffice\program\soffice.com"
   )) { if (Test-Path $p) { return $true } }
   return $false
 }
@@ -48,7 +48,7 @@ function Test-Pkg([string]$id) {
     "Git.Git"                     { return (Test-Cmd "git") }
     "OpenJS.NodeJS.LTS"           { return (Test-Cmd "node") }
     "Python.Python.3.12"          { return (Test-Cmd "python") }
-    "Google.Chrome"               { return (Test-Path "C:\Program Files\Google\Chrome\Application\chrome.exe") }
+    "Google.Chrome"               { return (Test-Path "<Chrome目录>\chrome.exe") }
     "TheDocumentFoundation.LibreOffice" { return (Test-Soffice) }
     default                       { return $false }
   }
@@ -254,8 +254,8 @@ if (-not $SkipDeploy) {
   }
 
   $loDir = Find-AppDir @(
-    "C:\Program Files\LibreOffice",
-    "C:\Program Files (x86)\LibreOffice",
+    "<LibreOffice目录>",
+    "<工具目录>Program Files (x86)\LibreOffice",
     "D:\LibreOffice",
     "D:\Program Files\LibreOffice"
   ) "program\soffice.com"
@@ -264,8 +264,8 @@ if (-not $SkipDeploy) {
   }
 
   $chromeDir = Find-AppDir @(
-    "C:\Program Files\Google\Chrome\Application",
-    "C:\Program Files (x86)\Google\Chrome\Application",
+    "<Chrome目录>",
+    "<工具目录>Program Files (x86)\Google\Chrome\Application",
     "${env:LOCALAPPDATA}\Google\Chrome\Application"
   ) "chrome.exe"
 
@@ -274,7 +274,7 @@ if (-not $SkipDeploy) {
 
   # w64devkit：从 PATH 或常见盘符探测
   $toolDir = ""
-  foreach ($p in @("C:\w64devkit", "D:\w64devkit", "E:\w64devkit")) {
+  foreach ($p in @("<工具目录>w64devkit", "D:\w64devkit", "E:\w64devkit")) {
     if (Test-Path (Join-Path $p "w64devkit\bin\gcc.exe")) { $toolDir = Split-Path $p; break }
   }
 
@@ -393,7 +393,7 @@ Step "8. 验证汇总"
 # 若 LibreOffice 已安装但 soffice 不在 PATH，自动加入用户 PATH
 if (Test-Soffice -and -not (Test-Cmd "soffice")) {
   $soDir = $null
-  foreach ($p in @("C:\Program Files\LibreOffice\program","C:\Program Files (x86)\LibreOffice\program")) {
+  foreach ($p in @("<LibreOffice目录>\program","<工具目录>Program Files (x86)\LibreOffice\program")) {
     if (Test-Path (Join-Path $p "soffice.exe")) { $soDir = $p; break }
   }
   if ($soDir -and (Add-ToUserPath $soDir)) { Ok "已将 LibreOffice program 目录加入用户 PATH：$soDir（新开终端生效）" }
@@ -406,7 +406,7 @@ $checks = @(
   @{ name = "p2t";             ok = (Test-Cmd "p2t") },
   @{ name = "git";             ok = (Test-Cmd "git") },
   @{ name = "soffice";         ok = (Test-Soffice) },
-  @{ name = "Chrome";          ok = (Test-Path "C:\Program Files\Google\Chrome\Application\chrome.exe") -or (Test-Path "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe") },
+  @{ name = "Chrome";          ok = (Test-Path "<Chrome目录>\chrome.exe") -or (Test-Path "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe") },
   @{ name = "skills 部署";     ok = (Test-Path (Join-Path $ConfigDir "skills\3gpp_skill\SKILL.md")) },
   @{ name = "辅助脚本部署";    ok = (Test-Path (Join-Path $ToolDir "extract-docx.ps1")) }
 )

@@ -14,7 +14,7 @@ def check(name, cond):
 def collect_framework_files():
     out = []
     for root, dirs, files in os.walk(CFG):
-        dirs[:] = [d for d in dirs if d not in ("node_modules", ".git", "__pycache__", "archive", "modules", "default")]
+        dirs[:] = [d for d in dirs if d not in ("node_modules", ".git", "__pycache__", "archive", "modules", "default", "repo_face")]
         for f in files:
             if f.endswith((".md", ".txt")):
                 out.append(os.path.join(root, f))
