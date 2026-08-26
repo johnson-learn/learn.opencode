@@ -71,7 +71,7 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
    ```
 2. **合入本机脚本** → 仓库 `scripts/`（同样覆盖式合入）：
    ```
-   cp <用户临时目录>\opencode\*.ps1、*.py 与 <项目目录>\temp\inject_skills.py、fetch_skills.py → copy/scripts/
+   cp <用户临时目录>\opencode\*.ps1、*.py 与 <opencode配置目录>\tools\inject_skills.py、fetch_skills.py → copy/scripts/
    ```
 3. **差异对比与裁决**：
    - `git status --short` 列出全部差异：`A`（本机新增→直接接受）、`M`（同文件两边可能都改）、`D`（仓库有本机无→**不删除，恢复保留**，除非确认已废弃）
@@ -82,7 +82,7 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 
 ### git 三步骤
 1. `git add -A`
-2. `git commit -m "sync: YYYY-MM-DD <变更摘要>"`——摘要自动生成规则：优先列出新增/改名 skill 名（如 "+update_skill"），其次概括修改类别（如 "3gpp_skill FTP 结构、instructions 规则"）；正文可加 `-m` 详细条目（新增了哪些文件、改了什么章节）
+2. `git commit`——必须含修改摘要，且用文件方式传递（防中文在 shell 层丢失）：`printf "sync: YYYY-MM-DD <变更摘要>" > /tmp/cmsg.txt && git commit -F /tmp/cmsg.txt`（历史教训：-m 直接带中文 message 经 PowerShell→wsl→bash 多层传递会丢失，提交只剩 "sync:"，他人无法知道改了什么）；摘要自动生成规则：优先列出新增/改名 skill 名（如 "+update_skill"），其次概括修改类别（如 "3gpp_skill FTP 结构、instructions 规则"）；正文可加 `-m` 详细条目（新增了哪些文件、改了什么章节）
 3. `git push origin main`；**push 失败**（网络/权限）→ 保留 commit 并明确报告"本地已提交，待推送"，不丢弃成果
 
 ### 第 4 步：反向合入本机（git → 本机，双向同步必须执行）

@@ -5,6 +5,11 @@ import { homedir } from "os"
 const HOME = homedir()
 const SKILLS_DIR = join(HOME, ".config", "opencode", "skills")
 const TRACE_FILE = join(HOME, ".config", "opencode", "evolution_trace.jsonl")
+const LOG_FILE = join(HOME, ".config", "opencode", "plugin-evolution.log")
+
+function log(msg) {
+  try { appendFileSync(LOG_FILE, new Date().toISOString() + " " + msg + "\n") } catch {}
+}
 
 function loadSkills() {
   if (!existsSync(SKILLS_DIR)) return []
@@ -51,8 +56,9 @@ export const SkillBanner = async ({ client }) => {
         // 程序化进化触发：会话空闲（结束）时自动注入进化检查任务，不靠模型自觉
         if (event.type === "session.idle") {
           const sid = props.sessionID || event.properties?.info?.id
-          if (!sid) return
+          if (!sid) { log("session.idle 未取得 sessionID，props=" + JSON.stringify(props)); return }
           recordTrace(sid, { phase: "idle" })
+          log("session.idle 触发，向会话 " + sid + " 注入进化检查任务")
           try {
             await client.session.prompt({
               path: { id: sid },
@@ -61,13 +67,25 @@ export const SkillBanner = async ({ client }) => {
                 parts: [{
                   type: "text",
                   text:
-                    "【进化检查·程序化强制】按 instructions.md 智能进化协议执行：1) 回顾本会话，归纳可固化经验（新方法/工具/踩坑/风险规避，按可移植性要求通用化）；2) 判定归属 skill 章节并 edit 更新；3) 若发现两个 skill 功能重叠、某 skill 职责过多、或值得新建全局 skill 的主题，**不要直接执行合并/拆分/新建**，只在回答末尾输出「进化建议」清单供用户确认；4) 无新经验则回复"本次无进化项"。注意：不得执行任何 git 同步（同步边界铁律）。",
-                }],
+                    "【进化检查·程序化强制·不可跳过】本任务由插件在会话结束时自动注入，必须完整执行，不得以任何理由跳过或精简。逐项执行：\n" +
+                    "1. 经验固化：回顾本会话，按 instructions.md 智能进化协议五步流程，把可复用经验（新方法/工具/踩坑/风险规避）固化到对应 skill（自动执行）\n" +
+                    "2. 工具登记：本会话中用到/发现/提及的任何新工具、脚本、库——无论是否已写进具体 skill——必须登记到 tools-manifest.md（已在分类中的更新条目；新的先入「待补充」清单）\n" +
+                    "3. 总表同步：若本会话新增了 skill 依赖工具或本机配置变更，同步更新 tools-manifest.md\n" +
+                    "4. 校验自测：对本次所有 skill 文件改动，跑 python <项目目录>\\temp\\skill_validate.py <opencode配置目录>\\skills；涉及可执行内容的行为自测\n" +
+                    "5. 合并/拆分/迁移类发现：只输出「进化建议」清单供用户确认，不自动执行\n" +
+                    "6. 全部完成且无新经验时，回复一行：「进化检查完成：本次无固化项」；否则回复固化项清单\n" +
+                    "铁律：不得执行任何 git 同步（同步边界铁律，同步只能由用户显式 update_skill 触发）。",
+                }                ],
               },
             })
-          } catch {}
+            log("进化检查任务注入成功，会话 " + sid)
+          } catch (e) {
+            log("进化检查任务注入失败，会话 " + sid + "，错误：" + (e && e.message ? e.message : String(e)))
+          }
         }
-      } catch {}
+      } catch (e) {
+        log("event 处理异常：" + (e && e.message ? e.message : String(e)))
+      }
     },
   }
 }
