@@ -4,6 +4,7 @@
 
 ### 进化触发时机（程序化强制，不再靠模型自觉）
 - **skill-banner 插件在 `session.idle`（会话结束）时自动注入「进化检查任务」**（client.session.prompt 程序化发送），每次会话结束必然触发一次进化检查——即使模型"忘了"，插件也会强制唤醒
+- **注入任务为强制清单，不可跳过、不可精简**：① 经验固化（五步流程）；② 工具登记（本会话用到的任何新工具/脚本/库必须登记 tools-manifest.md）；③ 总表同步（skill 依赖或本机配置变更）；④ 校验自测（skill_validate.py + 行为自测）；⑤ 合并/拆分/迁移只出建议；⑥ 完成后回复固化项清单或"无固化项"
 - 每次任务回答过程中如遇踩坑/新发现，可即时记录（额外触发点）
 - 轨迹记录：插件同时把会话轨迹追加到 `~\.config\opencode\evolution_trace.jsonl`（供合并/拆分分析用）
 
@@ -58,7 +59,7 @@
 4. **新项目 skill 注入规则**：当用户在一个新文件夹/新项目（当前工作目录下不存在项目级 skill）中**显式调用全局 skill**（如 `files_skill：任务`）时，必须执行注入：
    - 把**全部全局 skill**（`~\.config\opencode\skills\` 下每个 skill 目录）复制到当前项目的 `.opencode\skills\` 下（成为项目级 skill）
    - 对复制出的每个 SKILL.md，改写 frontmatter description：把"（全局 skill，仅显式触发，不靠关键词自动调用）"改为"（项目级 skill，默认触发）"，把"Use ONLY when 用户消息显式包含..."的仅显式限制改为"Use when 用户消息显式包含 <skill名>：（显式调用）或任务涉及本技能领域时按需自动调用"
-   - 注入脚本（本机已验证）：`python <项目目录>\temp\inject_skills.py <目标项目目录>`
+   - 注入脚本（本机已验证）：`python <opencode配置目录>\tools\inject_skills.py <目标项目目录>`
    - 注入后提醒用户重启 opencode；之后该项目内提问默认触发这些项目级 skill，无需再显式调用
    - 已注入过的项目（`.opencode\skills\` 已有同名 skill）默认覆盖更新
 
@@ -67,6 +68,7 @@
 1. **位置**：`~\.config\opencode\skills\<skill名>\SKILL.md`；目录名 = frontmatter 的 name（小写+下划线，如 files_skill）
 2. **description 格式**（显式触发约定）：开头"（全局 skill，仅显式触发，不靠关键词自动调用）" + "Use ONLY when 用户消息显式包含 "<skill名>："..." + 冒号后为任务说明 + "普通消息仅提及关键词但无前缀时，不调用本技能"
 3. **🛠 工具依赖清单章节（必须，置于 skill 开头正文首章）**：表格列【工具 | 用途 | 本机位置/版本 | 检查命令 | 缺失时安装】，末尾附"移植说明"总结核心依赖与可选项——便于移植到新机器逐项检查
+3c. **工具总清单唯一权威源**：`<opencode配置目录>\tools-manifest.md` 是全体系工具的唯一权威管理表（分类 A~G + 本机配置 + 待补充清单）。规则：① 各 skill 的工具清单为分 skill 视角摘录，冲突时以总表为准；② **新增/变更/安装任何工具时，必须同步更新总表**——覆盖范围：所有全局 skill、**项目级 skill** 的新增依赖工具均须登记；③ **思考回答中发现的好用工具、脚本、库等，即使未写进任何具体 skill，也必须登记到总表**（可先入"待补充"清单，装好后移入对应类别）；④ 新机器移植按总表逐项检查安装；⑤ setup-windows.ps1 的安装清单与总表保持对齐
 3b. **入口 SKILL.md 精炼原则**：入口文件只保留 frontmatter + 处理流程 + 路由表 + 核心铁律（目标 ≤5KB）；大块知识（工具清单明细、网站结构、访问技巧、长教程）移到 skill 目录下 `references/*.md`，入口用一句话引用"详见 references/xxx.md，按需读取"——防一次性加载上万个 token（豆包分析指出的短板）
 4. **处理流程章节（必须）**：确认任务 → 路由 → 执行 → 联动其它 skill（find_skill/filer_skill 等）
 5. **子技能资源库规范**：聚合类 skill 的子技能放 `modules/<目录>/GUIDE.md`（SKILL.md 改名 GUIDE.md，不独立注册）；路由表用 `modules/<目录>` 引用

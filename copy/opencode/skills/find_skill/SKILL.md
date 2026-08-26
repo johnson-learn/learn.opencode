@@ -13,7 +13,7 @@ description: 网络资源获取与 GitHub 镜像加速技能（全局 skill，�
 | node + market-cli | LobeHub 市场搜索/安装 | npx 缓存 `<用户目录>\AppData\Local\npm-cache\_npx\06aaad52133b3ed7\node_modules\@lobehub\market-cli\dist\cli.js`（含凭证 `~\.lobehub-market\credentials.json`） | `& node <cli.js> --help` | `npx -y @lobehub/market-cli register --name xxx --description xxx --source open-claw`（凭证需重新注册） |
 | Python 3.12 | 下载脚本（fetch_skills.py）、MSI 校验（msilib） | `python` | `python --version` | python.org |
 | tar / Expand-Archive | 解压 tarball/zip | Windows 自带 | `tar --version` | 自带 |
-| 批量安装脚本 | GitHub skill 仓库批量抓取 | `<项目目录>\temp\fetch_skills.py` | `Test-Path` | 从原机复制（含 PLAN 映射表） |
+| 批量安装脚本 | GitHub skill 仓库批量抓取 | `<opencode配置目录>\tools\fetch_skills.py` | `Test-Path` | 从原机复制（含 PLAN 映射表） |
 | pip 清华源 | Python 包装 | `https://pypi.tuna.tsinghua.edu.cn/simple` | — | 无需装 |
 | GitHub 镜像 | 直连不通时的替代渠道 | ghproxy.net（截断风险）/ gh-proxy.com（大文件首选） | `curl -sL -m 20 -o NUL -w %{http_code} https://gh-proxy.com/` | 无需装（渠道失效换下一个） |
 | winget | Windows 包安装（不稳，GitHub 源常失败） | 自带 | `winget --version` | 自带 |
@@ -70,7 +70,7 @@ description: 网络资源获取与 GitHub 镜像加速技能（全局 skill，�
 - 多详情页并行抓取时用 general 子代理批量处理（每页 SKILL.md 完整，直接落盘 GUIDE.md）
 
 ### GitHub skill 仓库批量安装脚本
-- 批量脚本：`python <项目目录>\temp\fetch_skills.py [仓库名过滤]`（ghproxy 下载 tarball → 递归找 SKILL.md → 按 PLAN 映射装入目标 skill 的 modules/ → SKILL.md 改名 GUIDE.md）
+- 批量脚本：`python <opencode配置目录>\tools\fetch_skills.py [仓库名过滤]`（ghproxy 下载 tarball → 递归找 SKILL.md → 按 PLAN 映射装入目标 skill 的 modules/ → SKILL.md 改名 GUIDE.md）
 - 大仓库（如 claude-office-skills 140+ 技能）装完后按白名单清理非目标模块
 - 已知失败：超大仓库下载超时（pdf-converter-mineru）、超长路径（imbad0202，Windows 路径限制）、部分仓库 tarball 截断（改走 skillsmp 详情页抓取）
 
