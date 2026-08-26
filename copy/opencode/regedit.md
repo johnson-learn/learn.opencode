@@ -64,8 +64,9 @@
 
 | 注册项 | 位置 | 生效 | 说明 |
 |---|---|---|---|
-| skill_validate.py | `tests\skill_validate.py` | G | 每次 skill 改动后强制（铁律第 8 条） |
-| test_plugin.js | `tests\test_plugin.js` | G | 插件改动后强制（15/15） |
+| skill_validate.py | `tests\skill_validate.py` | G | 每次 skill 改动后强制（铁律第 8 条）；体积门限可配置（--set-limit/--ignore/--ignore-all） |
+| test_skill_validate_config.py | `tests\test_skill_validate_config.py` | G | skill_validate 配置机制改动后强制（7/7） |
+| test_plugin.js | `tests\test_plugin.js` | G | 插件改动后强制（20/20） |
 | test_path_convert.py | `tests\test_path_convert.py` | G | path_convert 改动后强制（9/9） |
 | test_update_skill.py | `tests\test_update_skill.py` | G | 同步机制改动后强制（14/14，隔离临时仓库） |
 | test_regedit.py | `tests\test_regedit.py` | G | 注册表改动后强制（本表与实际文件系统一致性） |
@@ -80,6 +81,7 @@
 | sync_target.txt | `skills\update_skill\` | G | 同步目标记忆；STATE_FILES 保护对象 |
 | evolution_trace.jsonl | `<opencode配置目录>\` | E | 插件写（供合并/拆分分析） |
 | plugin-evolution.log | `<opencode配置目录>\` | E | 插件日志（验证兜底机制实跑） |
+| skill_validate_config.json | `tests\` | G | skill_validate 体积门限用户选择持久化（--set-limit/--ignore/--ignore-all 写入，后续一致性生效，随同步跨机器） |
 
 ## 同步层
 

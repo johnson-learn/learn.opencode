@@ -28,7 +28,8 @@
 [2026-08-26] 插件自测（test_plugin.js） → 15/15 通过：session.created 主/子会话 toast 行为、session.idle 进化任务注入（六项强制清单）、缺 sessionID 容错、未知事件零副作用、轨迹与日志落盘；自测发现真 bug：edit 误删 export 闭合（已修复）；test_plugin.js 纳入行为自测清单
 [2026-08-26] 用户指出（commit message 摘要丢失） → 多个提交只剩 "sync:"（中文摘要经 PowerShell→wsl→bash 多层 shell 传递丢失）；修复：update_skill git 三步骤改为 printf 写 /tmp/cmsg.txt + git commit -F 文件方式传递；已存在裸 sync: 提交不改历史（共享仓库 amend 危险），向前修复
 [2026-08-26] 用户要求（修炼文件归档全局） → 自查发现 skill 修炼文件散落 <项目目录>\temp：建立全局 <opencode配置目录>\tools\ 目录（path_convert/inject_skills/fetch_skills/slim_skills/cross_move/generalize 六个核心修炼工具）+ tools\archive\（18 个一次性已执行脚本归档）；测试用例已在 tests\；更新全部路径引用（instructions/skills）；三套测试全绿（10+15+0 错误）；原则：一切 skill 修炼文件必须放全局目录随 update_skill 同步 GitHub，任务产物（图片/文档）才留在项目 temp
-[2026-08-26] 用户规则（项目资产盘点反哺全局） → update_skill 新增「第 0.9 步：项目资产盘点」：同步前遍历项目（当前工作目录 + project_list.txt 状态清单 + 用户显式指定目录），扫描三类资产（项目级 skill / 项目脚本 / tools 目录），按通用性判定（可复用+职责独立+非项目特定+其它机器使用框架功能时需要）提取到全局 skills\ 或 tools\，regedit.md 注册 + tools-manifest 登记 + 校验自测，随本次同步上 GitHub；拿不准的列「提取建议清单」待确认（与进化协议分级铁律一致）。本轮盘点 <项目目录>：6 个项目级 skill 均为全局同名副本（跳过）、无通用脚本（temp 为任务产物）——无提取项
+[2026-08-26] 用户要求（SKILL.md 超限门限可配置） → skill_validate.py 升级：体积门限从硬编码 8KB 改为可配置——超限时输出「待决清单」给用户三选一（--set-limit 改门限 / --ignore 忽略指定 / --ignore-all 忽略全部），选择写入 tests\skill_validate_config.json 持久化后续一致性生效；新增 test_skill_validate_config.py（7/7：门限判定/忽略/持久化/改限/ignore-all/show-config，隔离临时目录）；踩坑：子进程 stdout 编码——skill_validate.py 缺 sys.stdout.reconfigure(utf-8) 致测试断言全败（Windows 子进程默认 cp936 字节流按 utf-8 解码乱码），已补；用户选择：门限 15KB（files_skill 8.8KB/update_skill 9.2KB 均在限内）；全套测试 7+47+20+9+14 全绿、skill_validate 0 错误 0 警告 0 待决
+
 
 
 
