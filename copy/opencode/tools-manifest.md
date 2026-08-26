@@ -11,7 +11,6 @@
 |---|---|---|
 | A. 基础环境 | 5 | winget/官方 |
 | B. Python 环境与核心包 | 20 | pip 清华源 |
-| C. 文档处理工具 | 4 | winget/pip |
 | D. OCR 与公式识别 | 2 | pip |
 | E. 网络与同步 | 4 | 自带/apt |
 | F. 编程环境 | 3 | 离线包/apt |
@@ -49,19 +48,10 @@
 | opencv-python + imageio-ffmpeg | 视频抽帧、音视频 | `pip install opencv-python imageio-ffmpeg` | `python -c "import cv2, imageio_ffmpeg"` |
 | playwright | headless 浏览器渲染 HTML→PDF/截图 | `pip install playwright` + `python -m playwright install chromium`（下载慢设 `PLAYWRIGHT_DOWNLOAD_HOST=https://npmmirror.com/mirrors/playwright`） | `python -c "from playwright.sync_api import sync_playwright"`（本机实测 HTML→PDF ✓） |
 | weasyprint | HTML/CSS→矢量 PDF | `pip install weasyprint` + MSYS2：`winget install MSYS2.MSYS2` → `pacman -S mingw-w64-ucrt-x86_64-gtk3` + 永久环境变量 `WEASYPRINT_DLL_DIRECTORIES=<工具目录>msys64\ucrt64\bin` | `python -c "import weasyprint; print(weasyprint.__version__)"`（本机 69.0 实测 ✓） |
-| docxtpl | Word 模板渲染（docx 模板 + jinja2） | `pip install docxtpl` | `python -c "import docxtpl"` |
-| jinja2 | 模板引擎（docxtpl 依赖） | `pip install jinja2` | `python -c "import jinja2"` |
-| python-magic-bin | 文件类型魔数识别（Windows 免装 libmagic） | `pip install python-magic-bin` | `python -c "import magic"` |
-| ocrmypdf | 扫描 PDF OCR（转可搜索 PDF） | `pip install ocrmypdf`（依赖 ghostscript/tesseract 系统组件） | `python -c "import ocrmypdf"` |
-
-## C. 文档处理工具
-
-| 工具 | 用途 | 安装命令 | 检查命令 |
-|---|---|---|---|
-| OCRmyPDF | 扫描 PDF 加 OCR 层（可搜索） | `pip install ocrmypdf`（依赖 tesseract 引擎，见 D 类；本机 17.10.0 实测扫描件→可搜索 PDF ✓） | `python -m ocrmypdf --version`（exe 不在 PATH，用 -m 方式） |
 | docxtpl | Word 模板填充 | `pip install docxtpl` | `python -c "from docxtpl import DocxTemplate"` |
 | Jinja2 | 模板渲染（文档/HTML/报告） | `pip install jinja2` | `python -c "from jinja2 import Template"` |
-| python-magic | 文件类型 magic bytes 检测 | `pip install python-magic-bin`（Windows） | `python -c "import magic"` |
+| python-magic-bin | 文件类型 magic bytes 检测 | `pip install python-magic-bin`（Windows） | `python -c "import magic"` |
+| ocrmypdf | 扫描 PDF 加 OCR 层（可搜索） | `pip install ocrmypdf`（依赖 tesseract 引擎，见 D 类；本机 17.10.0 实测扫描件→可搜索 PDF ✓） | `python -m ocrmypdf --version`（exe 不在 PATH，用 -m 方式） |
 
 ## D. OCR 与公式识别
 

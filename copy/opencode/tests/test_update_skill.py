@@ -5,6 +5,9 @@
 import os, subprocess, sys, tempfile, shutil
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
+# 动态推导本机路径（可移植：新机器自动适配）
+CFG = os.path.join(os.path.expanduser("~"), ".config", "opencode")
+
 pass_n, fail_n = 0, 0
 def check(name, cond):
     global pass_n, fail_n
@@ -81,16 +84,16 @@ tmp2 = tempfile.mkdtemp(prefix="us_merge_")
 repo_dir = os.path.join(tmp2, "repo"); os.makedirs(repo_dir)
 local_dir = os.path.join(tmp2, "local"); os.makedirs(local_dir)
 # 仓库有占位符版状态文件（会污染本机的情况）
-open(os.path.join(repo_dir, "path_map.txt"), "w", encoding="utf-8").write(r"<项目目录>=<项目目录>")
+open(os.path.join(repo_dir, "path_map.txt"), "w", encoding="utf-8").write("<项目目录>=<项目目录>")
 open(os.path.join(repo_dir, "sync_target.txt"), "w", encoding="utf-8").write("stale")
 open(os.path.join(repo_dir, "SKILL.md"), "w", encoding="utf-8").write("new content")
 # 本机有真实状态文件
-open(os.path.join(local_dir, "path_map.txt"), "w", encoding="utf-8").write(r"<项目目录>=E:\\real")
+open(os.path.join(local_dir, "path_map.txt"), "w", encoding="utf-8").write("<项目目录>=E:\\real")
 open(os.path.join(local_dir, "sync_target.txt"), "w", encoding="utf-8").write("\\\\wsl.localhost\\real")
 skipped = reverse_merge(repo_dir, local_dir)
 check("path_map.txt 被跳过", "path_map.txt" in skipped)
 check("sync_target.txt 被跳过", "sync_target.txt" in skipped)
-check("本机 path_map.txt 保持真实映射", open(os.path.join(local_dir, "path_map.txt"), encoding="utf-8").read() == r"<项目目录>=E:\\real")
+check("本机 path_map.txt 保持真实映射", open(os.path.join(local_dir, "path_map.txt"), encoding="utf-8").read() == "<项目目录>=E:\\real")
 check("SKILL.md 正常合入", open(os.path.join(local_dir, "SKILL.md"), encoding="utf-8").read() == "new content")
 shutil.rmtree(tmp2, ignore_errors=True)
 
@@ -122,8 +125,69 @@ verdict2 = judge_revert("v2 with FIX", os.path.join(tmp3, "p.py"))
 check("本机与仓库一致时正常同步", verdict2 == "本机领先或一致：正常正向同步")
 shutil.rmtree(tmp3, ignore_errors=True)
 
-# ============ 用例 5：远端双向完整链路（反向合入→to_local→教学行恢复→正向误伤→恢复闭环） ============
-print("[用例5] 远端双向更新完整链路（教学行双向误伤与恢复，动态自洽）")
+print("[用例5] 五步流程关键要素（SKILL.md 规则存在性）")
+sk = open(os.path.join(CFG, "skills", "update_skill", "SKILL.md"), encoding="utf-8").read()
+check("SKILL.md 含五步框架标题", "吸收远端 → 修改 → 自测 → 用户确认 → 按选择执行" in sk)
+check("第一步：先 pull 吸收远端", "第一步：吸收远端" in sk)
+check("第二步：修改+盘点", "第二步：修改" in sk)
+check("第三步：自测（缺用例先补写）", "第三步：自测" in sk and "先写用例再跑" in sk)
+check("第三步要求双向更新用例模拟远端", "模拟远端操作" in sk)
+check("第四步：用户确认推送", "第四步：用户确认" in sk and "填写新内容" in sk)
+check("第五步：按选择执行", "第五步：按用户选择执行" in sk)
+
+# ============ 用例 6：模拟远端操作（双仓库：远端新提交 → 吸收 → 修改 → 推送） ============
+print("[用例6] 模拟远端操作完整链路（隔离双仓库）")
+tmp6 = tempfile.mkdtemp(prefix="us_remote_")
+# 远端仓库（模拟 GitHub）
+remote_dir = os.path.join(tmp6, "remote")
+os.makedirs(remote_dir)
+subprocess.run(["git", "init", "-q", "--bare", remote_dir], check=True)
+# 本机工作树
+local_dir = os.path.join(tmp6, "local")
+subprocess.run(["git", "init", "-q", "-b", "main", local_dir], check=True)
+subprocess.run(["git", "-C", local_dir, "config", "user.email", "a@t.l"], check=True)
+subprocess.run(["git", "-C", local_dir, "config", "user.name", "machine-A"], check=True)
+open(os.path.join(local_dir, "f.md"), "w", encoding="utf-8").write("v1")
+subprocess.run(["git", "-C", local_dir, "add", "-A"], check=True)
+subprocess.run(["git", "-C", local_dir, "commit", "-q", "-m", "init"], check=True)
+subprocess.run(["git", "-C", local_dir, "remote", "add", "origin", remote_dir], check=True)
+subprocess.run(["git", "-C", local_dir, "push", "-q", "origin", "main"], check=True)
+# 模拟远端新提交（另一台机器：克隆→改→推）
+other_dir = os.path.join(tmp6, "other")
+subprocess.run(["git", "clone", "-q", "-b", "main", remote_dir, other_dir], check=True)
+subprocess.run(["git", "-C", other_dir, "config", "user.email", "b@t.l"], check=True)
+subprocess.run(["git", "-C", other_dir, "config", "user.name", "machine-B"], check=True)
+open(os.path.join(other_dir, "f.md"), "w", encoding="utf-8").write("v2 with FIX from B")
+subprocess.run(["git", "-C", other_dir, "add", "-A"], check=True)
+subprocess.run(["git", "-C", other_dir, "commit", "-q", "-m", "B-machine 修复"], check=True)
+subprocess.run(["git", "-C", other_dir, "push", "-q", "origin", "main"], check=True)
+# 第一步模拟：本机 pull 吸收远端
+subprocess.run(["git", "-C", local_dir, "pull", "-q", "--rebase", "origin", "main"], check=True)
+out6 = open(os.path.join(local_dir, "f.md"), encoding="utf-8").read()
+check("第一步 pull 吸收远端修复", out6 == "v2 with FIX from B")
+# 第二步模拟：本机修改
+open(os.path.join(local_dir, "f.md"), "w", encoding="utf-8").write(out6 + "\nv3 local improvement")
+# 推送前用户确认（第四步）状态检查：工作区有未推送修改
+st = subprocess.run(["git", "-C", local_dir, "status", "--short"], capture_output=True, text=True).stdout
+check("推送前工作区有未提交修改（待确认）", "M f.md" in st)
+# 第五步模拟：确认后推送（-F 文件方式）
+msg6 = "sync: 2026-08-26 模拟双向更新测试"
+mf6 = os.path.join(tmp6, "m.txt")
+open(mf6, "w", encoding="utf-8").write(msg6)
+subprocess.run(["git", "-C", local_dir, "add", "-A"], check=True)
+subprocess.run(["git", "-C", local_dir, "commit", "-q", "-F", mf6], check=True)
+subprocess.run(["git", "-C", local_dir, "push", "-q", "origin", "main"], check=True)
+# 反向验证：另一台机器 pull 看到本机修改
+subprocess.run(["git", "-C", other_dir, "pull", "-q", "--rebase", "origin", "main"], check=True)
+out7 = open(os.path.join(other_dir, "f.md"), encoding="utf-8").read()
+check("推送后远端可拉到本机修改", "v3 local improvement" in out7)
+# 第五步·反向合入检查：push 后远端无新提交（BEHIND=0 等价）
+behind = subprocess.run(["git", "-C", local_dir, "rev-list", "--count", "HEAD..origin/main"], capture_output=True, text=True).stdout.strip()
+check("推送后 BEHIND=0", behind == "0")
+shutil.rmtree(tmp6, ignore_errors=True)
+
+# ============ 用例 7：远端双向完整链路（教学行双向误伤与恢复，动态自洽，对端固化） ============
+print("[用例7] 远端双向更新完整链路（教学行双向误伤与恢复，动态自洽）")
 import importlib.util as _ilu, pathlib as _pl
 _spec = _ilu.spec_from_file_location("pc", os.path.join(_pl.Path(__file__).parent, "path_convert.py"))
 _pc = _ilu.module_from_spec(_spec); _spec.loader.exec_module(_pc)
@@ -155,6 +219,49 @@ fwd = [_conv(l, _pmap) for l in restored]
 check("to_portable 误伤数据类教学行（默认值转占位符）", fwd[1] != teach_repo[1])
 fwd_restored = restore_teaching(teach_repo, fwd)
 check("正向误伤后恢复闭环（与仓库版一致）", fwd_restored == teach_repo)
+
+# ============ 用例 8：提交前可移植性校验（扫描待提交内容无本机特征） ============
+print("[用例8] 提交前可移植性校验（不同电脑可移植，用户规则强制）")
+def scan_portability(root):
+    """扫描目录下文本文件的本机特征残留。返回违规列表 [(文件, 特征类型)]"""
+    home = os.path.expanduser("~").replace("/", "\\")
+    user = os.path.basename(home.rstrip("\\"))
+    violations = []
+    text_exts = (".md", ".py", ".js", ".json", ".jsonc", ".txt", ".ps1", ".sh")
+    for dirpath, dirs, files in os.walk(root):
+        dirs[:] = [d for d in dirs if d not in (".git", "__pycache__", "node_modules")]
+        for f in files:
+            if not f.lower().endswith(text_exts):
+                continue
+            fp = os.path.join(dirpath, f)
+            try:
+                c = open(fp, encoding="utf-8", errors="replace").read()
+            except Exception:
+                continue
+            if home in c:
+                violations.append((f, "含本机 home 真实路径"))
+            if ("\\Users\\" + user) in c or ("/Users/" + user) in c:
+                violations.append((f, "含本机用户名路径"))
+    return violations
+
+tmp8 = tempfile.mkdtemp(prefix="us_port_")
+# 干净目录：占位符形式
+clean_dir = os.path.join(tmp8, "clean")
+os.makedirs(clean_dir)
+open(os.path.join(clean_dir, "a.md"), "w", encoding="utf-8").write("路径 <opencode配置目录> 与 <用户目录>")
+check("干净目录（占位符形式）通过可移植性扫描", scan_portability(clean_dir) == [])
+# 污染目录：混入本机真实路径
+dirty_dir = os.path.join(tmp8, "dirty")
+os.makedirs(dirty_dir)
+open(os.path.join(dirty_dir, "b.md"), "w", encoding="utf-8").write("硬编码 " + CFG + " 与 " + os.path.expanduser("~").replace("/", "\\") + "\\AppData")
+v8 = scan_portability(dirty_dir)
+check("污染目录检出本机特征", len(v8) > 0)
+# 自检：本测试文件自身与 tests 目录当前无本机特征残留（用例进入自测库后自身须干净）
+self_v = scan_portability(os.path.dirname(os.path.abspath(__file__)))
+check("tests 目录自身通过可移植性扫描（0 违规）", self_v == [])
+if self_v:
+    print("    违规:", self_v[:3])
+shutil.rmtree(tmp8, ignore_errors=True)
 
 print("\n结果：通过 %d 项，失败 %d 项" % (pass_n, fail_n))
 sys.exit(1 if fail_n else 0)

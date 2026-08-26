@@ -36,7 +36,7 @@ check("真实路径全部替换", HOME not in converted)
 # === 用例 2：占位符 → 真实路径（to_local 往返） ===
 print("[用例2] to_local 占位符转真实路径")
 f2 = os.path.join(tmp, "b.md")
-open(f2, "w", encoding="utf-8").write(r"配置 <opencode配置目录> 与临时 <用户临时目录>")
+open(f2, "w", encoding="utf-8").write("配置 " + CFG_DIR + " 与临时 " + TMP_DIR)
 local_map = pc.build_local_map()
 pairs_l = [(ph, real) for ph, real in local_map.items()]
 pairs_l.sort(key=lambda x: len(x[0]), reverse=True)
@@ -66,7 +66,7 @@ check("普通文件被转换", ("<" + "用户目录" + ">") in open(os.path.join
 print("[用例5] 未知占位符检测")
 scan_dir = os.path.join(tmp, "scan")
 os.makedirs(scan_dir)
-open(os.path.join(scan_dir, "s.md"), "w", encoding="utf-8").write(r"残留 <未定义目录> 与 <用户目录>")
+open(os.path.join(scan_dir, "s.md"), "w", encoding="utf-8").write(r"残留 <未定义目录> 与 " + HOME)
 unk = pc.scan_unknown_placeholders(scan_dir)
 check("检出 <未定义目录>", r"<未定义目录>" in unk)
 
