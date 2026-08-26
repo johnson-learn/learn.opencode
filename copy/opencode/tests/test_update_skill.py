@@ -81,16 +81,16 @@ tmp2 = tempfile.mkdtemp(prefix="us_merge_")
 repo_dir = os.path.join(tmp2, "repo"); os.makedirs(repo_dir)
 local_dir = os.path.join(tmp2, "local"); os.makedirs(local_dir)
 # 仓库有占位符版状态文件（会污染本机的情况）
-open(os.path.join(repo_dir, "path_map.txt"), "w", encoding="utf-8").write("<项目目录>=<项目目录>")
+open(os.path.join(repo_dir, "path_map.txt"), "w", encoding="utf-8").write(r"<项目目录>=<项目目录>")
 open(os.path.join(repo_dir, "sync_target.txt"), "w", encoding="utf-8").write("stale")
 open(os.path.join(repo_dir, "SKILL.md"), "w", encoding="utf-8").write("new content")
 # 本机有真实状态文件
-open(os.path.join(local_dir, "path_map.txt"), "w", encoding="utf-8").write("<项目目录>=E:\\real")
+open(os.path.join(local_dir, "path_map.txt"), "w", encoding="utf-8").write(r"<项目目录>=E:\\real")
 open(os.path.join(local_dir, "sync_target.txt"), "w", encoding="utf-8").write("\\\\wsl.localhost\\real")
 skipped = reverse_merge(repo_dir, local_dir)
 check("path_map.txt 被跳过", "path_map.txt" in skipped)
 check("sync_target.txt 被跳过", "sync_target.txt" in skipped)
-check("本机 path_map.txt 保持真实映射", open(os.path.join(local_dir, "path_map.txt"), encoding="utf-8").read() == "<项目目录>=E:\\real")
+check("本机 path_map.txt 保持真实映射", open(os.path.join(local_dir, "path_map.txt"), encoding="utf-8").read() == r"<项目目录>=E:\\real")
 check("SKILL.md 正常合入", open(os.path.join(local_dir, "SKILL.md"), encoding="utf-8").read() == "new content")
 shutil.rmtree(tmp2, ignore_errors=True)
 
@@ -121,6 +121,40 @@ check("检测到本机落后（对称回退防护判定正确）", verdict.start
 verdict2 = judge_revert("v2 with FIX", os.path.join(tmp3, "p.py"))
 check("本机与仓库一致时正常同步", verdict2 == "本机领先或一致：正常正向同步")
 shutil.rmtree(tmp3, ignore_errors=True)
+
+# ============ 用例 5：远端双向完整链路（反向合入→to_local→教学行恢复→正向误伤→恢复闭环） ============
+print("[用例5] 远端双向更新完整链路（教学行双向误伤与恢复，动态自洽）")
+import importlib.util as _ilu, pathlib as _pl
+_spec = _ilu.spec_from_file_location("pc", os.path.join(_pl.Path(__file__).parent, "path_convert.py"))
+_pc = _ilu.module_from_spec(_spec); _spec.loader.exec_module(_pc)
+_lmap = _pc.build_local_map()
+_pmap = _pc.build_portable_map()
+_lpairs = [(ph, real) for ph, real in _lmap.items()]; _lpairs.sort(key=lambda x: len(x[0]), reverse=True)
+def _conv(text, pairs):
+    for a, b in pairs: text = text.replace(a, b)
+    return text
+def _ph(name):
+    return "<" + name + ">"   # 拆分拼接，规避双向转换改写测试字面量
+doc_real = _lmap.get(_ph("资料目录"), "DOC")
+proj_real = _lmap.get(_ph("项目目录"), "PROJ")
+teach_repo = [
+    "- **自动类**（转换时自动推导，无需用户填写）：" + _ph("用户目录") + "、" + _ph("opencode配置目录") + "",
+    "- **数据类**（安装脚本交互选择）：" + _ph("资料目录") + "（默认 " + doc_real + "\\default）、" + _ph("项目目录") + "（默认 " + proj_real + "\\project\\default）",
+]
+def restore_teaching(repo_lines, cur_lines):
+    for k, l in enumerate(cur_lines):
+        if ("自动类" in l and "转换时自动推导" in l) or ("数据类" in l and "安装脚本交互选择" in l):
+            cur_lines[k] = repo_lines[k]
+    return cur_lines
+local_lines = [_conv(l, _lpairs) for l in teach_repo]
+check("to_local 破坏教学行（自动类转真实路径）", local_lines[0] != teach_repo[0])
+check("to_local 破坏数据类教学行（默认值被映射前缀替换）", local_lines[1] != teach_repo[1])
+restored = restore_teaching(teach_repo, local_lines)
+check("教学行恢复后与仓库版一致", restored == teach_repo)
+fwd = [_conv(l, _pmap) for l in restored]
+check("to_portable 误伤数据类教学行（默认值转占位符）", fwd[1] != teach_repo[1])
+fwd_restored = restore_teaching(teach_repo, fwd)
+check("正向误伤后恢复闭环（与仓库版一致）", fwd_restored == teach_repo)
 
 print("\n结果：通过 %d 项，失败 %d 项" % (pass_n, fail_n))
 sys.exit(1 if fail_n else 0)
