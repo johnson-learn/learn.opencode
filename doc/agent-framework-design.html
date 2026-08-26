@@ -309,7 +309,7 @@
     <a href="#s13"><span class="num">13</span> Agent 评估体系</a>
     <a href="#s14"><span class="num">14</span> 界面交互设计</a>
     <a href="#s15"><span class="num">15</span> 完整示例：以自身为例</a>
-    <a href="#s16"><span class="num">16</span> 本机 skill 系统分析（opencode）</a>
+    <a href="#s16"><span class="num">16</span> 本机 skill 系统分析（opencode 优化版）</a>
     <a href="#s17"><span class="num">17</span> 常用工具速查手册</a>
   </div>
 </div>
@@ -1203,144 +1203,183 @@ CI 自动触发评估
 <!-- ==================== S16 本机skill分析 ==================== -->
 <section id="s16">
   <h2><span class="sec-num">16</span>本机 skill 系统分析（opencode）</h2>
-  <div class="sec-desc">以本机 opencode 的 skill 目录为真实案例，分析其架构设计、在八层框架中的定位、可取之处与弊端。</div>
+  <div class="sec-desc">以本机 opencode 配置目录为真实案例，分析其工程化自进化体系的最新架构——注册表机制、进化门禁、文档同步映射、仓库门面、14 套测试套件，以及可取之处与可优化空间。</div>
 
   <h3>16.1 目录结构概览</h3>
-  <p>本机 opencode 配置位于 <code>~/.config/opencode/</code>，是一套用户自建的 skill 生态系统，整体结构如下：</p>
+  <p>本机 opencode 配置位于 <code>~/.config/opencode/</code>，是一套用户自建的工程化 skill 生态系统。最新状态（v9）结构如下：</p>
   <div class="diagram">
 ~/.config/opencode/
-├── opencode.jsonc              # 主配置（仅引用 instructions.md）
-├── instructions.md             # 全局规则（9KB，核心调度逻辑）
-├── evolution.md                # 进化日志（记录每次自我更新）
-├── package.json                # Node 依赖声明
+├── AGENTS.md                 # 全局铁律（8 条，A 类系统注入，最高优先级）
+├── regedit.md                # 全体系注册表（组件加载方式 A~H 八分类登记）
+├── instructions.md           # 详版协议（触发规则与进化协议细则）
+├── docs-sync.md              # 配套文档同步映射表（变更类型→必须同步文件→校验方式）
+├── tools-manifest.md         # 工具总清单（7 大类 39 工具，唯一权威）
+├── evolution.md              # 进化规则文件（更新须弹窗确认）→ skills/default/evolution_skill/
+├── opencode.jsonc            # 主配置
+├── package.json              # 插件依赖
 ├── plugins/
-│   └── skill-banner.js         # 插件：会话创建时自动扫描并 toast 展示 skill 列表
+│   ├── skill-banner.js       # 插件：session.created 快照+注册表提醒 / session.idle 门禁+进化检查
+│   └── plugin-evolution.log  # 插件执行日志
 ├── skills/
-│   ├── 3gpp_skill/             # 3GPP 通信专家（41KB SKILL.md + 13 个子技能）
-│   │   ├── SKILL.md            # 唯一注册入口（frontmatter + 工具依赖 + 路由表 + 领域知识）
-│   │   └── modules/            # 子技能资源库（不独立注册，GUIDE.md）
-│   ├── files_skill/            # 文件处理（28KB SKILL.md + 104 个子技能）
-│   ├── find_skill/             # 网络资源获取与镜像加速
-│   ├── program_skill/          # 编程开发（默认 WSL Linux 环境）
-│   └── update_skill/           # 技能双向同步（git + 可移植性转换）
-└── node_modules/               # 运行时依赖（effect, zod, @ai-sdk/provider 等）
+│   ├── 3gpp_skill/           # 显式触发：3GPP 移动通信标准专家
+│   ├── files_skill/          # 显式触发：文件识别/OCR/公式/文档处理
+│   ├── find_skill/           # 显式触发：网络资源获取与镜像加速
+│   ├── program_skill/        # 显式触发：编程开发（默认 WSL Linux）
+│   ├── update_skill/         # 显式触发：技能双向同步（五步流程）
+│   └── default/              # 默认触发命名空间
+│       └── evolution_skill/  # 默认触发：进化执行器（含 evolution.md 规则 + evolution_log.txt 流水）
+├── tools/
+│   ├── evolution_gate.py     # 进化门禁（--snapshot/--check/--drain，机制步骤确定性执行）
+│   ├── path_convert.py       # 路径占位符双向转换（to_portable/to_local）
+│   ├── inject_skills.py      # 新项目 skill 注入
+│   ├── slim_skills.py        # SKILL.md 瘦身（超 8KB）
+│   ├── fetch_skills.py       # 从技能目录网站批量获取
+│   ├── cross_move.py         # 跨 skill 内容归位
+│   ├── generalize.py         # 经验通用化改写
+│   └── archive/              # 历史一次性脚本存档（18 个）
+└── tests/                     # 14 套测试，261 项用例全绿
+    ├── skill_validate.py          # skill 结构校验（体积门限可配置）
+    ├── test_skill_validate_config.py  # 门限配置机制（7/7）
+    ├── test_plugin.js                 # 插件事件处理（20/20）
+    ├── test_path_convert.py           # 路径转换往返（9/9）
+    ├── test_update_skill.py           # 双向同步全流程（40/40）
+    ├── test_regedit.py                # 注册表一致性（47/47）
+    ├── test_tools_manifest.py         # 工具总表完整性（21/21）
+    ├── test_instructions.py           # 规则一致性（31/31）
+    ├── test_evolution_consistency.py  # 进化记录与规则文件一致（15/15）
+    ├── test_evolution_gate.py         # 进化门禁全流程（14/14）
+    ├── test_docs_sync.py              # 文档同步映射表（19/19）
+    ├── test_audit_references.py       # 框架引用审计（3/3）
+    ├── test_repo_face.py              # 仓库门面一致性（14/14，无 WSL 镜像回退）
+    └── test_setup_ps1.py              # 一键安装脚本（21/21，AST 语法解析）
   </div>
 
-  <h3>16.2 核心架构特点</h3>
+  <h3>16.2 核心架构与机制</h3>
 
-  <h4>特点一：全局 skill 显式触发 + 项目 skill 自动注入的两段式设计</h4>
-  <p>全局 skill 默认<strong>不自动调用</strong>，必须用 <code>skill名：任务</code> 的语法显式触发（支持中文冒号、英文冒号、<code>&amp;</code> 并列、空格并列）。这避免了 5 个全局 skill 的描述常驻上下文。</p>
-  <p>当用户在新项目中首次显式调用全局 skill 时，系统执行<strong>注入机制</strong>：把全部全局 skill 复制到项目的 <code>.opencode/skills/</code> 下，改写 frontmatter description 为"项目级 skill，默认触发"。注入后项目内提问自动匹配 skill，无需再显式调用。</p>
+  <h4>机制一：三层规则体系（优先级 AGENTS &gt; regedit &gt; instructions）</h4>
+  <table>
+    <tr><th>层级</th><th>文件</th><th>定位</th><th>生效方式</th></tr>
+    <tr><td>最高优先级</td><td>AGENTS.md</td><td>8 条铁律摘要（注册表必读/同步边界/复盘进化/语言/输出HTML/注入/工具登记/修改复盘+测试先行）</td><td>A 类系统注入（每会话必达）</td></tr>
+    <tr><td>加载方式权威</td><td>regedit.md</td><td>全体系组件注册表，8 种生效方式分类（A 系统注入/B 会话必读/C 技能匹配/D 显式调用/E 运行时事件/F 按需读取/G 流程强制/H 响应检查）</td><td>B 类会话必读（铁律第 0 条强制 + 插件提醒双通道）</td></tr>
+    <tr><td>细则</td><td>instructions.md</td><td>触发规则与进化协议详版、skill 编写规范、通用回答规则</td><td>F 类按需读取</td></tr>
+  </table>
+  <p>冲突时以高优先级层为准；内容重叠处只在本层保留摘要，细则指向下层。</p>
 
-  <h4>特点二：聚合式 skill 架构（唯一入口 + modules 资源库）</h4>
-  <p>每个全局 skill 是一个<strong>唯一注册入口</strong>，SKILL.md 中包含 frontmatter（name/description）、工具依赖清单、处理流程、路由表、领域知识。大量子技能放在 <code>modules/</code> 目录下，<strong>不独立注册</strong>，而是通过路由表按任务类型引用。</p>
-  <p>例如 files_skill 聚合了 104 个文档处理子技能，按"图片识别/OCR""PDF""Word/DOCX""PPTX""Excel""翻译"等分类建立路由表，执行时先读对应 <code>modules/&lt;目录&gt;/GUIDE.md</code> 再按其说明执行。</p>
-
-  <h4>特点三：智能进化协议（闭环自我更新）</h4>
-  <p>instructions.md 中定义了<strong>智能进化协议</strong>：每次提问-思考-回答过程的末尾都必须触发一次进化检查，提取可复用的新经验（新方法/新工具/新踩坑/新风险规避），按五步流程固化：</p>
-  <ol>
-    <li><strong>归纳</strong>：提取可复用经验，通用化表述（不局限本机）</li>
-    <li><strong>归属</strong>：判断更新到哪个 skill 的哪个章节</li>
-    <li><strong>更新</strong>：用 edit 工具增补，保持既有结构</li>
-    <li><strong>记录</strong>：追加到 evolution.md（日期+来源+更新点）</li>
-    <li><strong>自检</strong>：frontmatter 合法、无矛盾、无敏感信息、通用性达标</li>
-  </ol>
-  <p>evolution.md 中已记录了 18 次进化，涵盖引号转义踩坑、双向同步链断裂修复、对称回退防护、状态文件保护等真实经验。</p>
-
-  <h4>特点四：可移植性工程（占位符体系 + 自动转换）</h4>
-  <p>为支持多机器同步，update_skill 建立了完整的<strong>路径可移植层</strong>：</p>
+  <h4>机制二：进化门禁（evolution_gate.py）—— 机制步骤确定性执行</h4>
+  <p><strong>设计理念</strong>：认识到"提示语体系无法 100% 保证必须步骤执行"的物理上限，把机制步骤从模型手中拿过来，由脚本确定性执行。</p>
+  <table>
+    <tr><th>步骤类型</th><th>执行方</th><th>内容</th></tr>
+    <tr><td><strong>机制步骤</strong></td><td>evolution_gate.py（100% 确定）</td><td>改动检测 / 流水兜底追加 / 自动跑测试 / 一致性校验</td></tr>
+    <tr><td><strong>智能步骤</strong></td><td>模型</td><td>经验归纳 / 归属判定 / edit 固化到可执行载体</td></tr>
+  </table>
+  <p>三个调用模式：</p>
   <ul>
-    <li><strong>占位符三类</strong>：自动类（用户目录等可自动推导）、工具类（安装脚本自动探测）、数据类（安装时交互选择，存 path_map.txt）</li>
-    <li><strong>双向转换</strong>：本机→仓库时跑 <code>path_convert.py to_portable</code> 把真实路径转占位符；仓库→本机时跑 <code>to_local</code> 转回真实路径</li>
-    <li><strong>状态文件保护</strong>：path_map.txt、sync_target.txt 不进仓库，双向同步时显式跳过，防止本机真实映射被仓库占位符版覆盖</li>
+    <li><code>--snapshot &lt;会话ID&gt;</code>：会话开始时记录所有规则文件状态快照（size/mtime）</li>
+    <li><code>--check &lt;会话ID&gt;</code>：会话结束时检测改动 → 流水兜底追加（模型没记时自动补骨架）→ 按改动类型自动跑测试 → 输出待模型补充清单</li>
+    <li><code>--drain [max_n]</code>：自愈机制，扫描残留快照（上次会话 idle 未触发 --check 的遗留）补跑门禁；最多补跑 3 个，超出部分仅审计记录；<strong>异步后台执行不阻塞会话启动</strong></li>
+  </ul>
+  <p>容错链路：正常路径 session.idle → --check；故障路径 idle 未触发 → 快照残留 → 下次 session.created → --drain 补跑（最终一致性设计）。</p>
+
+  <h4>机制三：归属二分铁律 + 规则流水分离</h4>
+  <table>
+    <tr><th>经验类型</th><th>必须写入</th><th>只写流水 = ?</th></tr>
+    <tr><td><strong>规则/流程/机制类</strong>（新增环节、执行约束、铁律、判定标准）</td><td>可执行载体：SKILL.md / instructions.md / regedit.md / AGENTS.md / evolution.md</td><td><strong>归属失败</strong></td></tr>
+    <tr><td><strong>记录/事实类</strong>（本次执行了什么、分析结论）</td><td>evolution_log.txt 即可</td><td>正常</td></tr>
+  </table>
+  <p>进化记录文件分离：<code>evolution.md</code> = 进化规则文件（更新须弹窗确认 + 核对历史 + 跑一致性测试）；<code>evolution_log.txt</code> = 历史流水（只增不改，追加尾部，禁止替换）。</p>
+
+  <h4>机制四：配套文档同步映射表（docs-sync.md）</h4>
+  <p>解决"改了规则忘了同步配套文档"的问题。9 种变更类型，每种明确"必须同步更新的文件"和"程序化校验方式"：skill 新增/删除/改名、测试用例新增/变更、工具新增/变更、流程/机制变更、规则变更、目录/结构变更、数据/状态文件变更、插件变更、仓库门面文档变更。被 AGENTS.md 铁律第 2 条引用为权威。</p>
+
+  <h4>机制五：仓库门面 + 一键安装（工程化交付）</h4>
+  <p>WSL 同步仓库（<code>\\wsl.localhost\Ubuntu\home\github\learn.opencode</code>）包含完整门面文档：</p>
+  <ul>
+    <li><code>copy/README.md</code>：6 个 skill 说明、目录结构、新电脑三步上手、多机同步划分（有权限机器运行 update_skill / 无权限机器只需 git pull）</li>
+    <li><code>copy/INSTALL.md</code>：一键安装指南（7 阶段开关：SkipWinget/SkipNpm/SkipPip/SkipWsl/SkipDeploy/UseChinaMirror/NoPathRewrite）+ 手动安装备查</li>
+    <li><code>copy/REQUIREMENTS.md</code>：依赖清单（指向 tools-manifest.md 权威）</li>
+    <li><code>copy/setup/setup-windows.ps1</code>：一键安装主脚本</li>
   </ul>
 
-  <h4>特点五：插件化的 skill 发现机制</h4>
-  <p><code>skill-banner.js</code> 是一个 opencode 插件，监听 <code>session.created</code> 事件，动态扫描 <code>skills/*/SKILL.md</code> 的 frontmatter，提取 name 和 description 前 42 字，通过 TUI toast 展示"本机全局技能（N 个）"列表。新增 skill 无需改任何配置，重启即自动纳入。</p>
+  <h4>机制六：skill 触发方式分类（default 命名空间）</h4>
+  <p>用目录结构直观反映触发方式：<code>skills/default/</code> 下放<strong>默认触发</strong>的 skill（C 类，自动匹配，目前仅 evolution_skill）；<code>skills/</code> 根目录下放<strong>显式触发</strong>的 skill（D 类，需用户带前缀调用，目前 5 个：3gpp/files/find/program/update）。</p>
 
-  <h3>16.3 在八层框架中的定位</h3>
+  <h3>16.3 测试套件（14 套 261 项全绿）</h3>
   <table>
-    <tr><th>框架层级</th><th>对应组件</th><th>说明</th></tr>
-    <tr><td><strong>交互层</strong></td><td>opencode TUI、skill-banner 插件</td><td>终端界面 + 会话创建时 toast 展示可用 skill 列表</td></tr>
-    <tr><td><strong>会话层</strong></td><td>opencode 会话管理、项目级 vs 全局级隔离</td><td>项目内 skill 默认触发，全局 skill 显式触发，两套机制隔离</td></tr>
-    <tr><td><strong>编排层</strong></td><td>instructions.md（全局规则、触发语法、路由逻辑、进化协议）</td><td>核心调度文件，定义 skill 调用语法、组合规则、注入规则、进化触发</td></tr>
-    <tr><td><strong>能力层</strong></td><td>5 个全局 skill + 100+ 子技能 modules</td><td>3gpp/files/find/program/update 五大能力域，聚合式架构</td></tr>
-    <tr><td><strong>知识层</strong></td><td>SKILL.md 中的领域知识、evolution.md 经验日志</td><td>3GPP 规范/FTP 结构、工具依赖、踩坑经验等固化知识</td></tr>
-    <tr><td><strong>模型层</strong></td><td>opencode 底层 LLM（@ai-sdk/provider 抽象）</td><td>通过 AI SDK 统一调用多家模型，opencode 本身不绑定特定模型</td></tr>
-    <tr><td><strong>安全层</strong></td><td>显式触发机制、同步边界铁律、状态文件保护、可移植性检查</td><td>全局 skill 不误调用、update_skill 不擅自 git 同步、状态文件不被覆盖</td></tr>
-    <tr><td><strong>基础设施层</strong></td><td>git 双向同步、path_convert.py、inject_skills.py、fetch_skills.py</td><td>多机器同步、路径转换、项目注入、批量安装子技能的工程脚本</td></tr>
+    <tr><th>测试文件</th><th>用例数</th><th>覆盖维度</th></tr>
+    <tr><td>test_update_skill.py</td><td>40</td><td>双向同步全流程：调用解析/commit 摘要/状态保护/对称回退/五步流程/模拟远端/可移植性/弹窗确认</td></tr>
+    <tr><td>test_regedit.py</td><td>47</td><td>注册表与文件系统/AGENTS.md 互查一致性</td></tr>
+    <tr><td>test_plugin.js</td><td>20</td><td>插件事件处理/任务注入/日志落盘</td></tr>
+    <tr><td>test_instructions.py</td><td>31</td><td>章节完整/铁律互查/引用存在/技能清单与目录一致/编写规范</td></tr>
+    <tr><td>test_setup_ps1.py</td><td>21</td><td>一键安装脚本：开关完整性/部署范围/path_convert 体系/AST 语法解析/与 INSTALL.md 一致</td></tr>
+    <tr><td>test_tools_manifest.py</td><td>21</td><td>分类计数吻合/待补充无重复/包可导入/表结构</td></tr>
+    <tr><td>test_docs_sync.py</td><td>19</td><td>映射表结构/校验测试存在/被 regedit+AGENTS 引用</td></tr>
+    <tr><td>test_evolution_consistency.py</td><td>15</td><td>流水声明落入规则文件/规则文件定位与弹窗确认流程</td></tr>
+    <tr><td>test_evolution_gate.py</td><td>14</td><td>快照/改动检测/流水兜底/自动测试/--drain 自愈/max_n 限流</td></tr>
+    <tr><td>test_repo_face.py</td><td>14</td><td>仓库门面与框架现状一致；WSL 不可达时回退 repo_face 镜像</td></tr>
+    <tr><td>test_path_convert.py</td><td>9</td><td>往返转换/STATE_FILES 保护/残留扫描</td></tr>
+    <tr><td>test_skill_validate_config.py</td><td>7</td><td>门限修改/忽略/持久化机制</td></tr>
+    <tr><td>test_audit_references.py</td><td>3</td><td>框架引用存在性/旧术语残留/README 双向一致</td></tr>
+    <tr><td>skill_validate.py</td><td>可配置</td><td>skill 结构（frontmatter/路由/体积门限，默认 8KB 可配置）</td></tr>
   </table>
 
   <h3>16.4 可取之处</h3>
   <div class="card-grid">
     <div class="card">
-      <div class="icon">⚡</div>
-      <h4>两段式触发设计</h4>
-      <p>全局 skill 显式触发不占上下文，项目内注入后自动触发兼顾便利。token 效率和使用体验取得平衡。</p>
+      <div class="icon">🔒</div>
+      <h4>进化门禁范式突破</h4>
+      <p>认识到"提示语无法 100% 保证必须步骤"的物理上限，把机制步骤（流水/测试/校验）从模型手中拿给脚本确定性执行，模型只做智能部分（归纳/归属/固化）。这是从"试图让模型更自觉"到"人机分工"的范式升级。</p>
     </div>
     <div class="card">
-      <div class="icon">📦</div>
-      <h4>聚合式 skill 架构</h4>
-      <p>一个入口聚合上百个子技能，通过路由表管理，避免了 skill 数量爆炸导致的注册开销和选择困难。</p>
+      <div class="icon">📋</div>
+      <h4>注册表 + 八分类加载方式</h4>
+      <p>regedit.md 统一登记全体系组件，8 种生效方式分类（A 系统注入到 H 响应检查）覆盖从系统启动到用户触发的全光谱，解决了"什么该什么时候加载"的根本问题。注册表自身也可进化。</p>
+    </div>
+    <div class="card">
+      <div class="icon">✅</div>
+      <h4>测试先行 + 261 项全绿</h4>
+      <p>14 套测试覆盖 skill 结构、插件、路径转换、双向同步、注册表、工具表、规则一致、进化一致、门禁、文档同步、引用审计、仓库门面、安装脚本。新增机制必须同步新增测试用例（铁律第 8 条）。</p>
     </div>
     <div class="card">
       <div class="icon">🔄</div>
-      <h4>闭环进化协议</h4>
-      <p>强制每次任务后固化经验，evolution.md 提供完整追溯。skill 会越用越完善，而非静态文档。</p>
+      <h4>最终一致性自愈设计</h4>
+      <p>--drain 自愈机制把"依赖 idle 触发"的单点故障变成容错设计：idle 断了 → 快照残留 → 下次会话异步补跑。异步执行不阻塞会话启动，max_n=3 限流防后台长时间占用，超出部分审计不丢失。</p>
     </div>
     <div class="card">
-      <div class="icon">🔀</div>
-      <h4>多机器可移植性</h4>
-      <p>占位符体系 + 自动转换 + 状态文件保护，解决了"在 A 机写的 skill 移植到 B 机路径全坏"的痛点。</p>
+      <div class="icon">📦</div>
+      <h4>工程化交付完整</h4>
+      <p>从"代码堆"到"可一键部署的工程化产品"：README/INSTALL/REQUIREMENTS 门面文档 + setup-windows.ps1 一键安装脚本（7 阶段可单独跳过）+ 21 项自动化测试 + 无 WSL 镜像回退。多机同步清晰划分有权限/无权限机器。</p>
     </div>
     <div class="card">
-      <div class="icon">🛠</div>
-      <h4>标准化工具依赖清单</h4>
-      <p>每个 skill 开头的五列表格（工具/用途/本机位置/检查命令/缺失安装），移植新机器时可逐项核验。</p>
-    </div>
-    <div class="card">
-      <div class="icon">🚧</div>
-      <h4>同步边界铁律</h4>
-      <p>明确规定只有显式调用 update_skill 才执行 git 同步，防止进化固化时误触发 push，边界清晰。</p>
-    </div>
-    <div class="card">
-      <div class="icon">📝</div>
-      <h4>踩坑固化文化</h4>
-      <p>evolution.md 记录了引号转义、对称回退、状态文件保护等真实踩坑，并固化到 skill 中，不重复犯错。</p>
-    </div>
-    <div class="card">
-      <div class="icon">🔌</div>
-      <h4>插件化发现机制</h4>
-      <p>skill-banner 动态扫描自动展示，新增 skill 零配置。符合"约定优于配置"的工程哲学。</p>
+      <div class="icon">🧬</div>
+      <h4>分析驱动迭代闭环</h4>
+      <p>从 v1 到 v9 的进化呈现典型"分析驱动迭代"：每次外部分析指出不足，下一次优化精准补上。v8 指出的三个不足（引用审计粗/门面依赖 WSL/安装脚本无测试）在 v9 全部闭环。</p>
     </div>
   </div>
 
-  <h3>16.5 弊端与不足</h3>
+  <h3>16.5 可优化空间</h3>
+  <ol>
+    <li><strong>test_audit_references.py 仍较粗</strong>：3 个大检查项，引用存在性是"全量扫描只报总数"，可细化为逐文件报告，定位具体缺失引用。</li>
+    <li><strong>evolution_gate.py --check 在 session.idle 同步执行</strong>：如果改动文件多、测试耗时长，可能阻塞会话结束。可考虑关键测试同步、全量测试异步后台。</li>
+    <li><strong>setup-windows.ps1 测试依赖 PowerShell AST 解析</strong>：只能验证语法正确，无法验证运行时行为（如 winget 安装是否真的跳过已装软件、path_convert 是否真的转换正确）。可增加 dry-run 模式测试。</li>
+    <li><strong>docs-sync.md 映射表是人工维护</strong>：新增变更类型时需手动更新映射表，虽然有 test_docs_sync.py 校验表结构，但无法检测"应该新增映射行但没加"的遗漏。</li>
+  </ol>
 
-  <h4>弊端一：全局 skill 显式触发的使用门槛</h4>
-  <p>用户必须记住 5 个 skill 名和 <code>skill名：任务</code> 语法，对新用户不友好。虽然 skill-banner toast 会展示，但仍需手动输入精确名称，拼写错误即不触发。</p>
+  <h3>16.6 历史版本记录</h3>
+  <table>
+    <tr><th>版本</th><th>标志性变化</th><th>测试用例</th><th>回应的不足</th></tr>
+    <tr><td>v1</td><td>5 个 skill，无测试，个人脚本集合</td><td>0</td><td>—</td></tr>
+    <tr><td>v2</td><td>新增注册表（regedit.md）/ 进化执行器（evolution_skill）/ 工具总表（tools-manifest.md）/ tests 目录</td><td>101</td><td>从零到有</td></tr>
+    <tr><td>v3</td><td>补上 test_tools_manifest.py（+21）；新增三层规则优先级声明（AGENTS &gt; regedit &gt; instructions）</td><td>122</td><td>工具表无测试 / 三层规则重叠</td></tr>
+    <tr><td>v4</td><td>补上 test_instructions.py（+31）；测试套件首次完整</td><td>149</td><td>最后一个待建测试</td></tr>
+    <tr><td><strong>v5</strong></td><td><strong>进化体系范式升级：规则流水分离 / evolution_gate 门禁脚本 / 归属二分铁律 / default 命名空间 / 弹窗确认</strong></td><td>~197</td><td>进化固化质量依赖 LLM</td></tr>
+    <tr><td>v6</td><td>门禁自愈机制：--drain 补跑残留快照（最终一致性）</td><td>~201</td><td>门禁依赖 idle 单点故障</td></tr>
+    <tr><td>v7</td><td>drain 异步化 + max_n=3 限流：不阻塞会话启动</td><td>~201</td><td>drain 同步阻塞</td></tr>
+    <tr><td>v8</td><td>文档同步体系化：docs-sync.md 映射表 / 仓库门面文档（README/INSTALL/REQUIREMENTS）/ 引用审计 / 全跑一致性测试 / r-string 可移植性修复</td><td>~243</td><td>配套文档同步依赖自觉 / 仓库无门面</td></tr>
+    <tr><td><strong>v9</strong></td><td><strong>setup-windows.ps1 自动化测试（+21）/ 仓库门面无 WSL 镜像回退 / 引用审计细化 / setup 脚本修复（missing brace/legacy vars）</strong></td><td><strong>261</strong></td><td>v8 三个不足全部闭环</td></tr>
+  </table>
 
-  <h4>弊端二：SKILL.md 单文件过于庞大</h4>
-  <p>3gpp_skill 的 SKILL.md 达 41KB，files_skill 达 28KB。单次加载会占用大量 token（约 1万~1.5万 token），虽然显式触发减少了加载频率，但加载后仍很重，挤压了任务本身的上下文空间。缺乏按需分块加载机制。</p>
-
-  <h4>弊端三：子技能质量参差不齐</h4>
-  <p>100+ 子技能来自 skillsmp.com、GitHub、LobeHub 等不同来源，质量和格式不统一。部分子技能可能已过时、包含错误信息、或与本机环境不兼容。缺乏统一的质量校验和版本锁定机制。</p>
-
-  <h4>弊端四：进化协议的执行依赖模型自觉性</h4>
-  <p>"每次任务末尾必须触发进化检查"是写在 instructions.md 里的自然语言规则，实际执行完全依赖 LLM 是否遵守。模型可能忽略、执行不彻底、或归纳质量不稳定。缺乏程序化的强制触发和校验机制。</p>
-
-  <h4>弊端五：可移植性体系复杂度高</h4>
-  <p>占位符分三类（自动/工具/数据）、path_convert.py 双向转换、状态文件保护、教学列表保护、对称回退防护……规则非常复杂，维护成本高。evolution.md 中至少 5 次记录了与可移植性相关的踩坑（路径泄漏、状态文件被覆盖、教学行误伤、对称回退），说明这套体系本身容易出问题。</p>
-
-  <h4>弊端六：缺乏自动化测试</h4>
-  <p>skill 的更新主要靠人工验证和进化协议，没有自动化的回归测试。更新 SKILL.md 后无法自动验证"修改是否破坏了原有功能""frontmatter 是否仍合法""路由表是否有死链"。一次错误的进化固化可能引入回归。</p>
-
-  <h4>弊端七：Windows + WSL 双环境复杂度</h4>
-  <p>program_skill 默认 WSL Linux 编译运行，update_skill 的 git 操作也在 WSL 内执行，但源文件在 Windows 盘（<code>/mnt/e/</code>）。跨环境路径转换、换行符差异、权限映射等增加了复杂度。evolution.md 中"bash 传参反斜杠被吃""WSL 内运行 Windows Python 需显式 --home"等踩坑都与此相关。</p>
-
-  <h3>16.6 总体评价</h3>
   <div class="callout tip">
-    <p><span class="label">评价：</span>这是一套<strong>工程化程度很高、自我进化意识很强</strong>的个人 skill 系统。其聚合式架构、两段式触发、闭环进化、多机可移植性等设计，在个人知识管理和生产力工具领域属于相当成熟的实践。主要短板在于<strong>单文件过重、子技能质量不可控、进化执行依赖模型自觉、可移植性体系过于复杂</strong>。如果能引入 skill 分块懒加载、子技能版本锁定、程序化进化触发器、自动化回归测试，这套系统的可靠性和可维护性将显著提升。</p>
+    <p><span class="label">总体评价：</span>这是一套<strong>工程化程度极高、自我进化意识极强</strong>的个人 skill 系统。从 v1 的"个人脚本集合"进化到 v9 的"有注册表、有门禁、有文档同步、有仓库门面、有 261 项测试的工程化产品"，核心突破是 evolution_gate 把"机制步骤确定性化"——认识到提示语体系的物理上限，用脚本接管不应该依赖模型的部分。剩余可优化空间主要在测试精细度和运行时行为验证上。</p>
   </div>
 </section>
 
