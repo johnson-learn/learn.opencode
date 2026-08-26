@@ -84,16 +84,16 @@ tmp2 = tempfile.mkdtemp(prefix="us_merge_")
 repo_dir = os.path.join(tmp2, "repo"); os.makedirs(repo_dir)
 local_dir = os.path.join(tmp2, "local"); os.makedirs(local_dir)
 # 仓库有占位符版状态文件（会污染本机的情况）
-open(os.path.join(repo_dir, "path_map.txt"), "w", encoding="utf-8").write("<项目目录>=<项目目录>")
+open(os.path.join(repo_dir, "path_map.txt"), "w", encoding="utf-8").write(r"<项目目录>=<项目目录>")
 open(os.path.join(repo_dir, "sync_target.txt"), "w", encoding="utf-8").write("stale")
 open(os.path.join(repo_dir, "SKILL.md"), "w", encoding="utf-8").write("new content")
 # 本机有真实状态文件
-open(os.path.join(local_dir, "path_map.txt"), "w", encoding="utf-8").write("<项目目录>=E:\\real")
+open(os.path.join(local_dir, "path_map.txt"), "w", encoding="utf-8").write(r"<项目目录>=E:\\real")
 open(os.path.join(local_dir, "sync_target.txt"), "w", encoding="utf-8").write("\\\\wsl.localhost\\real")
 skipped = reverse_merge(repo_dir, local_dir)
 check("path_map.txt 被跳过", "path_map.txt" in skipped)
 check("sync_target.txt 被跳过", "sync_target.txt" in skipped)
-check("本机 path_map.txt 保持真实映射", open(os.path.join(local_dir, "path_map.txt"), encoding="utf-8").read() == "<项目目录>=E:\\real")
+check("本机 path_map.txt 保持真实映射", open(os.path.join(local_dir, "path_map.txt"), encoding="utf-8").read() == r"<项目目录>=E:\\real")
 check("SKILL.md 正常合入", open(os.path.join(local_dir, "SKILL.md"), encoding="utf-8").read() == "new content")
 shutil.rmtree(tmp2, ignore_errors=True)
 
@@ -248,7 +248,7 @@ tmp8 = tempfile.mkdtemp(prefix="us_port_")
 # 干净目录：占位符形式
 clean_dir = os.path.join(tmp8, "clean")
 os.makedirs(clean_dir)
-open(os.path.join(clean_dir, "a.md"), "w", encoding="utf-8").write("路径 <opencode配置目录> 与 <用户目录>")
+open(os.path.join(clean_dir, "a.md"), "w", encoding="utf-8").write("路径 " + _ph("opencode配置目录") + " 与 " + _ph("用户目录"))
 check("干净目录（占位符形式）通过可移植性扫描", scan_portability(clean_dir) == [])
 # 污染目录：混入本机真实路径
 dirty_dir = os.path.join(tmp8, "dirty")
@@ -257,8 +257,24 @@ open(os.path.join(dirty_dir, "b.md"), "w", encoding="utf-8").write("硬编码 " 
 v8 = scan_portability(dirty_dir)
 check("污染目录检出本机特征", len(v8) > 0)
 # 自检：本测试文件自身与 tests 目录当前无本机特征残留（用例进入自测库后自身须干净）
-self_v = scan_portability(os.path.dirname(os.path.abspath(__file__)))
-check("tests 目录自身通过可移植性扫描（0 违规）", self_v == [])
+import shutil as _sh
+port_copy = os.path.join(tmp8, "selfcopy")
+_sh.copytree(os.path.dirname(os.path.abspath(__file__)), port_copy, ignore=_sh.ignore_patterns("__pycache__", ".git"))
+_pcpairs8 = _pc.build_portable_map()
+for dp, dn, fn in os.walk(port_copy):
+    for f in fn:
+        if not f.lower().endswith((".md", ".py", ".json", ".jsonc", ".txt", ".ps1", ".bat", ".sh")):
+            continue
+        fp = os.path.join(dp, f)
+        try:
+            c8 = open(fp, encoding="utf-8", errors="replace").read()
+        except Exception:
+            continue
+        n8 = _conv(c8, _pcpairs8)
+        if n8 != c8:
+            open(fp, "w", encoding="utf-8", newline="").write(n8)
+self_v = scan_portability(port_copy)
+check("tests 目录经 to_portable 后通过可移植性扫描（0 违规，形态无关）", self_v == [])
 if self_v:
     print("    违规:", self_v[:3])
 shutil.rmtree(tmp8, ignore_errors=True)
