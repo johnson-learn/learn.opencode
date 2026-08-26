@@ -77,14 +77,14 @@ def do_check(sid):
         return 0
     print("[gate] 检测到 %d 个规则文件改动：" % len(changed))
     for fp in changed:
-        print("  -", fp.replace(CFG, "<opencode配置目录>"))
+        print("  -", fp.replace(CFG, r"<opencode配置目录>"))
     # 1. 流水自动追加（若本会话模型未正常追加记录）
     log_size_now = os.path.getsize(LOG) if os.path.exists(LOG) else 0
     appended = False
     if log_size_now == snap["log_size"]:
         entry = ("[%s] 会话自动门禁（%s） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 %d 个规则文件（清单见下）；"
                  "智能归纳待模型补充\n" % (datetime.date.today().isoformat(), sid, len(changed)))
-        entry += "".join("- " + fp.replace(CFG, "<opencode配置目录>") + "\n" for fp in changed)
+        entry += "".join("- " + fp.replace(CFG, r"<opencode配置目录>") + "\n" for fp in changed)
         with open(LOG, "a", encoding="utf-8") as f:
             f.write(entry + "\n")
         appended = True
