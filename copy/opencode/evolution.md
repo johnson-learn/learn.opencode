@@ -28,4 +28,9 @@
 [2026-08-26] 插件自测（test_plugin.js） → 15/15 通过：session.created 主/子会话 toast 行为、session.idle 进化任务注入（六项强制清单）、缺 sessionID 容错、未知事件零副作用、轨迹与日志落盘；自测发现真 bug：edit 误删 export 闭合（已修复）；test_plugin.js 纳入行为自测清单
 [2026-08-26] 用户指出（commit message 摘要丢失） → 多个提交只剩 "sync:"（中文摘要经 PowerShell→wsl→bash 多层 shell 传递丢失）；修复：update_skill git 三步骤改为 printf 写 /tmp/cmsg.txt + git commit -F 文件方式传递；已存在裸 sync: 提交不改历史（共享仓库 amend 危险），向前修复
 [2026-08-26] 用户要求（修炼文件归档全局） → 自查发现 skill 修炼文件散落 <项目目录>\temp：建立全局 <opencode配置目录>\tools\ 目录（path_convert/inject_skills/fetch_skills/slim_skills/cross_move/generalize 六个核心修炼工具）+ tools\archive\（18 个一次性已执行脚本归档）；测试用例已在 tests\；更新全部路径引用（instructions/skills）；三套测试全绿（10+15+0 错误）；原则：一切 skill 修炼文件必须放全局目录随 update_skill 同步 GitHub，任务产物（图片/文档）才留在项目 temp
-[2026-08-26] 机制缺陷诊断与修复（用户指出进化框架从未自动执行） → 根因：① 进化检查执行点错位——绑在插件 session.idle（会话结束），而要求是"每次提问思考回答"；日志实测只触发过 3 次且发生在会话结束后，模型无机会执行；② 进化协议从未进入模型系统提示——instructions.md 经 opencode.jsonc instructions 字段引用无效（模型上下文始终看不到协议全文）；③ 缺全局 AGENTS.md（唯一已验证能注入每个会话系统提示的机制）。修复：新建 <opencode配置目录>\AGENTS.md 七条铁律（第 1 条=每次响应后强制复盘进化，执行点=每次回答结束前；同步边界/语言/输出/注入/工具登记/测试先行），本会话已生效可见；instructions.md 触发时机章节改双机制（AGENTS.md 主 + session.idle 兜底）；教训固化：规则要模型执行必须先确认在会话系统提示可见
+[2026-08-26] 用户要求（新增进化层：保证智能自我进化） → 体系新增第八层「进化层」：① 新建全局第 6 个 skill evolution_skill（进化执行器，C 类默认触发）——封装五步固化/注册表更新/工具登记/配套文档/校验自测全流程 + 五大进化能力判定表 + 铁律；② AGENTS.md 铁律第 2 条升级：复盘进化发现需固化 → 加载 evolution_skill 执行（固化位置清单加 regedit.md）；③ regedit.md 技能层 5→6 个、新增「进化层」章节（注册执行器/协议详版/进化史/轨迹/检查注入/注册表自我进化六项 + 进化层闭环图）；④ 注册表自我进化规则：条目与生效方式分类均可按五步固化进化，test_regedit.py 校验闭环；⑤ 项目级副本重注入（6 个 skill，update_skill 项目副本 description 保留严格显式触发约束，同步边界安全）；⑥ test_regedit.py 更新 47/47（6 个 skill 一致性 + evolution_skill 登记）；skill_validate 0 错误
+
+
+
+
+

@@ -80,6 +80,19 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
    - 一致性校验：skill 数量 ≥ 源数量（合入后只增不减）、关键文件非空
    - 无任何差异 → 报告"无新改动"并结束
 
+### 同步过滤规则（判断标准：其它机器使用框架/skill/功能时需要的才同步）
+
+- **判断标准（用户 2026-08-26 定）**：其它机器使用该框架、该框架 skill 以及该框架功能时需要的 → 同步；不需要 → 不同步
+- **不同步（临时/本机专属/测试数据）**：
+  - 编译临时文件：`__pycache__`、`*.pyc`、`**/bin/`、`**/obj/`、`node_modules`、`.dll`、`.exe`
+  - 测试样本与结果：`**/modules/*/tests/`（参考模块 baselines 等）、测试输出文件
+  - 运行时数据：`*.log`、`*.jsonl`（evolution_trace.jsonl、plugin-evolution.log）、`*.tmp`、`~*`
+  - 本机状态：path_map.txt、sync_target.txt（STATE_FILES）
+  - 大二进制资产：字体 `assets/fonts/`、模型文件、`.epub` 测试样本
+- **要同步（框架运行所需）**：所有 SKILL.md + references/ + modules 文档类内容（GUIDE/README/reference 的 md）、脚本（scripts/、tools/）、测试用例（tests/ 的 test_*.py、test_*.js）、规则文件（AGENTS.md、instructions.md、evolution.md、regedit.md、tools-manifest.md）、插件、opencode.jsonc
+- **执行方式**：cp 阶段不排除（cp -r 全复制），由仓库 `.gitignore` 在 `git add -A` 时自动过滤；新增临时文件类型 → 同步补 .gitignore 规则
+- **历史已混入的临时文件**：发现后 `git rm -r --cached <路径>` 停止跟踪（工作区文件保留，不删除本机源），commit 说明清理原因
+
 ### git 三步骤
 1. `git add -A`
 2. `git commit`——必须含修改摘要，且用文件方式传递（防中文在 shell 层丢失）：`printf "sync: YYYY-MM-DD <变更摘要>" > /tmp/cmsg.txt && git commit -F /tmp/cmsg.txt`（历史教训：-m 直接带中文 message 经 PowerShell→wsl→bash 多层传递会丢失，提交只剩 "sync:"，他人无法知道改了什么）；摘要自动生成规则：优先列出新增/改名 skill 名（如 "+update_skill"），其次概括修改类别（如 "3gpp_skill FTP 结构、instructions 规则"）；正文可加 `-m` 详细条目（新增了哪些文件、改了什么章节）

@@ -10,8 +10,8 @@
 | 类别 | 工具数 | 安装方式 |
 |---|---|---|
 | A. 基础环境 | 5 | winget/官方 |
-| B. Python 环境与核心包 | 14 | pip 清华源 |
-| C. 文档处理工具 | 4 | winget/pip |
+| B. Python 环境与核心包 | 17 | pip 清华源 |
+| C. 文档处理工具 | 6 | winget/pip |
 | D. OCR 与公式识别 | 2 | pip |
 | E. 网络与同步 | 4 | 自带/apt |
 | F. 编程环境 | 2 | 离线包/apt |
@@ -38,7 +38,7 @@
 | python-docx | Word 读写 | `pip install python-docx` | `python -c "import docx"` |
 | python-pptx | PPT 读写 | `pip install python-pptx` | `python -c "import pptx"` |
 | openpyxl | Excel .xlsx 读写 | `pip install openpyxl` | `python -c "import openpyxl"` |
-| xlrd | 老 .xls 读取（openpyxl 不支持） | `pip install xlrd==1.2.0` | `python -c "import xlrd"` |
+| xlrd | 老 .xls 读取（openpyxl 不支持） | `pip install xlrd`（2.x 仅支持 .xls，本机 2.0.2 实测） | `python -c "import xlrd; print(xlrd.__version__)"` |
 | pypdf | PDF 基础操作 | `pip install pypdf` | `python -c "import pypdf"` |
 | pdfplumber | PDF 文本/表格精确提取 | `pip install pdfplumber` | `python -c "import pdfplumber"` |
 | PyMuPDF | PDF 渲染 PNG/文本搜索 | `pip install pymupdf` | `python -c "import pymupdf"` |
@@ -47,12 +47,14 @@
 | chardet | 编码检测 | `pip install chardet` | `python -c "import chardet"` |
 | pyzbar | 条码/二维码解码 | `pip install pyzbar` | `python -c "import pyzbar"` |
 | opencv-python + imageio-ffmpeg | 视频抽帧、音视频 | `pip install opencv-python imageio-ffmpeg` | `python -c "import cv2, imageio_ffmpeg"` |
+| playwright | headless 浏览器渲染 HTML→PDF/截图 | `pip install playwright` + `python -m playwright install chromium`（下载慢设 `PLAYWRIGHT_DOWNLOAD_HOST=https://npmmirror.com/mirrors/playwright`） | `python -c "from playwright.sync_api import sync_playwright"`（本机实测 HTML→PDF ✓） |
+| weasyprint | HTML/CSS→矢量 PDF | `pip install weasyprint` + MSYS2：`winget install MSYS2.MSYS2` → `pacman -S mingw-w64-ucrt-x86_64-gtk3` + 永久环境变量 `WEASYPRINT_DLL_DIRECTORIES=<工具目录>msys64\ucrt64\bin` | `python -c "import weasyprint; print(weasyprint.__version__)"`（本机 69.0 实测 ✓） |
 
 ## C. 文档处理工具
 
 | 工具 | 用途 | 安装命令 | 检查命令 |
 |---|---|---|---|
-| OCRmyPDF | 扫描 PDF 加 OCR 层（可搜索） | `pip install ocrmypdf`（依赖 tesseract 引擎，见 D 类） | `ocrmypdf --version` |
+| OCRmyPDF | 扫描 PDF 加 OCR 层（可搜索） | `pip install ocrmypdf`（依赖 tesseract 引擎，见 D 类；本机 17.10.0 实测扫描件→可搜索 PDF ✓） | `python -m ocrmypdf --version`（exe 不在 PATH，用 -m 方式） |
 | docxtpl | Word 模板填充 | `pip install docxtpl` | `python -c "from docxtpl import DocxTemplate"` |
 | Jinja2 | 模板渲染（文档/HTML/报告） | `pip install jinja2` | `python -c "from jinja2 import Template"` |
 | python-magic | 文件类型 magic bytes 检测 | `pip install python-magic-bin`（Windows） | `python -c "import magic"` |
@@ -62,7 +64,7 @@
 | 工具 | 用途 | 安装命令 | 检查命令 |
 |---|---|---|---|
 | Pix2Text（同 B 类） | 公式/中文 OCR | — | — |
-| Tesseract（可选，OCRmyPDF 依赖） | 通用 OCR 引擎（100+ 语言） | `winget install UB-Mannheim.TesseractOCR`（GitHub 源可能失败→改 gh-proxy 下安装包） | `tesseract --version` |
+| Tesseract（OCRmyPDF 依赖） | 通用 OCR 引擎（100+ 语言） | `winget install UB-Mannheim.TesseractOCR`（GitHub 源可能失败→改 gh-proxy 下安装包） | `& "<工具目录>Program Files\Tesseract-OCR\tesseract.exe" --version`（本机 5.4.0 ✓） |
 
 ## E. 网络与同步
 
@@ -100,11 +102,10 @@
 | apt 清华源 | WSL 内 /etc/apt/sources.list | 加速 apt |
 | pip 清华源 | 命令行参数 | 见 B 类安装命令 |
 | WSL 开机自启任务 | 计划任务 WSL-AutoStart | 保持实例运行防 60s idle 停止 |
+| WEASYPRINT_DLL_DIRECTORIES | 用户环境变量 = `<工具目录>msys64\ucrt64\bin` | WeasyPrint 加载 MSYS2 GTK DLL 必需（已永久设置） |
 
 ## 待补充（本机已分析未安装，装时更新本表）
 
-- Playwright（headless 渲染导出 HTML→PDF/截图）：`pip install playwright && playwright install chromium`
-- WeasyPrint（HTML→矢量 PDF）：`pip install weasyprint`（Windows 需 GTK 运行库）
 - FFmpeg 完整版：`winget install Gyan.FFmpeg`
 - yt-dlp：`pip install yt-dlp`
 - ImageMagick：`winget install ImageMagick.ImageMagick`
