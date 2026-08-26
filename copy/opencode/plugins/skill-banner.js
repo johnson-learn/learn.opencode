@@ -1,11 +1,26 @@
 import { readdirSync, readFileSync, existsSync, appendFileSync } from "fs"
 import { join } from "path"
 import { homedir } from "os"
+import { execSync } from "child_process"
 
 const HOME = homedir()
 const SKILLS_DIR = join(HOME, ".config", "opencode", "skills")
-const TRACE_FILE = join(HOME, ".config", "opencode", "skills", "evolution_skill", "evolution_trace.jsonl")
+const TRACE_FILE = join(HOME, ".config", "opencode", "skills", "default", "evolution_skill", "evolution_trace.jsonl")
 const LOG_FILE = join(HOME, ".config", "opencode", "plugins", "plugin-evolution.log")
+const GATE = join(HOME, ".config", "opencode", "tools", "evolution_gate.py")
+
+function runGate(action, sid) {
+  // 进化门禁脚本：机制步骤（流水兜底/自动测试）确定性执行，不依赖模型自觉
+  try {
+    const out = execSync(`python "${GATE}" ${action} "${sid}"`, {
+      timeout: 240000, encoding: "utf8", windowsHide: true,
+    })
+    return out.trim()
+  } catch (e) {
+    log("evolution_gate " + action + " 执行失败：" + (e && e.message ? String(e.message).slice(0, 200) : ""))
+    return ""
+  }
+}
 
 function log(msg) {
   try { appendFileSync(LOG_FILE, new Date().toISOString() + " " + msg + "\n") } catch {}
@@ -52,6 +67,7 @@ export const SkillBanner = async ({ client }) => {
             body: { message: `本机全局技能（${skills.length} 个）\n` + lines, variant: "info" },
           })
           recordTrace(props.sessionID || "unknown", {})
+          runGate("--snapshot", props.sessionID || "unknown")
           // 双通道：程序化注入「读注册表」提醒，保证模型会话开始必读 regedit.md
           const sid = props.sessionID
           if (sid) {
@@ -84,6 +100,11 @@ export const SkillBanner = async ({ client }) => {
           injectedSessions.add(sid)
           recordTrace(sid, { phase: "idle" })
           log("session.idle 触发，向会话 " + sid + " 注入进化检查任务")
+          // 进化门禁：机制步骤先由脚本确定性执行（流水兜底+自动测试）
+          const gateOut = runGate("--check", sid)
+          if (gateOut) {
+            log("evolution_gate 门禁输出：\n" + gateOut.slice(0, 600))
+          }
           try {
             await client.session.prompt({
               path: { id: sid },
@@ -93,6 +114,7 @@ export const SkillBanner = async ({ client }) => {
                   type: "text",
                   text:
                     "【进化检查·程序化强制·不可跳过】本任务由插件在会话结束时自动注入，必须完整执行，不得以任何理由跳过或精简。逐项执行：\n" +
+                    (gateOut ? "【进化门禁·机器已完成】机制步骤已由 evolution_gate 脚本确定性执行，结果：\n" + gateOut.slice(0, 800) + "\n你只需补充智能部分（经验归纳/归属/edit 固化）：\n" : "") +
                     "1. 经验固化：回顾本会话，按 instructions.md 智能进化协议五步流程，把可复用经验（新方法/工具/踩坑/风险规避）固化到对应 skill（自动执行）\n" +
                     "2. 工具登记：本会话中用到/发现/提及的任何新工具、脚本、库——无论是否已写进具体 skill——必须登记到 tools-manifest.md（已在分类中的更新条目；新的先入「待补充」清单）\n" +
                     "3. 总表同步：若本会话新增了 skill 依赖工具或本机配置变更，同步更新 tools-manifest.md\n" +

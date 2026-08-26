@@ -31,11 +31,20 @@ def validate(root, cfg=None):
     if not os.path.isdir(root):
         print("目录不存在:", root)
         return 1
+    # default 是"默认触发"分类容器：校验其子目录内的 skill，而非 default 本身
+    skill_entries = []
     for name in sorted(os.listdir(root)):
-        skill_dir = os.path.join(root, name)
-        p = os.path.join(skill_dir, "SKILL.md")
-        if not os.path.isdir(skill_dir):
+        d = os.path.join(root, name)
+        if not os.path.isdir(d):
             continue
+        if name == "default":
+            for sub in sorted(os.listdir(d)):
+                if os.path.isdir(os.path.join(d, sub)):
+                    skill_entries.append((sub, os.path.join(d, sub)))
+            continue
+        skill_entries.append((name, d))
+    for name, skill_dir in skill_entries:
+        p = os.path.join(skill_dir, "SKILL.md")
         if not os.path.isfile(p):
             errors.append("%s: 缺 SKILL.md" % name)
             continue

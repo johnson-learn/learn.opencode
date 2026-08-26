@@ -25,7 +25,7 @@ for item in ["tools\\inject_skills.py", "tools\\path_convert.py", "tools\\slim_s
              "tools\\fetch_skills.py", "tools\\cross_move.py", "tools\\generalize.py",
              "tests\\skill_validate.py", "tests\\test_plugin.js", "tests\\test_path_convert.py",
              "tests\\test_update_skill.py", "tests\\test_regedit.py", "tests\\README.md",
-              "plugins\\skill-banner.js", "instructions.md", "skills\\evolution_skill\\evolution.md", "tools-manifest.md"]:
+              "plugins\\skill-banner.js", "instructions.md", "default\\evolution_skill\\evolution.md", "tools-manifest.md"]:
     key = item.split("\\")[-1].split(".")[0]
     check("注册表条目存在: " + item, item in reg)
 
@@ -61,7 +61,7 @@ fs_checks = [
     ("tests/test_update_skill.py", "test_update_skill.py"),
     ("AGENTS.md", "AGENTS.md"),
     ("instructions.md", "instructions.md"),
-    ("skills/evolution_skill/evolution.md", "evolution.md"),
+    ("skills/default/evolution_skill/evolution.md", "evolution.md"),
     ("tools-manifest.md", "tools-manifest.md"),
     ("regedit.md", "regedit.md"),
 ]
@@ -71,8 +71,12 @@ if missing: print("    缺失:", missing)
 
 # 7. skills 目录实际 6 个全局 skill 与注册表一致
 skill_dirs = [d for d in os.listdir(os.path.join(CFG, "skills"))
-              if os.path.isdir(os.path.join(CFG, "skills", d))]
-check("skills 目录 6 个与注册表一致", sorted(skill_dirs) == sorted(["3gpp_skill", "files_skill", "find_skill", "program_skill", "update_skill", "evolution_skill"]))
+              if os.path.isdir(os.path.join(CFG, "skills", d)) and d != "default"]
+default_dirs = [d for d in os.listdir(os.path.join(CFG, "skills", "default"))
+                if os.path.isdir(os.path.join(CFG, "skills", "default", d))]
+check("skills 目录 5 个 + default 1 个与注册表一致",
+      sorted(skill_dirs) == sorted(["3gpp_skill", "files_skill", "find_skill", "program_skill", "update_skill"])
+      and default_dirs == ["evolution_skill"])
 check("evolution_skill 已登记", registered("evolution_skill"))
 
 print("\n结果：通过 %d 项，失败 %d 项" % (pass_n, fail_n))

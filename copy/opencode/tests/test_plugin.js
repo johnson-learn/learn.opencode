@@ -4,7 +4,7 @@ import { join } from "path"
 import { homedir } from "os"
 
 const HOME = homedir()
-const TRACE = join(HOME, ".config", "opencode", "skills", "evolution_skill", "evolution_trace.jsonl")
+const TRACE = join(HOME, ".config", "opencode", "skills", "default", "evolution_skill", "evolution_trace.jsonl")
 const LOG = join(HOME, ".config", "opencode", "plugins", "plugin-evolution.log")
 
 // 清理旧测试数据

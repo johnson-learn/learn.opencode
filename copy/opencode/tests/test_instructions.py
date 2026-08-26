@@ -30,7 +30,7 @@ check("AGENTS.md 第 2 条为复盘进化", m2 and "复盘进化" in m2.group(1)
 check("instructions 引用了铁律第 2 条（复盘进化执行）", "2" in refs)
 
 # 4. 引用文件存在性（占位符解析）
-files = ["tools-manifest.md", "regedit.md", "skills\\evolution_skill\\evolution.md", "tests\\skill_validate.py",
+files = ["tools-manifest.md", "regedit.md", "skills\\default\\evolution_skill\\evolution.md", "tests\\skill_validate.py",
          "tools\\inject_skills.py"]
 for f in files:
     check("引用文件存在: " + f, os.path.exists(os.path.join(CFG, f)))
@@ -38,9 +38,13 @@ check("instructions 引用 regedit.md 机制", "regedit.md" in ins)
 check("instructions 引用 tools-manifest 权威", "tools-manifest.md" in ins)
 check("instructions 引用 evolution_skill 执行器", "evolution_skill" in ins)
 
-# 5. 技能清单表与 skills 目录一致（双向）
+# 5. 技能清单表与 skills 目录一致（双向；default 子目录内的默认触发 skill 计入）
 skill_dirs = set(d for d in os.listdir(os.path.join(CFG, "skills"))
-                 if os.path.isdir(os.path.join(CFG, "skills", d)))
+                 if os.path.isdir(os.path.join(CFG, "skills", d)) and d != "default")
+default_dir = os.path.join(CFG, "skills", "default")
+if os.path.isdir(default_dir):
+    skill_dirs |= set(d for d in os.listdir(default_dir)
+                      if os.path.isdir(os.path.join(default_dir, d)))
 table_skills = set(re.findall(r"\| `(\w+_skill)` \|", ins))
 check("技能清单表覆盖全部 %d 个 skill" % len(skill_dirs), skill_dirs <= table_skills)
 check("技能清单表无多余条目", table_skills <= skill_dirs)
@@ -49,6 +53,8 @@ check("技能清单表含 evolution_skill", "evolution_skill" in table_skills)
 # 6. 各 skill 遵守编写规范（工具依赖清单或 references 指向）
 for d in sorted(skill_dirs):
     p = os.path.join(CFG, "skills", d, "SKILL.md")
+    if not os.path.exists(p):
+        p = os.path.join(default_dir, d, "SKILL.md")
     if not os.path.exists(p):
         check(d + " 有 SKILL.md", False)
         continue
