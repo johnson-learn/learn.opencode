@@ -11,11 +11,12 @@ def check(name, cond):
     if cond: pass_n += 1; print("  ✓ " + name)
     else: fail_n += 1; print("  ✗ " + name)
 
-# 隔离：备份真实配置
+# 隔离：备份真实配置并重置为默认阈值
 REAL_CFG = os.path.join(TESTS_DIR, "skill_validate_config.json")
 bak = None
 if os.path.exists(REAL_CFG):
     bak = open(REAL_CFG, encoding="utf-8").read()
+open(REAL_CFG, "w", encoding="utf-8").write(json.dumps({"size_limit_kb": 8, "ignored_skills": [], "ignore_all": False}))
 
 tmp = tempfile.mkdtemp(prefix="sv_cfg_")
 try:

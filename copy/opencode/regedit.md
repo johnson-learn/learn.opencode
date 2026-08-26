@@ -1,5 +1,6 @@
 # 全体系注册表（Registry）—— 唯一权威加载方式登记表
 
+> **规则三层与冲突优先级**：AGENTS.md 铁律 > 本注册表（加载方式权威）> instructions.md 详版协议。冲突时以高优先级层为准；本表只登记「加载方式与生效时机」，规则细则见 instructions.md，铁律摘要见 AGENTS.md。
 > 本表登记整个 opencode 体系的**全部组件**及其**生效/加载方式**。任何组件（技能/插件/工具/测试/数据/同步/规则）加入或变更时，必须同步更新本表，并跑 `python <opencode配置目录>\tests\test_regedit.py` 校验一致性。
 > 读取约定：本表由 AGENTS.md 铁律第 0 条强制——**每次会话开始必须读取**；插件 session.created 程序化提醒兜底。
 
@@ -70,6 +71,8 @@
 | test_path_convert.py | `tests\test_path_convert.py` | G | path_convert 改动后强制（9/9） |
 | test_update_skill.py | `tests\test_update_skill.py` | G | 同步机制改动后强制（14/14，隔离临时仓库） |
 | test_regedit.py | `tests\test_regedit.py` | G | 注册表改动后强制（本表与实际文件系统一致性） |
+| test_tools_manifest.py | `tests\test_tools_manifest.py` | G | 工具总表改动后强制（分类计数吻合/待补充无重复/包可导入/表结构，21/21） |
+| test_instructions.py | `tests\test_instructions.py` | G | instructions.md 改动后强制（章节/铁律互查/引用存在/技能清单与目录一致/编写规范，31/31） |
 | README.md（测试清单） | `tests\README.md` | F | 查测试入口与运行命令 |
 
 ## 数据层
