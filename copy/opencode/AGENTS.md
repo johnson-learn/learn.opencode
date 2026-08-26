@@ -18,7 +18,7 @@
 - 无 → 回答末尾附一行：`进化：无新固化`
 固化位置：`<opencode配置目录>\instructions.md` / `evolution.md`（进化规则，更新需弹窗确认）/ `evolution_log.txt`（历史流水，只增不改）/ 对应 skill 的 SKILL.md 或 references\ / `tools-manifest.md` / `regedit.md`。
 **归属二分铁律**：规则/流程/机制类经验必须写入可执行载体（SKILL.md/instructions.md/regedit.md/AGENTS.md/evolution.md 规则文件），只写 evolution_log.txt = 归属失败；记录/事实类才仅写 evolution_log.txt。
-任何结构/机制/工具变更后，README/INSTALL/REQUIREMENTS/tests\README.md 等配套文档必须同步更新——不许等用户提醒；**流程类变更必须同步 SKILL.md 与 regedit.md**。
+任何结构/机制/工具变更后，README/INSTALL/REQUIREMENTS/tests\README.md 等配套文档必须同步更新——不许等用户提醒；**流程类变更必须同步 SKILL.md 与 regedit.md**；**配套更新清单以 `<opencode配置目录>\docs-sync.md` 映射表为权威**（按变更类型逐项更新对应文件并跑校验测试）。
 校验自测（每条固化强制）：内容核查（命令可执行/无本机硬编码路径/标注验证状态）+ `python <opencode配置目录>\tests\skill_validate.py` + 行为实测（涉及命令必须实跑）。
 详版五步流程与五大进化能力见 `<opencode配置目录>\instructions.md` 与 `evolution_skill`。
 

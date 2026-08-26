@@ -91,7 +91,7 @@ def do_check(sid):
         print("[gate] 流水骨架已自动追加（模型未记录时兜底）")
     else:
         print("[gate] 流水已有本会话记录（模型已正常追加），不重复")
-    # 2. 按改动类型自动跑对应测试
+    # 2. 按改动类型自动跑对应测试（docs-sync.md 映射表程序化落地：一致性测试全跑，防配套漏更）
     results = {}
     def run_test(name, cmd, cwd=TESTS):
         try:
@@ -108,6 +108,10 @@ def do_check(sid):
     if any("plugins" in fp for fp in changed):
         run_test("test_plugin", ["node", os.path.join(TESTS, "test_plugin.js")])
     run_test("test_evolution_consistency", [py, os.path.join(TESTS, "test_evolution_consistency.py")])
+    # docs-sync 映射表相关一致性：任何改动都跑（登记/清单/总表配套同步的机器校验）
+    run_test("test_instructions", [py, os.path.join(TESTS, "test_instructions.py")])
+    run_test("test_regedit", [py, os.path.join(TESTS, "test_regedit.py")])
+    run_test("test_tools_manifest", [py, os.path.join(TESTS, "test_tools_manifest.py")])
     print("[gate] 自动测试结果：")
     for name, (rc, tail) in results.items():
         print("  %s: rc=%s | %s" % (name, rc, tail))
