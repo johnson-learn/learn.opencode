@@ -88,7 +88,7 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 
 1. **盘点范围**（按序执行）：
    - 当前工作目录所在项目
-   - 状态文件 `project_list.txt`（`<opencode配置目录>\skills\update_skill\` 下）记录的其它项目目录；update_skill 首次遇到新项目目录时追加记录
+   - 状态文件 `<opencode配置目录>\skills\update_skill\project_list.txt`（首次盘点时创建）记录的其它项目目录；update_skill 首次遇到新项目目录时追加记录
    - 用户显式指定：`update_skill：<项目目录>` = 盘点该项目 + 双向同步
 2. **每项目扫描三类资产**：
    - 项目级 skill（`.opencode\skills\*/`）：与全局同名（注入副本）→ 跳过；全局没有的全新 skill → 通用性判定
@@ -126,6 +126,14 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 1. **自动扫描**：`python <opencode配置目录>\tests\test_update_skill.py` 用例 8（提交前可移植性校验）——扫描待提交目录，检出"本机 home 真实路径 / 本机用户名路径"即违规；此用例已进入提交前自测用例库
 2. **人工核查**：硬编码盘符绝对路径（`<工具目录>`、`E:\` 等）只允许"安装约定位置"（`<工具目录>msys64`、`<工具目录>Program Files`、`<工具目录>Windows`、`<工具目录>Temp` 等任何机器安装后相同的位置）；本机特有目录（`<项目目录>` 等）必须占位符化
 3. 校验不通过 → 修复为占位符/动态推导 → 重跑用例 8 → 通过后才可进入 git 三步骤
+
+#### （第五步·推送分支）门面文档同步（仓库门面，用户 2026-08-26 定）
+
+> 仓库根与 copy\ 下除 opencode\ 的门面文件（根 README.md、copy\README.md、copy\INSTALL.md、copy\REQUIREMENTS.md）是 GitHub 上显示的仓库门面——它们**不在本机全局目录**，只在仓库工作树维护。
+1. **核查时机**：每次推送前对照框架现状核查门面一致性：技能清单（6 个）与目录结构（skills\ + skills\default\）、安装步骤（部署内容含 tests/tools/plugins）、依赖（tools-manifest 对齐）、机制说明（进化门禁/五步同步/多机说明）
+2. **更新方式**：直接在仓库工作树编辑门面文件，随本次 commit/push 一并上 GitHub（弹窗确认时展示门面变更清单）
+3. **无权限机器不受影响**：门面维护只在有权限机器的 update_skill 流程内；无权限机器 `git pull` 即得更新后的门面与 skill，不需执行 update_skill 修改
+4. **程序化核查**：`python <opencode配置目录>\tests\test_repo_face.py`（门面一致性测试：README 技能清单 vs skills 目录、INSTALL 关键步骤存在、REQUIREMENTS 权威引用）——挂入第三步自测
 
 #### （第五步·推送分支）同步三环节（差异合入模式，禁止简单删除替换）
 

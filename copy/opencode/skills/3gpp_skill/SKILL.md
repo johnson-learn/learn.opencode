@@ -112,7 +112,7 @@ description: 3GPP 移动通信标准专家技能（全局 skill，仅显式触�
 - 详见 `references/teaching-template.md`
 - 详见 `references/figure-requirements.md`
 - 详见 `references/html-check.md`
-- 双轨提取/公式核实通用流程：见 files_skill 的 `references/dual-track-extraction.md`（按需读取）
+- 双轨提取/公式核实通用流程：见 files_skill 的 `<opencode配置目录>\skills\files_skill\references\dual-track-extraction.md`（按需读取）
 
 
 ## 详细知识（按需读取 references/，不随入口加载）
@@ -122,4 +122,4 @@ description: 3GPP 移动通信标准专家技能（全局 skill，仅显式触�
 - 详见 `references/teaching-template.md`
 - 详见 `references/figure-requirements.md`
 - 详见 `references/html-check.md`
-- 双轨提取/公式核实通用流程：见 files_skill 的 `references/dual-track-extraction.md`（按需读取）
+- 双轨提取/公式核实通用流程：见 files_skill 的 `<opencode配置目录>\skills\files_skill\references\dual-track-extraction.md`（按需读取）
