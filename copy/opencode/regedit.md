@@ -77,6 +77,8 @@
 | test_instructions.py | `tests\test_instructions.py` | G | instructions.md 改动后强制（章节/铁律互查/引用存在/技能清单与目录一致/编写规范，31/31） |
 | test_evolution_gate.py | `tests\test_evolution_gate.py` | G | evolution_gate 改动后强制（快照/改动检测/流水兜底/自动测试触发/待补充清单/--drain 自愈补跑/max_n 限流，14/14） |
 | test_docs_sync.py | `tests\test_docs_sync.py` | G | docs-sync.md 改动后强制（变更类型/校验测试存在/被 regedit+AGENTS 引用，19/19） |
+| test_audit_references.py | `tests\test_audit_references.py` | G | 框架引用审计（引用存在性/旧术语残留/README 双向一致，3/3） |
+| test_repo_face.py | `tests\test_repo_face.py` | G | 仓库门面一致性（门面文件与框架现状对照，14/14；WSL 不可达时跳过） |
 | README.md（测试清单） | `tests\README.md` | F | 查测试入口与运行命令 |
 
 ## 数据层
@@ -101,7 +103,8 @@
 | 占位符体系 | path_map.txt + path_convert.py | G | 三级占位符（自动/工具/数据），双向转换 |
 | 同步过滤规则 | update_skill SKILL.md「同步过滤规则」章节 + 仓库 .gitignore | G | 判断标准：其它机器使用框架/skill/功能时需要的才同步；临时文件（编译产物/测试样本/日志/状态文件/大资产）由 .gitignore 自动过滤 |
 | 可移植性校验 | update_skill SKILL.md「第五步·推送前强制」+ test_update_skill.py 用例 8 | G | 提交到远端前强制：待提交内容不得含本机特征（home 真实路径/用户名路径/本机特有绝对路径）；用例 8 已进入提交前自测用例库 |
-| 项目资产盘点 | update_skill SKILL.md「第 0.9 步」+ project_list.txt | G | 同步前遍历项目（当前目录 + project_list.txt 清单 + 显式指定），提取通用资产（新 skill/通用脚本）到全局并随同步上 GitHub；拿不准的列建议清单 |
+| 门面文档同步 | update_skill SKILL.md「第五步·门面文档同步」+ test_repo_face.py | G | 仓库门面（根 README、copy\README/INSTALL/REQUIREMENTS）只在仓库工作树维护；推送前对照框架现状核查更新；无权限机器 pull 即得，不需 update_skill 修改 |
+| 项目资产盘点 | update_skill SKILL.md「第二步·项目资产盘点」+ project_list.txt | G | 同步前遍历项目（当前目录 + project_list.txt 清单 + 显式指定），提取通用资产（新 skill/通用脚本）到全局并随同步上 GitHub；拿不准的列建议清单 |
 
 ## 进化层（第八层：保证智能自我进化）
 

@@ -11,7 +11,7 @@
 
 ### 转换流程（集成进同步三环节）
 1. **本机 → 仓库**：合入前先对仓库文件跑 `python3 <仓库>/copy/scripts/path_convert.py to_portable --home="<本机用户目录正斜杠>" <仓库>/copy/opencode`（及 scripts 目录）——把本机合入内容中的真实路径转为占位符
-2. **仓库 → 本机**（反向合入，第 0.5 步与第 4 步均适用）：把仓库文件复制回本机后，对本机文件跑 `python3 <仓库>/copy/scripts/path_convert.py to_local --home="<本机用户目录正斜杠>" <本机opencode配置目录>`（及 Temp\opencode）——把占位符转回本机真实路径
+2. **仓库 → 本机**（反向合入，第一步吸收远端与第五步反向检查均适用）：把仓库文件复制回本机后，对本机文件跑 `python3 <仓库>/copy/scripts/path_convert.py to_local --home="<本机用户目录正斜杠>" <本机opencode配置目录>`（及 Temp\opencode）——把占位符转回本机真实路径
 3. **远端路径技巧的防御（关键）**：远端文件全部是占位符形式，反向合入到本机时**必须经 to_local 转换**，否则本机 skill 出现占位符导致工具路径失效；to_local 结束自动输出"残留未转换占位符"清单——**出现未知占位符（远端新定义的填写类）时，提示用户补充本机 path_map.txt 后重跑 to_local，不得带着占位符继续使用**
 4. 转换前后各跑一次 `grep -rl "<本机用户名>" <目录>`（正向）与占位符残留扫描（反向）残留检查，为 0 才可提交/合入
 5. 本机状态文件：`<opencode配置目录>\skills\update_skill\path_map.txt`（填写类占位符→本机真实路径映射，**不进仓库**，同步排除）；远端新增占位符时同步更新该文件
