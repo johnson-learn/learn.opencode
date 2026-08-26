@@ -90,11 +90,12 @@
 
 | 注册项 | 位置 | 生效 | 说明 |
 |---|---|---|---|
-| update_skill 双向同步流程 | `skills\update_skill\SKILL.md` | D+G | 用户显式触发；流程各步强制（pull→合入→to_portable→commit -F→push→反向检查） |
+| update_skill 双向同步流程 | `skills\update_skill\SKILL.md` | D+G | 用户显式触发；五步框架强制（吸收远端→修改→自测缺用例先补写→用户确认推送/填新内容→按选择执行）；推送前必须用户确认 |
 | GitHub 仓库 | `github.com/johnson-learn/learn.opencode.git` | G | 仅 update_skill 允许触碰（铁律第 2 条） |
 | WSL 工作副本 | `\\wsl.localhost\Ubuntu\home\github\learn.opencode\` | G | 同上 |
 | 占位符体系 | path_map.txt + path_convert.py | G | 三级占位符（自动/工具/数据），双向转换 |
 | 同步过滤规则 | update_skill SKILL.md「同步过滤规则」章节 + 仓库 .gitignore | G | 判断标准：其它机器使用框架/skill/功能时需要的才同步；临时文件（编译产物/测试样本/日志/状态文件/大资产）由 .gitignore 自动过滤 |
+| 可移植性校验 | update_skill SKILL.md「第五步·推送前强制」+ test_update_skill.py 用例 8 | G | 提交到远端前强制：待提交内容不得含本机特征（home 真实路径/用户名路径/本机特有绝对路径）；用例 8 已进入提交前自测用例库 |
 | 项目资产盘点 | update_skill SKILL.md「第 0.9 步」+ project_list.txt | G | 同步前遍历项目（当前目录 + project_list.txt 清单 + 显式指定），提取通用资产（新 skill/通用脚本）到全局并随同步上 GitHub；拿不准的列建议清单 |
 
 ## 进化层（第八层：保证智能自我进化）

@@ -3,7 +3,7 @@
 import os, sys
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-CFG = r"<opencode配置目录>"
+CFG = os.path.join(os.path.expanduser("~"), ".config", "opencode")
 pass_n, fail_n = 0, 0
 def check(name, cond):
     global pass_n, fail_n

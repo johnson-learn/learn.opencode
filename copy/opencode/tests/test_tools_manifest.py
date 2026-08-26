@@ -12,8 +12,8 @@ def check(name, cond):
 
 c = open(MANIFEST, encoding="utf-8").read()
 
-# 1. 结构：七个分类章节齐全（A~G）+ 本机配置 + 待补充
-for sec in ["## A. 基础环境", "## B. Python 环境与核心包", "## C. 文档处理工具",
+# 1. 结构：六个分类章节齐全（A~G 除 C 已并入 B）+ 本机配置 + 待补充
+for sec in ["## A. 基础环境", "## B. Python 环境与核心包",
             "## D. OCR 与公式识别", "## E. 网络与同步", "## F. 编程环境",
             "## G. 校验与辅助", "## 本机配置", "## 待补充"]:
     check("章节存在: " + sec, sec in c)
@@ -28,10 +28,10 @@ def count_rows(sec_name, next_sec):
     seg = c[i:j] if j > 0 else c[i:]
     return len([l for l in seg.splitlines() if re.match(r"^\|\s*\S", l)
                 and "---" not in l and "检查命令" not in l and not l.startswith("| 类别")])
-next_map = {"A": "## B.", "B": "## C.", "C": "## D.", "D": "## E.", "E": "## F.", "F": "## G.", "G": "## 本机配置"}
-sec_map = {"A": "## A. 基础环境", "B": "## B. Python 环境与核心包", "C": "## C. 文档处理工具",
+next_map = {"A": "## B.", "B": "## D.", "D": "## E.", "E": "## F.", "F": "## G.", "G": "## 本机配置"}
+sec_map = {"A": "## A. 基础环境", "B": "## B. Python 环境与核心包",
            "D": "## D. OCR 与公式识别", "E": "## E. 网络与同步", "F": "## F. 编程环境", "G": "## G. 校验与辅助"}
-for cat in "ABCDEFG":
+for cat in "ABDEFG":
     actual = count_rows(sec_map[cat], next_map[cat])
     check("分类 %s 计数吻合（速览 %d = 实际 %d）" % (cat, cats.get(cat, 0), actual), cats.get(cat) == actual)
 
