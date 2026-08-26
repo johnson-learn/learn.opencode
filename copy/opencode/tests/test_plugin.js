@@ -4,8 +4,8 @@ import { join } from "path"
 import { homedir } from "os"
 
 const HOME = homedir()
-const TRACE = join(HOME, ".config", "opencode", "evolution_trace.jsonl")
-const LOG = join(HOME, ".config", "opencode", "plugin-evolution.log")
+const TRACE = join(HOME, ".config", "opencode", "skills", "evolution_skill", "evolution_trace.jsonl")
+const LOG = join(HOME, ".config", "opencode", "plugins", "plugin-evolution.log")
 
 // 清理旧测试数据
 for (const f of [TRACE, LOG]) { try { unlinkSync(f) } catch {} }

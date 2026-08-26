@@ -30,7 +30,7 @@ check("AGENTS.md 第 2 条为复盘进化", m2 and "复盘进化" in m2.group(1)
 check("instructions 引用了铁律第 2 条（复盘进化执行）", "2" in refs)
 
 # 4. 引用文件存在性（占位符解析）
-files = ["tools-manifest.md", "regedit.md", "evolution.md", "tests\\skill_validate.py",
+files = ["tools-manifest.md", "regedit.md", "skills\\evolution_skill\\evolution.md", "tests\\skill_validate.py",
          "tools\\inject_skills.py"]
 for f in files:
     check("引用文件存在: " + f, os.path.exists(os.path.join(CFG, f)))
@@ -57,7 +57,7 @@ for d in sorted(skill_dirs):
     check(d + " 遵守编写规范（工具清单/references）", ok)
 
 # 7. 五步进化流程关键要素
-for kw in ["归纳", "归属", "evolution.md", "校验与自测", "行为自测"]:
+for kw in ["归纳", "归属", "evolution_log.txt", "校验与自测", "行为自测"]:
     check("五步流程要素: " + kw, kw in ins)
 
 print("\n结果：通过 %d 项，失败 %d 项" % (pass_n, fail_n))

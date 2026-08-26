@@ -15,7 +15,7 @@
 | 注册表一致性（regedit.md ↔ 文件系统 ↔ AGENTS.md 互查） | `test_regedit.py` | `python tests\test_regedit.py` | ✓ 47/47 |
 | tools-manifest 完整性（分类计数吻合/待补充无重复/包可导入/表结构） | `test_tools_manifest.py` | `python tests\test_tools_manifest.py` | ✓ 21/21 |
 | instructions.md 规则一致性（章节/铁律互查/引用存在/技能清单与目录一致/编写规范） | `test_instructions.py` | `python tests\test_instructions.py` | ✓ 31/31 |
-| evolution 一致性（近 5 条「」声明落入规则文件/关键环节已固化抽查） | `test_evolution_consistency.py` | `python tests\test_evolution_consistency.py` | ✓ 9/9 |
+| evolution 一致性（evolution_log.txt 近 5 条「」声明落入规则文件/evolution.md 规则文件定位与弹窗确认流程抽查） | `test_evolution_consistency.py` | `python tests\test_evolution_consistency.py` | ✓ 15/15 |
 
 > skill_validate 体积门限：默认 8KB，超限输出「待决清单」，用户选择（--set-limit 改门限 / --ignore 忽略指定 / --ignore-all 忽略全部）写入 `skill_validate_config.json` 持久化，后续一致性生效（当前本机门限 15KB，用户 2026-08-26 设定）。
 

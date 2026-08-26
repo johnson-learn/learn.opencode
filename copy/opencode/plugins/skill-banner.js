@@ -4,8 +4,8 @@ import { homedir } from "os"
 
 const HOME = homedir()
 const SKILLS_DIR = join(HOME, ".config", "opencode", "skills")
-const TRACE_FILE = join(HOME, ".config", "opencode", "evolution_trace.jsonl")
-const LOG_FILE = join(HOME, ".config", "opencode", "plugin-evolution.log")
+const TRACE_FILE = join(HOME, ".config", "opencode", "skills", "evolution_skill", "evolution_trace.jsonl")
+const LOG_FILE = join(HOME, ".config", "opencode", "plugins", "plugin-evolution.log")
 
 function log(msg) {
   try { appendFileSync(LOG_FILE, new Date().toISOString() + " " + msg + "\n") } catch {}
