@@ -28,7 +28,10 @@
 [2026-08-26] 插件自测（test_plugin.js） → 15/15 通过：session.created 主/子会话 toast 行为、session.idle 进化任务注入（六项强制清单）、缺 sessionID 容错、未知事件零副作用、轨迹与日志落盘；自测发现真 bug：edit 误删 export 闭合（已修复）；test_plugin.js 纳入行为自测清单
 [2026-08-26] 用户指出（commit message 摘要丢失） → 多个提交只剩 "sync:"（中文摘要经 PowerShell→wsl→bash 多层 shell 传递丢失）；修复：update_skill git 三步骤改为 printf 写 /tmp/cmsg.txt + git commit -F 文件方式传递；已存在裸 sync: 提交不改历史（共享仓库 amend 危险），向前修复
 [2026-08-26] 用户要求（修炼文件归档全局） → 自查发现 skill 修炼文件散落 <项目目录>\temp：建立全局 <opencode配置目录>\tools\ 目录（path_convert/inject_skills/fetch_skills/slim_skills/cross_move/generalize 六个核心修炼工具）+ tools\archive\（18 个一次性已执行脚本归档）；测试用例已在 tests\；更新全部路径引用（instructions/skills）；三套测试全绿（10+15+0 错误）；原则：一切 skill 修炼文件必须放全局目录随 update_skill 同步 GitHub，任务产物（图片/文档）才留在项目 temp
-[2026-08-26] 用户规则（提交前可移植性校验强制） → update_skill 第五步推送分支新增「可移植性校验」强制环节：修改提交到远端前必须校验不同电脑可移植——自动扫描（test_update_skill.py 用例 8：检出本机 home 真实路径/用户名路径即违规）+ 人工核查（硬编码绝对路径只允许安装约定位置）。用例 8 进入提交前自测用例库；用例首跑即抓到 tests\test_regedit.py 的 CFG 硬编码残留并修复为动态推导（os.path.expanduser），tests 目录现 0 违规。本轮双机合并中发现的移植性问题共 4 处（本机 1 + 对端 2 + test_regedit 1）全部修复为动态路径，本机特征残留 0
+[2026-08-26] 用户要求（修改复盘核查强制） → 用户判定本轮"规则只进 evolution.md 未进 SKILL.md"为低级错误（严重）；新环节固化：**每个文件修改完成后、自测前必须自我复盘核查**（「修改复盘核查」环节）——① 改了什么/为什么改/有无误删误改无关内容；② 规则类内容是否已进全部应改载体（不只 evolution.md）；③ 是否符合占位符/可移植性/归属二分铁律；④ 配套文档是否同步。核查通过才跑测试。固化位置：AGENTS.md 铁律第 8 条（改为"修改复盘核查 + 测试先行"）、evolution_skill 处理流程第 3 步、update_skill 第二步。低级错误根因深挖：进化流程只有"追加记录"检查，没有"修改动作完整性"检查——模型连续多个 edit 后容易漏掉应改载体，复盘核查正是补这个动作级的闭环
+
+
+
 
 
 

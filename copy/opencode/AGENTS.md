@@ -17,7 +17,8 @@
 - 有 → 加载 `evolution_skill`（进化执行器），按其流程五步固化（归纳→归属→edit 更新→追加 evolution.md→校验自测）+ 注册表更新（regedit.md + test_regedit.py）+ 配套文档同步，并在回答末尾附一行：`进化：已固化 …`
 - 无 → 回答末尾附一行：`进化：无新固化`
 固化位置：`<opencode配置目录>\instructions.md` / `evolution.md` / 对应 skill 的 SKILL.md 或 references\ / `tools-manifest.md` / `regedit.md`。
-任何结构/机制/工具变更后，README/INSTALL/REQUIREMENTS/tests\README.md 等配套文档必须同步更新——不许等用户提醒。
+**归属二分铁律**：规则/流程/机制类经验必须写入可执行载体（SKILL.md/instructions.md/regedit.md/AGENTS.md），只写 evolution.md = 归属失败；记录/事实类才仅写 evolution.md。
+任何结构/机制/工具变更后，README/INSTALL/REQUIREMENTS/tests\README.md 等配套文档必须同步更新——不许等用户提醒；**流程类变更必须同步 SKILL.md 与 regedit.md**。
 校验自测（每条固化强制）：内容核查（命令可执行/无本机硬编码路径/标注验证状态）+ `python <opencode配置目录>\tests\skill_validate.py` + 行为实测（涉及命令必须实跑）。
 详版五步流程与五大进化能力见 `<opencode配置目录>\instructions.md` 与 `evolution_skill`。
 
@@ -36,5 +37,10 @@
 ## 7. 工具总表登记
 思考/回答中发现的好用工具、脚本、库，即使未写进具体 skill 也必须登记 `<opencode配置目录>\tools-manifest.md`（可先入"待补充"）。
 
-## 8. 测试先行
+## 8. 修改复盘核查 + 测试先行
+每个文件修改完成后、跑自测之前，必须自我复盘核查该次修改（用户 2026-08-26 定，防低级错误）：
+- 改了什么、为什么改、有无误删/误改无关内容？
+- 该次修改的**规则/机制类内容是否已进全部应改载体**（SKILL.md/instructions.md/regedit.md 等，不只见于 evolution.md）？
+- 是否符合占位符/可移植性/归属二分铁律？配套文档是否同步？
+核查发现问题 → 立即修正；核查通过才跑测试。
 每次对 skill/插件/工具/流程的修改，必须跑 `<opencode配置目录>\tests\` 下对应测试（skill_validate.py / test_plugin.js / test_path_convert.py / test_update_skill.py）；新增机制必须同步新增测试用例。

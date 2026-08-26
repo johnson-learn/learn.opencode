@@ -90,7 +90,7 @@
 
 | 注册项 | 位置 | 生效 | 说明 |
 |---|---|---|---|
-| update_skill 双向同步流程 | `skills\update_skill\SKILL.md` | D+G | 用户显式触发；五步框架强制（吸收远端→修改→自测缺用例先补写→用户确认推送/填新内容→按选择执行）；推送前必须用户确认 |
+| update_skill 双向同步流程 | `skills\update_skill\SKILL.md` | D+G | 用户显式触发；五步框架强制（吸收远端含对端修改评审→修改→自测缺用例先补写→用户确认推送/填新内容→按选择执行）；推送前必须用户确认 |
 | GitHub 仓库 | `github.com/johnson-learn/learn.opencode.git` | G | 仅 update_skill 允许触碰（铁律第 2 条） |
 | WSL 工作副本 | `\\wsl.localhost\Ubuntu\home\github\learn.opencode\` | G | 同上 |
 | 占位符体系 | path_map.txt + path_convert.py | G | 三级占位符（自动/工具/数据），双向转换 |
