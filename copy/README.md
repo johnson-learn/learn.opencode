@@ -18,6 +18,10 @@ copy\
 │   ├── package.json              skill-banner 插件依赖
 │   ├── plugins\skill-banner.js   opencode 插件（会话创建时 toast 展示全局技能清单）
 │   └── skills\                   5 个全局 skill（SKILL.md + modules 子技能库）
+
+│   ├── tests\                      测试用例（skill 结构校验 / 插件 / 路径转换 / 双向同步，随仓库同步）
+│   ├── tools\                      修炼工具（path_convert / inject_skills / fetch_skills / slim_skills 等）
+│   └── tools-manifest.md           工具总清单（唯一权威，分类 A~G + 本机配置 + 待补充）
 │       ├── 3gpp_skill\           3GPP 移动通信标准专家
 │       ├── files_skill\          文件识别/OCR/公式/文档处理
 │       ├── find_skill\           网络资源获取与镜像加速
@@ -58,5 +62,5 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File setup\setup-windows.ps1 
 ## 上传 GitHub 前注意
 
 1. `data\`、`opencode\node_modules\` 等大目录已被 `.gitignore` 排除（3GPP 文档 300+ MB 不建议入 git，用 `download-specs.ps1` 新机重下或网盘拷贝）。
-2. 检查 `setup\setup-windows.ps1` 顶部的 `$OLD_USER = "job_p"` —— 若旧机用户名不同请先改对（它是部署时路径自动改写的依据）。
+2. 路径可移植由占位符体系保证（path_convert.py 双向转换，tools-manifest.md 为工具权威源）；新机部署后运行 `python <opencode配置目录>\tests\skill_validate.py` 与其余测试用例自检（见 tests\README.md）。
 3. 仓库内不含任何密钥/凭证（skill 规范已保证）。

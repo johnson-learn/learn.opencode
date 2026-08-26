@@ -22,7 +22,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File setup\setup-windows.ps1 -Use
 | 3 pip 包 | `-SkipPip` | pix2text、matplotlib、PyMuPDF、pillow（`-UseChinaMirror` 走清华源） |
 | 4 WSL | `-SkipWsl` | 调起 `install-wsl.ps1`（管理员窗口；可能需要重启一次） |
 | 5~6 部署 | `-SkipDeploy` | 复制 skill/配置到 `~\.config\opencode\`；辅助脚本到 `%LOCALAPPDATA%\Temp\opencode\` |
-| 7 路径改写 | `-NoPathRewrite` | 把 skill 文本中旧机路径（`C:\Users\job_p\...`、`E:\openCodeDefault\temp`）替换为新机实际路径 |
+| 6.5~7 路径配置 | `-NoPathRewrite` | 自动探测工具类目录（LibreOffice/Chrome/Node/WSL）+ 数据类目录交互选择（默认/定制）+ path_convert.py 占位符转本机真实路径 |
 
 安装完成后：
 1. 重启终端 / opencode；
@@ -45,9 +45,14 @@ copy opencode\package.json  "%USERPROFILE%\.config\opencode\"
 # 2) 部署辅助脚本（skill 引用路径约定为 %LOCALAPPDATA%\Temp\opencode）
 robocopy scripts "%LOCALAPPDATA%\Temp\opencode" /E
 ```
-> 手动部署后，若新电脑用户名不是 `job_p`，需自行把 skill 与脚本里的旧路径全局替换为新路径（脚本方式 A 的"阶段 7"会自动完成这一步）。
+> 手动部署后，需运行 `python "%USERPROFILE%\.config\opencode\tools\path_convert.py" to_local` 完成占位符→本机路径转换（数据类目录在 path_map.txt 中维护；脚本方式 A 的"阶段 6.5~7"会自动完成）。
 
 ## 验证清单
+
+1. 重启 opencode，会话创建时应 toast 展示全局技能清单
+2. 按 `tools-manifest.md` 逐类检查工具（A~G 检查命令）
+3. 跑测试自检：`python "%USERPROFILE%\.config\opencode\tests\skill_validate.py" "%USERPROFILE%\.config\opencode\skills"`，其余用例见 `tests\README.md`
+4. 首次 update_skill 需指出同步目标目录
 
 ```powershell
 opencode --version          # opencode CLI
