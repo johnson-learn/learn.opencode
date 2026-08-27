@@ -60,14 +60,46 @@ def main():
     if not os.path.exists(msgfile):
         print("[sync_push] commit 消息文件不存在：" + msgfile)
         return 2
-    # 推送前可移植性残留快速检查（本机特征词）
-    r = run_git(["grep", "-I", "-l", "-e", os.path.basename(os.path.expanduser("~"))], repo)
-    if r.returncode == 0 and r.stdout.strip():
-        hits = r.stdout.strip().splitlines()
-        if any("path_map" not in h and "archive" not in h for h in hits):
-            print("[sync_push] 警告：待提交内容含本机用户名特征（可能缺可移植性转换），仍继续推送前请人工复核：")
-            for h in hits[:5]:
-                print("  " + h)
+    # 可移植性转换防线（2026-08-27 用户指正：转换不能在提交之后才发现缺失——脚本自动执行，流程漏步不再可能）：
+    # 推送前自动对仓库 opencode 目录跑 to_portable（幂等：已转换目录再跑无变化），随后特征扫描阻断兜底
+    pc = os.path.join(os.path.dirname(os.path.abspath(__file__)), "path_convert.py")
+    target_dir = os.path.join(repo, "copy", "opencode")
+    if os.path.isfile(pc) and os.path.isdir(target_dir):
+        rpc = subprocess.run([sys.executable, pc, "to_portable", target_dir],
+                             capture_output=True, text=True, encoding="utf-8", errors="replace")
+        print("[sync_push] 推送前自动 to_portable 完成（rc=%d，防本机路径入仓库）" % rpc.returncode)
+    # 推送前可移植性强制检查（2026-08-27 由警告升级为阻断）：扫描待提交变更文件（git status 列表），
+    # 检出本机用户名特征（Users\<用户名> 等）→ 直接拒绝推送，提示人工复核转换盲区
+    r = run_git(["status", "--porcelain"], repo)
+    changed = []
+    for line in (r.stdout or "").splitlines():
+        if len(line.strip()) < 4:
+            continue
+        p = line[3:].strip().strip('"')
+        if p:
+            changed.append(p)
+    uname = os.path.basename(os.path.expanduser("~"))
+    patterns = ["Users\\" + uname, "Users/" + uname, uname + "\\AppData"]
+    hits = []
+    for p in changed:
+        pl = p.replace("\\", "/").lower()
+        if "archive" in pl or "modules" in pl or "path_map" in pl or "sync_target" in pl:
+            continue
+        fp = os.path.join(repo, p)
+        if not os.path.isfile(fp):
+            continue
+        try:
+            c = open(fp, encoding="utf-8", errors="replace").read()
+        except Exception:
+            continue
+        if any(pat.lower() in c.lower() for pat in patterns):
+            hits.append(p)
+    if hits:
+        print("[sync_push] 拒绝推送：待提交变更含本机用户名特征（可移植性违规）。")
+        for h in hits[:5]:
+            print("  " + h)
+        print("[sync_push] 处理：对仓库目录跑 path_convert.py to_portable 后重新弹窗确认推送。")
+        return 2
     # WSL 分支下把消息文件路径也转成 WSL 路径（commit -F 在 WSL 内读文件）
     if is_wsl_repo(repo):
         msgfile = to_wsl_path(msgfile)
