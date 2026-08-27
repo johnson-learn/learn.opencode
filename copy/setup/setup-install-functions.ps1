@@ -6,17 +6,24 @@
 $script:workerProc = $null
 $script:workerCmdFile = Join-Path $env:TEMP "opencode_worker_cmd.txt"
 $script:workerScript = Join-Path $env:TEMP "opencode_worker.ps1"
+$script:workerStopFile = Join-Path $env:TEMP "opencode_worker_stop.txt"
 
 function Start-WorkerCommand([string]$cmd) {
   # 首次调用：生成 worker 循环脚本 + 弹出工作窗口（全程只弹这一次）
   if (-not $script:workerProc -or $script:workerProc.HasExited) {
+    # 清理上一轮残留的 stop 信号，防新 worker 一启动即误退出
+    Remove-Item $script:workerStopFile -Force -ErrorAction SilentlyContinue
     # 命令文件路径直接内嵌进 worker 脚本（2026-08-28 实测：-Verb RunAs 提权进程不继承主进程
     # 运行时设置的环境变量，$env:WORKER_CMD 为空导致 Test-Path 空值刷屏——内嵌后无环境依赖）
     $doneFile = $script:workerCmdFile + ".done"
     $loop = @"
 `$f = '$($script:workerCmdFile)'
 `$doneF = '$doneFile'
+`$stopF = '$($script:workerStopFile)'
 while (`$true) {
+  # stop 信号自毁（2026-08-28 实测修复：worker 为提权进程，主窗口非管理员时
+  # Stop-Process 杀不掉致窗口残留——worker 轮询到信号自行 exit 关窗，不依赖主窗口权限）
+  if (Test-Path `$stopF) { exit }
   if (Test-Path `$f) {
     `$c = Get-Content `$f -Raw -ErrorAction SilentlyContinue
     Remove-Item `$f -Force -ErrorAction SilentlyContinue
@@ -35,8 +42,9 @@ while (`$true) {
 "@
     Set-Content -LiteralPath $script:workerScript -Value $loop -Encoding UTF8
     # 管理员化工作窗口（2026-08-28 实测：普通权限 msiexec 装 Program Files 静默失败致"一直没反应"）：
-    # -Verb RunAs 弹 UAC 一次（请点『是』），此后 winget/curl/msiexec 全部有权限
-    $script:workerProc = Start-Process powershell -Verb RunAs -ArgumentList @("-NoProfile", "-ExecutionPolicy", "Bypass", "-NoExit", "-File", $script:workerScript) -PassThru
+    # -Verb RunAs 弹 UAC 一次（请点『是』），此后 winget/curl/msiexec 全部有权限；
+    # 无 -NoExit：脚本 exit 后窗口自动关闭（配合 stop 信号不留残留窗口）
+    $script:workerProc = Start-Process powershell -Verb RunAs -ArgumentList @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $script:workerScript) -PassThru
     Write-Host "    [工作窗口] 已弹出（管理员权限，UAC 请点『是』；后续所有工具的下载安装都在此窗口进行）"
   }
   # 原子写命令文件（临时文件 + Move 替换，防 worker 读到半截文件）
@@ -46,9 +54,17 @@ while (`$true) {
 }
 
 function Stop-WorkerWindow {
+  if (-not $script:workerProc) { return }
+  # 先写 stop 信号：worker 每 400ms 轮询，读到即自行 exit 关窗
+  # （提权进程不依赖主窗口权限；Stop-Process 仅作兜底）
+  Set-Content -LiteralPath $script:workerStopFile -Value "stop" -Encoding UTF8 -ErrorAction SilentlyContinue
   if ($script:workerProc -and -not $script:workerProc.HasExited) {
-    try { Stop-Process -Id $script:workerProc.Id -Force -ErrorAction SilentlyContinue } catch {}
+    Start-Sleep -Milliseconds 1500
+    try {
+      if (-not $script:workerProc.HasExited) { Stop-Process -Id $script:workerProc.Id -Force -ErrorAction SilentlyContinue }
+    } catch {}
   }
+  Remove-Item $script:workerStopFile -Force -ErrorAction SilentlyContinue
   $script:workerProc = $null
 }
 

@@ -108,3 +108,4 @@ collaborates_with:
 - Linux C 验证套路：代码加 `#ifdef _WIN32` 适配层（localtime_r→localtime_s、clock_nanosleep→Sleep(timeBeginPeriod)），w64devkit 编译通过即逻辑正确；Windows Sleep 粒度极限 ~1ms，0.5ms 级精确节拍仅 Linux 上 clock_nanosleep(TIMER_ABSTIME) 可达
 - 中文输出优先；文件编码 UTF-8
 - 安装新工具遵循用户规则：200M 以内直接装，超过先询问；Linux 内装包走 `apt install`（非 yum，Ubuntu 是 Debian 系）
+- **Windows 提权子进程窗口管理（✓ 2026-08-28 实测）**：`Start-Process powershell -Verb RunAs` 弹的提权进程，主进程非管理员时 `Stop-Process` 会静默失败 → 窗口残留。可靠停止方案 = **信号文件自毁**：子进程循环每 ~400ms 轮询 stop 信号文件（`Test-Path $stopF → exit`），主进程写信号文件即触发退出；`Stop-Process` 仅作兜底；启动参数**不加 `-NoExit`**（否则 exit 后窗口仍停留）。信号文件放 `$env:TEMP`（双方皆可写），新子进程启动前先清理残留信号

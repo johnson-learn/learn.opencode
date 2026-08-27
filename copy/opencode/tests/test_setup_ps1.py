@@ -77,9 +77,9 @@ if mode == "仓库直读":
     try:
         r = subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", sim, "-FuncFile", funcs],
                            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300)
-        check("模拟测试 test_setup_sim.ps1 执行通过（mock 分支流转 17/17）", r.returncode == 0 and "SIM_RESULT: pass=17 fail=0" in r.stdout)
+        check("模拟测试 test_setup_sim.ps1 执行通过（mock 分支流转 + 窗口停止信号 20/20）", r.returncode == 0 and "SIM_RESULT: pass=20 fail=0" in r.stdout)
     except Exception:
-        check("模拟测试 test_setup_sim.ps1 执行通过（mock 分支流转 17/17）", False)
+        check("模拟测试 test_setup_sim.ps1 执行通过（mock 分支流转 + 窗口停止信号 20/20）", False)
 else:
     print("  （镜像回退模式：跳过模拟测试，函数文件不可得）")
 check("winget 命令发送到单一工作窗口 + 自动状态机", "Start-WorkerCommand \"winget" in c and "开始自动安装" in c)
