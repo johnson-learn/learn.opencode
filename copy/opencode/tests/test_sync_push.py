@@ -60,6 +60,15 @@ check("远端可拉到改动", True)
 r = run(marker, repo, msgfile)
 check("标记清除后再次推送被拒（需重新弹窗）", r.returncode == 2)
 
+# 5. WSL 仓库路径判定与转换（纯函数，不真跑 WSL git；WSL 不可用机器同样可测）
+import importlib.util as _ilu
+_sp = _ilu.spec_from_file_location("sp", SP)
+_spm = _ilu.module_from_spec(_sp); _sp.loader.exec_module(_spm)
+check("is_wsl_repo 识别 UNC 路径", _spm.is_wsl_repo(r"\\wsl.localhost\Ubuntu\home\github\learn.opencode") is True)
+check("is_wsl_repo 识别普通 Windows 路径", _spm.is_wsl_repo(r"C:\tmp\repo") is False)
+check("to_wsl_path UNC 转换", _spm.to_wsl_path(r"\\wsl.localhost\Ubuntu\home\github\learn.opencode") == "/home/github/learn.opencode")
+check("to_wsl_path 非 WSL 原样返回", _spm.to_wsl_path(r"C:\tmp\repo") == r"C:\tmp\repo")
+
 shutil.rmtree(tmp, ignore_errors=True)
 print("\n结果：通过 %d 项，失败 %d 项" % (pass_n, fail_n))
 sys.exit(1 if fail_n else 0)

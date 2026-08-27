@@ -2,8 +2,39 @@
 # 同步推送脚本（sync_push.py）——推送门禁脚本化：未经用户弹窗确认，脚本直接拒绝 commit/push
 # 用法：python sync_push.py <确认标记文件> <git仓库目录> <commit消息文件>
 #   确认标记文件由模型在用户弹窗选择"推送"后写入（含时间戳）；推送成功后自动清除标记
+# 2026-08-27 修复：WSL 仓库（路径含 wsl.localhost）必须走 WSL 内 git 执行——Windows git 经 UNC 访问
+#   WSL 仓库有三个坑：① SSH 无 WSL 密钥致 push 失败（Host key verification failed）② commit author 用
+#   Windows git 身份与历史 WSL 提交者不一致 ③ filemode 语义差异（drvfs 权限位与 ext4 不同）
 import os, sys, subprocess, json, datetime
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
+
+def is_wsl_repo(repo):
+    return "wsl.localhost" in repo.replace("\\", "/").lower()
+
+
+def to_wsl_path(repo):
+    # \\wsl.localhost\Ubuntu\home\... -> /home/...
+    parts = repo.replace("\\", "/").strip("/").split("/")
+    try:
+        i = parts.index("wsl.localhost")
+        return "/" + "/".join(parts[i + 2:])
+    except ValueError:
+        return repo
+
+
+def sh_quote(s):
+    return "'" + s.replace("'", "'\\''") + "'"
+
+
+def run_git(args, repo):
+    if is_wsl_repo(repo):
+        wp = to_wsl_path(repo)
+        inner = "git -C %s %s" % (sh_quote(wp), " ".join(sh_quote(a) for a in args))
+        return subprocess.run(["wsl", "-d", "Ubuntu", "-e", "bash", "-c", inner],
+                              capture_output=True, text=True)
+    return subprocess.run(["git", "-C", repo] + args, capture_output=True, text=True)
+
 
 def main():
     if len(sys.argv) < 4:
@@ -28,22 +59,24 @@ def main():
         print("[sync_push] commit 消息文件不存在：" + msgfile)
         return 2
     # 推送前可移植性残留快速检查（本机特征词）
-    r = subprocess.run(["git", "-C", repo, "grep", "-I", "-l", "-e", os.path.basename(os.path.expanduser("~"))],
-                       capture_output=True, text=True)
+    r = run_git(["grep", "-I", "-l", "-e", os.path.basename(os.path.expanduser("~"))], repo)
     if r.returncode == 0 and r.stdout.strip():
         hits = r.stdout.strip().splitlines()
         if any("path_map" not in h and "archive" not in h for h in hits):
             print("[sync_push] 警告：待提交内容含本机用户名特征（可能缺可移植性转换），仍继续推送前请人工复核：")
             for h in hits[:5]:
                 print("  " + h)
+    # WSL 分支下把消息文件路径也转成 WSL 路径（commit -F 在 WSL 内读文件）
+    if is_wsl_repo(repo):
+        msgfile = to_wsl_path(msgfile)
     # git add / commit / push
     steps = [
-        (["git", "-C", repo, "add", "-A"], "add"),
-        (["git", "-C", repo, "commit", "-q", "-F", msgfile], "commit"),
-        (["git", "-C", repo, "push", "origin", "main"], "push"),
+        (["add", "-A"], "add"),
+        (["commit", "-q", "-F", msgfile], "commit"),
+        (["push", "origin", "main"], "push"),
     ]
     for cmd, name in steps:
-        r = subprocess.run(cmd, capture_output=True, text=True)
+        r = run_git(cmd, repo)
         if r.returncode != 0 and name != "commit":
             print("[sync_push] %s 失败：%s" % (name, (r.stderr or r.stdout).strip()[-200:]))
             if name == "push":
@@ -62,6 +95,7 @@ def main():
     os.remove(marker)
     print("[sync_push] 推送成功，确认标记已清除（下次推送需重新弹窗确认）")
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())
