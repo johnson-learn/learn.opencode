@@ -43,7 +43,17 @@ check("w64devkit 探测不硬编码盘符（动态枚举现有盘符）", "Get-P
 check("7.5 验证改为注册事件注入体系（system.transform）", "experimental.chat.system.transform" in c)
 check("7.5 不再要求 opencode.jsonc 含 instructions 注册", "含 instructions 注册" not in c)
 check("辅助脚本部署检查指向实际部署位置 $ToolDir（Temp\\opencode）", 'Test-Path (Join-Path $ToolDir "extract-docx.ps1")' in c)
-check("w64devkit 探测用独立变量 $w64Dir（防覆盖 $ToolDir——PS 变量大小写不敏感）", "$w64Dir = \"\"" in c and "$toolDir = \"\"" not in c and "<工具目录>=\" + $w64Dir" in c)
+check("w64devkit 探测用独立变量 $w64Dir（防覆盖 $ToolDir——PS 变量大小写不敏感）", "$w64Dir = \"\"" in c and "$toolDir = \"\"" not in c)
+check("工具类空值当场交互询问（安装时闭环，不写空值行）", "未自动探测到" in c and "回车跳过（不写入映射" in c and "装好工具后重跑本脚本自动补齐" in c)
+check("第 7 节残留提示改为重跑本脚本（非手动编辑 path_map）", "装好工具后重跑本脚本即可自动补齐（已装项自动跳过）" in c)
+
+# 3.7 安装交互优化（用户 2026-08-27 要求：必选/可选分级、新窗口安装、等待/放弃/换源/退出选项）
+check("工具必选/可选分级（Git/Node/Python 必选）", "required = $true" in c and "required = $false" in c)
+check("新开窗口安装（Start-Process winget）", "Start-Process -FilePath \"winget\"" in c)
+check("原窗口等待提示（等待 X 安装中）", "等待 $($p.name) 安装中" in c)
+check("必选工具失败三选项（换源重试/放弃必选/放弃移植）", "换其它安装源重试" in c and "放弃本次必选工具安装" in c and "放弃本次移植（退出脚本）" in c)
+check("可选工具失败两选项（换源重试/放弃可选继续）", "放弃本次可选工具安装，继续移植" in c)
+check("放弃移植退出码（exit 2）", "exit 2" in c)
 check("填写类与自动类残留检测均排除 tests 目录（repo_face 镜像保留占位符是设计）", c.count("FullName -notmatch \"\\\\tests\\\\\"") >= 2)
 
 # 3.6 必备工具缺失醒目告警（用户 2026-08-27 要求：缺失/安装失败必须醒目提醒）

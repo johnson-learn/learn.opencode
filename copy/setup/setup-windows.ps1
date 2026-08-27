@@ -100,24 +100,62 @@ if ($lp.LongPathsEnabled -ne 1) {
 
 # ---------- 1. winget 安装基础软件 ----------
 if (-not $SkipWinget) {
-  Step "1. 基础软件安装（winget 静默）"
+  Step "1. 基础软件安装（winget；失败可换源/放弃/退出）"
   if (-not (Test-Cmd "winget")) {
     Warn "winget 不存在，跳过软件安装。请手动安装 Git/Node/Python/Chrome/LibreOffice（见 REQUIREMENTS.md §1）"
   } else {
     $pkgs = @(
-      @{ id = "Git.Git";                  name = "Git for Windows" },
-      @{ id = "OpenJS.NodeJS.LTS";        name = "Node.js LTS" },
-      @{ id = "Python.Python.3.12";       name = "Python 3.12" },
-      @{ id = "Google.Chrome";            name = "Google Chrome" },
-      @{ id = "TheDocumentFoundation.LibreOffice"; name = "LibreOffice" }
+      @{ id = "Git.Git";                         name = "Git for Windows"; required = $true;  check = { Test-Cmd "git" } },
+      @{ id = "OpenJS.NodeJS.LTS";               name = "Node.js LTS";     required = $true;  check = { Test-Cmd "node" } },
+      @{ id = "Python.Python.3.12";              name = "Python 3.12";     required = $true;  check = { Test-Cmd "python" } },
+      @{ id = "Google.Chrome";                   name = "Google Chrome";   required = $false; check = { (Test-Path "C:\Program Files\Google\Chrome\Application\chrome.exe") -or (Test-Path "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe") } },
+      @{ id = "TheDocumentFoundation.LibreOffice"; name = "LibreOffice";    required = $false; check = { Test-Soffice } }
     )
     foreach ($p in $pkgs) {
-      $already = Test-Pkg $p.id
-      if ($already) { Ok "$($p.name) 已安装"; continue }
-      Write-Host "  安装 $($p.name) ...（可能耗时数分钟，请耐心等待）"
-      winget install --id $p.id -e --accept-source-agreements --accept-package-agreements --silent | Out-Null
-      # winget 在"已装但无可用升级"等场景下返回码可能非 0，故结合再检测判断是否成功
-      if (($LASTEXITCODE -eq 0) -or (Test-Pkg $p.id)) { Ok "$($p.name) 安装完成" } else { Warn "$($p.name) 安装失败，可手动安装（见 REQUIREMENTS.md）" }
+      $tier = if ($p.required) { "必选" } else { "可选" }
+      if (& $p.check) { Ok "$($p.name) 已安装"; continue }
+      # 新开窗口安装，原窗口等待并可随时放弃（2026-08-27 用户要求优化）
+      Write-Host "  [$tier] $($p.name) 未安装，已新开窗口安装中；本窗口等待，可稍后选择放弃..."
+      $wingetLog = Join-Path $env:TEMP ("opencode_winget_" + ($p.id -replace "[^A-Za-z0-9]", "_") + ".log")
+      Start-Process -FilePath "winget" -ArgumentList @("install", "--id", $p.id, "-e", "--silent", "--accept-source-agreements", "--accept-package-agreements", "--log", $wingetLog) -WindowStyle Minimized | Out-Null
+      $installed = $false
+      for ($i = 0; $i -lt 60; $i++) {
+        if (& $p.check) { $installed = $true; break }
+        Write-Host ("    等待 $($p.name) 安装中...（" + [int](5 - $i/12) + " 分钟超时）") -NoNewline
+        Start-Sleep -Seconds 5
+        Write-Host "`r" -NoNewline
+      }
+      Write-Host ""
+      if ($installed) { Ok "$($p.name) 安装完成"; continue }
+      $done = $false
+      while (-not $done) {
+        Write-Host "  $($p.name) 安装未成功（winget 源不可用或超时）"
+        if ($p.required) {
+          Write-Host "    [1] 换其它安装源重试（打印手动安装指引；装完回车继续检测）"
+          Write-Host "    [2] 放弃本次必选工具安装（后续手动安装后重跑本脚本；本次跳过依赖该工具的环节）"
+          Write-Host "    [3] 放弃本次移植（退出脚本）"
+          $ans = Read-Host "    请选择 (1/2/3)"
+          if ($ans -eq "2") { Warn "已放弃必选工具 $($p.name) 安装（手动安装后重跑本脚本自动补齐）"; $done = $true }
+          elseif ($ans -eq "3") { Warn "用户选择放弃本次移植，退出脚本"; exit 2 }
+          else {
+            Write-Host "    手动安装指引：$($p.name) 请从官方下载或用其它镜像源安装（详见 REQUIREMENTS.md §1）"
+            Read-Host "    安装完成后按回车继续检测..." | Out-Null
+            if (& $p.check) { Ok "$($p.name) 已由用户手动安装"; $done = $true }
+            else { Warn "仍未检测到 $($p.name)，可再选 [1] 重试 / [2] 放弃 / [3] 退出移植" }
+          }
+        } else {
+          Write-Host "    [1] 换其它安装源重试（打印手动安装指引；装完回车继续检测）"
+          Write-Host "    [2] 放弃本次可选工具安装，继续移植"
+          $ans = Read-Host "    请选择 (1/2)"
+          if ($ans -eq "2") { Warn "已放弃可选工具 $($p.name) 安装，继续移植"; $done = $true }
+          else {
+            Write-Host "    手动安装指引：$($p.name) 请从官方下载或用其它镜像源安装（详见 REQUIREMENTS.md §1）"
+            Read-Host "    安装完成后按回车继续检测..." | Out-Null
+            if (& $p.check) { Ok "$($p.name) 已由用户手动安装"; $done = $true }
+            else { Warn "仍未检测到 $($p.name)，可再选 [1] 重试 / [2] 放弃安装继续移植" }
+          }
+        }
+      }
     }
   }
 } else { Warn "已跳过基础软件安装（-SkipWinget）" }
@@ -345,11 +383,19 @@ if (-not $SkipDeploy) {
   $pkgDir  = Ask-Dir "<离线安装包目录>"     "$dBase\tool\default"
 
   $mapLines = @("# 路径映射（本机特定，不进仓库）：占位符=本机真实路径", "# 工具类自动探测；数据类为默认目录或用户定制")
-  $mapLines += "<LibreOffice目录>=" + $loDir
-  $mapLines += "<Chrome目录>=" + $chromeDir
-  $mapLines += "<Node目录>=" + $nodeDir
-  $mapLines += "<工具目录>=" + $w64Dir
-  $mapLines += "<WSL安装目录>=" + $wslDir
+  # 工具类空值当场询问（2026-08-27 改进：安装时闭环，不留事后警告；跳过=不写空值行，装好工具重跑本脚本自动补齐）
+  foreach ($tk in @(@("<LibreOffice目录>", $loDir), @("<Chrome目录>", $chromeDir), @("<Node目录>", $nodeDir), @("<工具目录>", $w64Dir), @("<WSL安装目录>", $wslDir))) {
+    $tName = $tk[0]
+    $tVal = $tk[1]
+    if (-not $tVal) {
+      Write-Host "    $tName 未自动探测到（对应工具可能未安装）"
+      Write-Host "      [1] 回车跳过（不写入映射，装好工具后重跑本脚本自动补齐）"
+      Write-Host "      [2] 手动输入路径"
+      $tAns = Read-Host "      请选择 (1/2，直接回车=1)"
+      if ($tAns -eq "2") { $tVal = (Read-Host "      请输入路径").Trim() }
+    }
+    if ($tVal) { $mapLines += "$tName=$tVal" }
+  }
   $mapLines += "<资料目录>=" + $docDir
   $mapLines += "<3GPP文档库目录>=" + $gppDir
   $mapLines += "<项目目录>=" + $projDir
@@ -357,7 +403,7 @@ if (-not $SkipDeploy) {
   $mapLines += "<离线安装包目录>=" + $pkgDir
   [System.IO.File]::WriteAllLines($pathMapFile, $mapLines, (New-Object System.Text.UTF8Encoding($false)))
 
-  Ok "工具类目录已自动探测（LibreOffice/Chrome/Node/工具/WSL）"
+  Ok "工具类目录已自动探测（未探测到的已询问：跳过或手动填写）"
   Ok "数据类目录已配置（默认或定制）并写入 $pathMapFile"
   }
 
@@ -372,8 +418,8 @@ if (-not $SkipDeploy) {
       # 填写类占位符检查：提醒用户补 path_map.txt（排除 tests 目录——repo_face 镜像文件保留占位符是设计）
       $leftover = Get-ChildItem $ConfigDir -Recurse -File -Include "*.md","*.jsonc" -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "\\tests\\" } | Select-String -Pattern "<(项目|源码|WSL安装|离线安装包|工具|LibreOffice|Chrome|Node|3GPP文档库)目录>" -List -ErrorAction SilentlyContinue
       if ($leftover) {
-        Warn "存在未配置的填写类占位符，请编辑 $ConfigDir\skills\update_skill\path_map.txt（每行：占位符=本机真实路径）后重跑："
-        Warn "  python $conv to_local --home=`"$homeSlash`" $ConfigDir"
+        Warn "存在未配置的填写类占位符（对应工具未安装或路径未探测到）。装好工具后重跑本脚本即可自动补齐（已装项自动跳过）："
+        Warn "  powershell.exe -NoProfile -ExecutionPolicy Bypass -File setup-windows.ps1"
       }
       # 自动类占位符残留检查（排除 tests 目录——repo_face 镜像文件保留占位符是设计）
       $autoLeft = Get-ChildItem $ConfigDir -Recurse -File -Include "*.md","*.jsonc" -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "\\tests\\" } | Select-String -Pattern "<用户目录>|<opencode配置目录>|<用户临时目录>" -List -ErrorAction SilentlyContinue
