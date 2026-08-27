@@ -203,7 +203,7 @@ if (-not $SkipWinget) {
                 Write-Host "    等待下载开始...（工作窗口可见进度，菜单随时可选）"
               }
             } elseif ($mode -eq "mirror-install") {
-              Write-Host "    安装中，等待检测...（工作窗口可见进度，菜单随时可选）"
+              Write-Host "    安装中，等待检测...（工作窗口可见进度；若长时间无反应，请查看工作窗口错误信息或确认已以管理员身份运行）"
             } else {
               Write-Host "    winget 安装中，等待检测...（工作窗口可见进度，菜单随时可选）"
             }
