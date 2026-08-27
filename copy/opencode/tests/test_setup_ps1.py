@@ -58,6 +58,7 @@ check("原窗口选项直接显示（无倒计时，回车继续等待每 10 秒
 check("必选工具失败三选项（镜像直链重试/放弃必选/放弃移植）", "换镜像直链渠道安装" in c and "放弃本次必选工具安装" in c and "放弃本次移植（退出脚本）" in c)
 check("可选工具失败两选项（换源重试/放弃可选继续）", "放弃本次可选工具安装，继续移植" in c)
 check("放弃移植退出码（exit 2）", "exit 2" in c)
+check("所有出口关闭历史窗口（安装成功/放弃/退出/循环结束均 Close-SpawnedWindows）", c.count("Close-SpawnedWindows") >= 4)
 check("静默失败兜底：非静默 PowerShell 安装窗口（可看进度可手动确认）", "已新开 PowerShell 窗口非静默安装" in c)
 check("镜像直链第二渠道（npmmirror 国内高速源 + 各包静默参数）", "registry.npmmirror.com" in c and "gh-proxy.com" in c and "dl.google.com" in c and "mirrors.tuna.tsinghua.edu.cn" in c)
 check("多安装源逐个尝试（mirrors 数组 + 换下一个源）", "mirrors = @" in c and "换下一个源" in c2)
@@ -76,9 +77,9 @@ if mode == "仓库直读":
     try:
         r = subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", sim, "-FuncFile", funcs],
                            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300)
-        check("模拟测试 test_setup_sim.ps1 执行通过（mock 分支流转 17/17）", r.returncode == 0 and "SIM_RESULT: pass=17 fail=0" in r.stdout)
+        check("模拟测试 test_setup_sim.ps1 执行通过（mock 分支流转 20/20）", r.returncode == 0 and "SIM_RESULT: pass=20 fail=0" in r.stdout)
     except Exception:
-        check("模拟测试 test_setup_sim.ps1 执行通过（mock 分支流转 17/17）", False)
+        check("模拟测试 test_setup_sim.ps1 执行通过（mock 分支流转 20/20）", False)
 else:
     print("  （镜像回退模式：跳过模拟测试，函数文件不可得）")
 check("新窗口为 PowerShell 窗口（-NoExit 保留结果，UAC 提示）", "Start-Process powershell" in c and "-NoExit" in c and "弹出 UAC 请点" in c)
