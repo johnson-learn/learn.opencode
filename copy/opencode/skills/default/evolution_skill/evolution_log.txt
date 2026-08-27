@@ -1024,3 +1024,9 @@
 [2026-08-27] 用户指正：--silent 静默安装对部分安装包会失败→失败后选重试时自动新开非静默窗口（不带 --silent，用户可看进度/错误、可手动确认）+ 指引兑底；test_setup_ps1 40→41/41
 
 [2026-08-27] 镜像直链第二渠道实施（用户方案）：setup 第 1 节工具定义增加 mirror+静默参数（Git/Node/Python 走 npmmirror，Chrome 官方直链，LibreOffice gh-proxy 加速）；Install-FromMirror 函数（curl 下载→<1MB 判失败→msi 走 msiexec/exe 直跑→检测）；失败选项变为三级渠道链：winget→镜像直链→非静默窗口+手动指引；test_setup_ps1 41→44/44
+
+[2026-08-28] Johnson 实测反馈两缺陷修复：① 安装完成但原窗口仍等待超时（新装程序当前会话 PATH 未刷新，Test-Cmd 检测不到）→ 检测改双通道（命令 OR 安装位置文件，Git/Node/Python 加已知路径）；② 新窗口不是 PowerShell（Start-Process winget 开的是裸控制台）→ 改为 powershell -NoProfile -NoExit -Command 执行 winget（可看结果，UAC 自动弹窗提示）；test_setup_ps1 44→46/46
+
+[2026-08-28] 安装后自动配置实施（用户要求完成全套工作）：① 安装后刷新当前会话 PATH（Machine+User 重加载，新装工具立即可用无需重开终端）；② -UseChinaMirror 时 npm 镜像源持久化（npm config set registry npmmirror）；③ pip 镜像源持久化（pip config set global.index-url 清华源）；test_setup_ps1 46→49/49
+
+[2026-08-28] 用户指正倒计时：安装等待改为无倒计时选项菜单（安装窗口启动后原窗口直接显示选项：回车=每 10 秒自动检测装完自动继续；1=换镜像直链；2=放弃安装；3=退出移植，装完检测通过自动继续）

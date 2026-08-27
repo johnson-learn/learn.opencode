@@ -133,11 +133,11 @@ if (-not $SkipWinget) {
     Warn "winget 不存在，跳过软件安装。请手动安装 Git/Node/Python/Chrome/LibreOffice（见 REQUIREMENTS.md §1）"
   } else {
     $pkgs = @(
-      @{ id = "Git.Git";                         name = "Git for Windows"; required = $true;  check = { Test-Cmd "git" };
+      @{ id = "Git.Git";                         name = "Git for Windows"; required = $true;  check = { (Test-Cmd "git") -or (Test-Path "C:\Program Files\Git\cmd\git.exe") };
          mirror = "https://registry.npmmirror.com/-/binary/git-for-windows/v2.45.2.windows.1/Git-2.45.2-64-bit.exe"; silent = @("/VERYSILENT", "/NORESTART") },
-      @{ id = "OpenJS.NodeJS.LTS";               name = "Node.js LTS";     required = $true;  check = { Test-Cmd "node" };
+      @{ id = "OpenJS.NodeJS.LTS";               name = "Node.js LTS";     required = $true;  check = { (Test-Cmd "node") -or (Test-Path "C:\Program Files\nodejs\node.exe") };
          mirror = "https://registry.npmmirror.com/-/binary/node/v20.15.1/node-v20.15.1-x64.msi"; silent = @("/qn", "/norestart") },
-      @{ id = "Python.Python.3.12";              name = "Python 3.12";     required = $true;  check = { Test-Cmd "python" };
+      @{ id = "Python.Python.3.12";              name = "Python 3.12";     required = $true;  check = { (Test-Cmd "python") -or (Test-Path "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe") -or (Test-Path "C:\Program Files\Python312\python.exe") };
          mirror = "https://registry.npmmirror.com/-/binary/python/3.12.4/python-3.12.4-amd64.exe"; silent = @("/quiet", "InstallAllUsers=1", "PrependPath=1") },
       @{ id = "Google.Chrome";                   name = "Google Chrome";   required = $false; check = { (Test-Path "C:\Program Files\Google\Chrome\Application\chrome.exe") -or (Test-Path "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe") };
          mirror = "https://dl.google.com/chrome/install/latest/chrome_installer.exe"; silent = @("/silent", "/install") },
@@ -147,61 +147,63 @@ if (-not $SkipWinget) {
     foreach ($p in $pkgs) {
       $tier = if ($p.required) { "必选" } else { "可选" }
       if (& $p.check) { Ok "$($p.name) 已安装"; continue }
-      # 新开窗口安装，原窗口等待并可随时放弃（2026-08-27 用户要求优化）
-      Write-Host "  [$tier] $($p.name) 未安装，已新开窗口安装中；本窗口等待，可稍后选择放弃..."
+      # 新开 PowerShell 窗口安装（可看进度/结果；UAC 提权自动弹出请确认），原窗口直接给选项（无倒计时）
+      Write-Host "  [$tier] $($p.name) 未安装，已新开 PowerShell 窗口安装中（如弹出 UAC 请点『是』）"
       $wingetLog = Join-Path $env:TEMP ("opencode_winget_" + ($p.id -replace "[^A-Za-z0-9]", "_") + ".log")
-      Start-Process -FilePath "winget" -ArgumentList @("install", "--id", $p.id, "-e", "--silent", "--accept-source-agreements", "--accept-package-agreements", "--log", $wingetLog) -WindowStyle Minimized | Out-Null
-      $installed = $false
-      for ($i = 0; $i -lt 60; $i++) {
-        if (& $p.check) { $installed = $true; break }
-        Write-Host ("    等待 $($p.name) 安装中...（" + [int](5 - $i/12) + " 分钟超时）") -NoNewline
-        Start-Sleep -Seconds 5
-        Write-Host "`r" -NoNewline
-      }
-      Write-Host ""
-      if ($installed) { Ok "$($p.name) 安装完成"; continue }
+      $wingetCmd = "winget install --id $($p.id) -e --silent --accept-source-agreements --accept-package-agreements --log `"$wingetLog`""
+      Start-Process powershell -ArgumentList @("-NoProfile", "-NoExit", "-Command", $wingetCmd) | Out-Null
       $done = $false
       while (-not $done) {
-        Write-Host "  $($p.name) 安装未成功（winget 源不可用或超时）"
+        if (& $p.check) { Ok "$($p.name) 安装完成"; break }
+        Write-Host "  本窗口选项（可随时选择，无倒计时）："
+        Write-Host "    [回车] 继续等待安装完成（每 10 秒自动检测，装完自动继续）"
         if ($p.required) {
           Write-Host "    [1] 换镜像直链渠道安装（国内高速源自动下载静默安装；仍失败则转非静默窗口+手动指引）"
           Write-Host "    [2] 放弃本次必选工具安装（后续手动安装后重跑本脚本；本次跳过依赖该工具的环节）"
           Write-Host "    [3] 放弃本次移植（退出脚本）"
-          $ans = Read-Host "    请选择 (1/2/3)"
+          $ans = Read-Host "  请选择（回车=继续等待 / 1 / 2 / 3）"
           if ($ans -eq "2") { Warn "已放弃必选工具 $($p.name) 安装（手动安装后重跑本脚本自动补齐）"; $done = $true }
           elseif ($ans -eq "3") { Warn "用户选择放弃本次移植，退出脚本"; exit 2 }
-          else {
+          elseif ($ans -eq "1") {
             if (Install-FromMirror $p) { Ok "$($p.name) 镜像直链渠道安装完成"; $done = $true }
             else {
-              Write-Host "    镜像直链渠道也失败：已新开非静默安装窗口（不静默：可看安装进度/错误，可手动确认）..."
-              Start-Process -FilePath "winget" -ArgumentList @("install", "--id", $p.id, "-e", "--accept-source-agreements", "--accept-package-agreements") | Out-Null
+              Write-Host "    镜像直链渠道也失败：已新开 PowerShell 窗口非静默安装（可看安装进度/错误，可手动确认）..."
+              Start-Process powershell -ArgumentList @("-NoProfile", "-NoExit", "-Command", "winget install --id $($p.id) -e --accept-source-agreements --accept-package-agreements") | Out-Null
               Write-Host "    若窗口内安装仍失败：请从官方下载或用其它镜像源手动安装（详见 REQUIREMENTS.md §1）"
               Read-Host "    安装完成后按回车继续检测..." | Out-Null
               if (& $p.check) { Ok "$($p.name) 已由用户手动安装"; $done = $true }
-              else { Warn "仍未检测到 $($p.name)，可再选 [1] 重试 / [2] 放弃 / [3] 退出移植" }
+              else { Warn "仍未检测到 $($p.name)，回到选项菜单" }
             }
           }
+          else { Start-Sleep -Seconds 10 }
         } else {
           Write-Host "    [1] 换镜像直链渠道安装（国内高速源自动下载静默安装；仍失败则转非静默窗口+手动指引）"
           Write-Host "    [2] 放弃本次可选工具安装，继续移植"
-          $ans = Read-Host "    请选择 (1/2)"
+          $ans = Read-Host "  请选择（回车=继续等待 / 1 / 2）"
           if ($ans -eq "2") { Warn "已放弃可选工具 $($p.name) 安装，继续移植"; $done = $true }
-          else {
+          elseif ($ans -eq "1") {
             if (Install-FromMirror $p) { Ok "$($p.name) 镜像直链渠道安装完成"; $done = $true }
             else {
-              Write-Host "    镜像直链渠道也失败：已新开非静默安装窗口（不静默：可看安装进度/错误，可手动确认）..."
-              Start-Process -FilePath "winget" -ArgumentList @("install", "--id", $p.id, "-e", "--accept-source-agreements", "--accept-package-agreements") | Out-Null
+              Write-Host "    镜像直链渠道也失败：已新开 PowerShell 窗口非静默安装（可看安装进度/错误，可手动确认）..."
+              Start-Process powershell -ArgumentList @("-NoProfile", "-NoExit", "-Command", "winget install --id $($p.id) -e --accept-source-agreements --accept-package-agreements") | Out-Null
               Write-Host "    若窗口内安装仍失败：请从官方下载或用其它镜像源手动安装（详见 REQUIREMENTS.md §1）"
               Read-Host "    安装完成后按回车继续检测..." | Out-Null
               if (& $p.check) { Ok "$($p.name) 已由用户手动安装"; $done = $true }
-              else { Warn "仍未检测到 $($p.name)，可再选 [1] 重试 / [2] 放弃安装继续移植" }
+              else { Warn "仍未检测到 $($p.name)，回到选项菜单" }
             }
           }
+          else { Start-Sleep -Seconds 10 }
         }
       }
     }
   }
 } else { Warn "已跳过基础软件安装（-SkipWinget）" }
+
+  # 安装后自动配置（2026-08-28 用户要求"完成全套工作"）：刷新当前会话 PATH，新装工具立即可用无需重开终端
+  $machinePath = [Environment]::GetEnvironmentVariable("Path", "Machine")
+  $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+  $env:Path = ($machinePath + ";" + $userPath)
+  Ok "已刷新当前会话 PATH（新装工具环境变量立即可用，无需重开终端）"
 
 # ---------- 2. npm 全局包 ----------
 if (-not $SkipNpm) {
@@ -210,6 +212,10 @@ if (-not $SkipNpm) {
     Warn "npm 不可用（Node.js 未装或未刷新 PATH）。装好 Node 后重跑本脚本即可。"
   } else {
     $reg = if ($UseChinaMirror) { "--registry=https://registry.npmmirror.com" } else { "" }
+    if ($UseChinaMirror) {
+      npm config set registry https://registry.npmmirror.com
+      Ok "npm 镜像源已持久化配置（registry.npmmirror.com，后续 npm 命令自动走国内源）"
+    }
     if (-not (Test-Cmd "opencode")) {
       npm i -g opencode-ai $reg
       if ($?) { Ok "opencode-ai 安装完成" } else { Warn "opencode-ai 安装失败" }
@@ -234,6 +240,10 @@ if (-not $SkipPip) {
       Warn "检测到 Microsoft Store 版 Python（$pyExe）。其用户目录路径过长，torch/pix2text 可能安装失败。建议用 winget 安装官方 Python 3.12 后重跑本脚本。"
     }
     $pi = if ($UseChinaMirror) { "-i https://pypi.tuna.tsinghua.edu.cn/simple" } else { "" }
+    if ($UseChinaMirror) {
+      python -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+      Ok "pip 镜像源已持久化配置（清华源，后续 pip 命令自动走国内源）"
+    }
     foreach ($pkg in @("pix2text","matplotlib","PyMuPDF","pillow")) {
       Write-Host "  pip install $pkg ..."
       python -m pip install --upgrade --user $pkg $pi
