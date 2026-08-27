@@ -63,12 +63,15 @@ check("sync_target.txt 未被动", "\\\\wsl.localhost" in open(os.path.join(walk
 check("普通文件被转换", ("<" + "用户目录" + ">") in open(os.path.join(walk_dir, "normal.md"), encoding="utf-8").read())
 
 # === 用例 5：未知占位符扫描 ===
-print("[用例5] 未知占位符检测")
+print("[用例5] 未知占位符检测（白名单机制：只报框架占位符全集内残留，文档示例尖括号词不误报）")
 scan_dir = os.path.join(tmp, "scan")
 os.makedirs(scan_dir)
-open(os.path.join(scan_dir, "s.md"), "w", encoding="utf-8").write(r"残留 <未定义目录> 与 " + HOME)
+open(os.path.join(scan_dir, "s.md"), "w", encoding="utf-8").write("残留 <项目目录> 与 <文件> 与 </html> 与 <int> 与 " + HOME)
 unk = pc.scan_unknown_placeholders(scan_dir)
-check("检出 <未定义目录>", r"<未定义目录>" in unk)
+check("检出白名单内 <项目目录>", "<项目目录>" in unk)
+check("不误报文档示例词 <文件>", "<文件>" not in unk)
+check("不误报 HTML 标签 </html>", "</html>" not in unk)
+check("不误报泛型 <int>", "<int>" not in unk)
 
 # === 用例 6：占位符形式语法合法性（tests 全目录 .py 必须可 ast.parse） ===
 print("[用例6] 占位符形式语法合法性（防止 \\U 转义类错误混入仓库）")

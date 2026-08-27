@@ -82,7 +82,7 @@
 | test_plugin.js | `tests\test_plugin.js` | G | 插件改动后强制（42/42：事件分支 20 + 注册事件注入 13 + 五步检查点/API 告警闭环 9） |
 | test_charset.py | `tests\test_charset.py` | G | 字符边界规范防线：框架文件 CRLF/BOM/UTF-8 解码扫描 + 铁律第 9 条存在性（7/7）；health_check 第⑧项必跑；扫描失败立即归一修复再交付 |
 | test_platform_api.py | `tests\test_platform_api.py` | G | **平台 API 依赖保障**：opencode 二进制仍实现 experimental.chat.system.transform hook / jsonc 通道 / 插件注册 / 4 注入文件就绪（11/11）——opencode 升级或移除该实验性 API 时此测试失败告警；每次 health_check --run 必跑 |
-| test_path_convert.py | `tests\test_path_convert.py` | G | path_convert 改动后强制（13/13：往返转换/STATE_FILES/残留扫描/tests 与 archive 目录跳过转换） |
+| test_path_convert.py | `tests\test_path_convert.py` | G | path_convert 改动后强制（16/16：往返转换/STATE_FILES/残留扫描白名单化/tests 与 archive 目录跳过转换） |
 | test_update_skill.py | `tests\test_update_skill.py` | G | 同步机制改动后强制（14/14，隔离临时仓库） |
 | test_regedit.py | `tests\test_regedit.py` | G | 注册表改动后强制（本表与实际文件系统一致性） |
 | test_tools_manifest.py | `tests\test_tools_manifest.py` | G | 工具总表改动后强制（分类计数吻合/待补充无重复/包可导入/表结构，21/21） |
@@ -93,7 +93,7 @@
 | test_docs_sync.py | `tests\test_docs_sync.py` | G | docs-sync.md 改动后强制（变更类型/校验测试存在/被 regedit+AGENTS 引用，19/19） |
 | test_audit_references.py | `tests\test_audit_references.py` | G | 框架引用审计（引用存在性/旧术语残留/README 双向一致，3/3） |
 | test_repo_face.py | `tests\test_repo_face.py` | G | 仓库门面一致性（门面文件与框架现状对照 + STATE_FILES 工作树残留 + 本机用户名路径动态扫描，17/17；WSL 不可达回退 tests\repo_face\ 镜像） |
-| test_setup_ps1.py | `tests\test_setup_ps1.py` | G | setup-windows.ps1 自动化测试（开关/部署范围/path_convert 体系/AST 语法/盘符动态探测/注册事件注入验证/ToolDir 空值防护/**必备工具缺失告警与退出码**，30/30；首跑即抓出 SkipDeploy 块缺 } 语法错误与 tests/tools 漏部署） |
+| test_setup_ps1.py | `tests\test_setup_ps1.py` | G | setup-windows.ps1 自动化测试（开关/部署范围/path_convert 体系/AST 语法/盘符动态探测/注册事件注入验证/必备工具缺失告警与退出码/**w64Dir 独立变量防覆盖 ToolDir/填写类检测排除 tests**，31/31；首跑即抓出 SkipDeploy 块缺 } 语法错误与 tests/tools 漏部署） |
 | README.md（测试清单） | `tests\README.md` | F | 查测试入口与运行命令 |
 
 ## 数据层

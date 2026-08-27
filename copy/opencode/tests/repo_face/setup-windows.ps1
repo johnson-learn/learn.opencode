@@ -273,11 +273,13 @@ if (-not $SkipDeploy) {
   try { if (Test-Cmd "node") { $nodeDir = Split-Path -Parent (Get-Command node).Source } } catch {}
 
   # w64devkit：从现有盘符动态探测（不硬编码盘符，防无该盘符机器 Join-Path 报错）
-  $toolDir = ""
+  # 注意：必须用独立变量名（$w64Dir），PowerShell 变量大小写不敏感——用 $toolDir 会覆盖
+  # 第 24 行定义的 $ToolDir（辅助脚本目录），导致第 8 节"辅助脚本部署"误报缺失（2026-08-27 实测）
+  $w64Dir = ""
   try {
     foreach ($d in @(Get-PSDrive -PSProvider FileSystem -ErrorAction SilentlyContinue | ForEach-Object { $_.Root })) {
       $cand = Join-Path $d "w64devkit"
-      if (Test-Path (Join-Path $cand "w64devkit\bin\gcc.exe")) { $toolDir = $d; break }
+      if (Test-Path (Join-Path $cand "w64devkit\bin\gcc.exe")) { $w64Dir = $d; break }
     }
   } catch {}
 
@@ -346,7 +348,7 @@ if (-not $SkipDeploy) {
   $mapLines += "<LibreOffice目录>=" + $loDir
   $mapLines += "<Chrome目录>=" + $chromeDir
   $mapLines += "<Node目录>=" + $nodeDir
-  $mapLines += "<工具目录>=" + $toolDir
+  $mapLines += "<工具目录>=" + $w64Dir
   $mapLines += "<WSL安装目录>=" + $wslDir
   $mapLines += "<资料目录>=" + $docDir
   $mapLines += "<3GPP文档库目录>=" + $gppDir
@@ -367,8 +369,8 @@ if (-not $SkipDeploy) {
     if (Test-Path $conv) {
       python $conv to_local --home="$homeSlash" $ConfigDir
       python $conv to_local --home="$homeSlash" $ToolDir
-      # 填写类占位符检查：提醒用户补 path_map.txt
-      $leftover = Get-ChildItem $ConfigDir -Recurse -File -Include "*.md","*.jsonc" -ErrorAction SilentlyContinue | Select-String -Pattern "<(项目|源码|WSL安装|离线安装包|工具|LibreOffice|Chrome|Node|3GPP文档库)目录>" -List -ErrorAction SilentlyContinue
+      # 填写类占位符检查：提醒用户补 path_map.txt（排除 tests 目录——repo_face 镜像文件保留占位符是设计）
+      $leftover = Get-ChildItem $ConfigDir -Recurse -File -Include "*.md","*.jsonc" -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "\\tests\\" } | Select-String -Pattern "<(项目|源码|WSL安装|离线安装包|工具|LibreOffice|Chrome|Node|3GPP文档库)目录>" -List -ErrorAction SilentlyContinue
       if ($leftover) {
         Warn "存在未配置的填写类占位符，请编辑 $ConfigDir\skills\update_skill\path_map.txt（每行：占位符=本机真实路径）后重跑："
         Warn "  python $conv to_local --home=`"$homeSlash`" $ConfigDir"
@@ -413,7 +415,7 @@ $checks = @(
   @{ name = "soffice";         ok = (Test-Soffice) },
   @{ name = "Chrome";          ok = (Test-Path "C:\Program Files\Google\Chrome\Application\chrome.exe") -or (Test-Path "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe") },
   @{ name = "skills 部署";     ok = (Test-Path (Join-Path $ConfigDir "skills\3gpp_skill\SKILL.md")) },
-  @{ name = "辅助脚本部署";    ok = (-not [string]::IsNullOrEmpty($ToolDir)) -and (Test-Path (Join-Path $ToolDir "extract-docx.ps1")) }
+  @{ name = "辅助脚本部署";    ok = (Test-Path (Join-Path $ToolDir "extract-docx.ps1")) }
 )
 foreach ($c in $checks) {
   if ($c.ok) { Ok $c.name } else { Warn "$($c.name) 缺失（见 REQUIREMENTS.md 手动补装）" }

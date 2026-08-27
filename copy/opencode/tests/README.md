@@ -12,7 +12,7 @@
 | skill-banner 插件（事件处理/任务注入/日志落盘/注册事件系统提示注入/五步检查点/API 风险告警闭环） | `test_plugin.js` | `node tests\test_plugin.js`（需 node） | ✓ 42/42（事件分支 20 + 注册事件注入 13 + 五步/API 闭环 9） |
 | 平台 API 依赖保障（opencode 二进制 hook 存在性/jsonc 通道/插件注册/注入文件就绪） | `test_platform_api.py` | `python tests\test_platform_api.py` | ✓ 11/11 |
 | 字符边界规范防线（框架文件 CRLF/BOM/编码一致性扫描 + 铁律第 9 条存在性） | `test_charset.py` | `python tests\test_charset.py` | ✓ 7/7 |
-| path_convert.py（往返转换/STATE_FILES/残留扫描/tests 与 archive 跳过转换） | `test_path_convert.py` | `python tests\test_path_convert.py` | ✓ 13/13 |
+| path_convert.py（往返转换/STATE_FILES/残留扫描白名单化/tests 与 archive 跳过转换） | `test_path_convert.py` | `python tests\test_path_convert.py` | ✓ 16/16 |
 | update_skill 双向同步（调用解析/commit 摘要/状态保护/对称回退判定/五步流程要素/模拟远端操作/可移植性校验/弹窗确认分支） | `test_update_skill.py` | `python tests\test_update_skill.py`（需 Windows git，隔离临时仓库） | ✓ 40/40 |
 | 注册表一致性（regedit.md ↔ 文件系统 ↔ AGENTS.md 互查） | `test_regedit.py` | `python tests\test_regedit.py` | ✓ 47/47 |
 | tools-manifest 完整性（分类计数吻合/待补充无重复/包可导入/表结构） | `test_tools_manifest.py` | `python tests\test_tools_manifest.py` | ✓ 21/21 |
@@ -24,7 +24,7 @@
 | docs-sync 映射表完整性（变更类型/校验测试存在/被 regedit+AGENTS 引用） | `test_docs_sync.py` | `python tests\test_docs_sync.py` | ✓ 19/19 |
 | 框架引用审计（框架自有文件引用存在性/旧术语残留/README 双向一致） | `test_audit_references.py` | `python tests\test_audit_references.py` | ✓ 3/3 |
 | 仓库门面一致性（门面文件与框架现状对照 + STATE_FILES 残留 + 本机路径动态扫描，WSL 不可达时回退 repo_face 镜像） | `test_repo_face.py` | `python tests\test_repo_face.py` | ✓ 17/17 |
-| setup-windows.ps1（开关完整性/部署范围/path_convert 体系/AST 语法/盘符动态探测/注册事件注入验证/ToolDir 空值防护/必备工具缺失告警） | `test_setup_ps1.py` | `python tests\test_setup_ps1.py` | ✓ 30/30 |
+| setup-windows.ps1（开关完整性/部署范围/path_convert 体系/AST 语法/盘符动态探测/注册事件注入验证/必备工具缺失告警/w64Dir 独立变量/填写类检测排除 tests） | `test_setup_ps1.py` | `python tests\test_setup_ps1.py` | ✓ 31/31 |
 
 > skill_validate 体积门限：默认 8KB，超限输出「待决清单」，用户选择（--set-limit 改门限 / --ignore 忽略指定 / --ignore-all 忽略全部）写入 `skill_validate_config.json` 持久化，后续一致性生效（当前本机门限 15KB，用户 2026-08-26 设定）。
 
