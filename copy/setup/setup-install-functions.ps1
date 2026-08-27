@@ -74,7 +74,9 @@ $script:spawnedWindows = @()
 
 function Close-SpawnedWindows {
   foreach ($proc in $script:spawnedWindows) {
-    try { Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue } catch {}
+    try { Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue } catch {
+      Write-Host "    [窗口清理] 关闭窗口进程 $($proc.Id) 失败：$($_.Exception.Message)"
+    }
   }
   $script:spawnedWindows = @()
 }
@@ -98,7 +100,11 @@ function Start-ChildWindow([string]$file, [string[]]$childArgs, [bool]$runAs) {
 }
 
 function Start-DownloadWindow([string]$url, [string]$dl) {
-  Start-ChildWindow "powershell" @("-NoProfile", "-Command", "curl.exe -L --connect-timeout 20 -o `"$dl`" $url") $false | Out-Null
+  # 下载命令写临时脚本文件 + -File 执行（引号在文件内正常，消除 -Command 转义问题）；
+  # -NoExit：命令失败时窗口保留显示错误（2026-08-28 实测：瞬间关闭看不到错误）
+  $dlScript = Join-Path $env:TEMP ("opencode_download.ps1")
+  Set-Content -LiteralPath $dlScript -Value "curl.exe -L --connect-timeout 20 -o `"$dl`" $url" -Encoding UTF8
+  Start-ChildWindow "powershell" @("-NoProfile", "-ExecutionPolicy", "Bypass", "-NoExit", "-File", $dlScript) $false | Out-Null
 }
 
 # 提权安装窗口（msi 走 msiexec /qn；exe 走 silent 参数；UAC 弹窗确认）

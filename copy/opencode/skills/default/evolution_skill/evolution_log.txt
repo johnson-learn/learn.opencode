@@ -1070,3 +1070,5 @@
 - 模拟测试 20/20、test_setup_ps1 57/57 全绿
 
 [2026-08-28] 子窗口执行策略拦截修复（用户还是不行）：本机 UNC cwd 复现失败后转向执行策略假设→ Start-ChildWindow 统一注入 -ExecutionPolicy Bypass（避免重复）；Restricted 策略模拟验证通过（子窗口启动+下载 4035 字节）；待 Johnson 实测确认
+
+[2026-08-28] 用户实测：按回车窗口弹出但瞬间关闭、历史窗口未关→ 下载窗口改 -File 执行临时脚本（消除引号转义）+ -NoExit（失败时窗口保留显示错误，不再一闪而过）；Close-SpawnedWindows 的 Stop 错误打印不再静默；待 Johnson 重跑获取窗口内错误信息
