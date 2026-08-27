@@ -69,8 +69,29 @@ function Get-DynamicVersions {
 
 
 # 下载窗口（2026-08-28 状态机化：下载放新窗口可见进度，原窗口菜单始终可选）
+# 2026-08-28 窗口统一管理：所有子窗口可见；新窗口弹出时自动关闭历史子窗口（主 setup 窗口保留）
+$script:spawnedWindows = @()
+
+function Close-SpawnedWindows {
+  foreach ($proc in $script:spawnedWindows) {
+    try { Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue } catch {}
+  }
+  $script:spawnedWindows = @()
+}
+
+function Start-ChildWindow([string]$file, [string[]]$args, [bool]$runAs) {
+  # 关旧窗口（用户新选择时历史弹窗不堆积）
+  Close-SpawnedWindows
+  $proc = if ($runAs) {
+    Start-Process $file -Verb RunAs -WindowStyle Normal -ArgumentList $args -PassThru
+  } else {
+    Start-Process $file -WindowStyle Normal -ArgumentList $args -PassThru
+  }
+  if ($proc) { $script:spawnedWindows += $proc }
+}
+
 function Start-DownloadWindow([string]$url, [string]$dl) {
-  Start-Process powershell -ArgumentList @("-NoProfile", "-Command", "curl.exe -L --connect-timeout 20 -o `"$dl`" $url") | Out-Null
+  Start-ChildWindow "powershell" @("-NoProfile", "-Command", "curl.exe -L --connect-timeout 20 -o `"$dl`" $url") $false | Out-Null
 }
 
 # 提权安装窗口（msi 走 msiexec /qn；exe 走 silent 参数；UAC 弹窗确认）
@@ -85,5 +106,5 @@ function Start-InstallWindow($p, [string]$dl) {
     $silentArgs = ($p.silent -join " ")
     Set-Content -LiteralPath $instScript -Value "& `"$dl`" $silentArgs" -Encoding UTF8
   }
-  Start-Process powershell -Verb RunAs -ArgumentList @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $instScript) | Out-Null
+  Start-ChildWindow "powershell" @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $instScript) $true | Out-Null
 }

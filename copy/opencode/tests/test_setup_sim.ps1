@@ -48,6 +48,8 @@ function curl.exe {
 }
 
 function Start-Sleep { param([int]$Seconds) }
+$script:mockProcId = 1000
+$script:mockStopCalls = 0
 function Start-Process {
   [CmdletBinding()]
   param(
@@ -56,10 +58,17 @@ function Start-Process {
     [switch]$Wait,
     [string]$WindowStyle,
     [object]$ArgumentList,
+    [switch]$PassThru,
     [Parameter(ValueFromRemainingArguments = $true)] $rest
   )
   $script:mockInstallCalls += ,@($rest)
+  $script:mockProcId++
   if ($script:mockInstalledOnInstall) { $script:mockInstalled = $true }
+  return [pscustomobject]@{ Id = $script:mockProcId; HasExited = $false }
+}
+function Stop-Process {
+  param([int]$Id, [switch]$Force, [Parameter(ValueFromRemainingArguments = $true)] $rest)
+  $script:mockStopCalls++
 }
 
 function Reset-Mock {
@@ -69,6 +78,7 @@ function Reset-Mock {
   $script:mockDlSmall = $false
   $script:mockDlFail = $false
   $script:mockInstalledOnInstall = $true
+  $script:mockStopCalls = 0
 }
 
 . $FuncFile
@@ -130,6 +140,17 @@ $r = Install-FromMirror $p
 Check "全源网络异常返回 false" (-not $r)
 Check "异常不中断（两次都尝试）" ($script:mockCurlCalls.Count -eq 2)
 $script:mockDlFail = $false
+
+# ---------- 场景 7：窗口管理（新窗口弹出自动关闭历史子窗口） ----------
+Write-Host "[场景7] 历史弹窗自动关闭"
+Reset-Mock
+Start-DownloadWindow "https://mirror.example.com/a.msi" "C:\Temp\a.msi"
+$stopsAfter1 = $script:mockStopCalls
+Start-DownloadWindow "https://mirror.example.com/b.msi" "C:\Temp\b.msi"
+Check "第二次弹窗时自动关闭第一个窗口（Stop-Process 被调用）" ($script:mockStopCalls -gt $stopsAfter1)
+Check "spawnedWindows 只保留最新一个" ($script:spawnedWindows.Count -eq 1)
+Start-InstallWindow @{ id = "Test.Tool"; silent = @("/qn") } "C:\Temp\a.msi"
+Check "安装窗口弹出时同样关闭旧窗口" ($script:mockStopCalls -gt 0)
 
 Write-Host ""
 Write-Host "SIM_RESULT: pass=$pass fail=$fail"

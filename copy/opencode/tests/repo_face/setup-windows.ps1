@@ -137,7 +137,7 @@ if (-not $SkipWinget) {
       $dlFile = $null          # 当前下载文件
       $installStarted = $false # 下载完成后的安装窗口是否已启动
       while (-not $done) {
-        if (& $p.check) { Ok "$($p.name) 安装完成"; break }
+        if (& $p.check) { Close-SpawnedWindows; Ok "$($p.name) 安装完成"; break }
         Write-Host "  本窗口选项（可随时选择，无倒计时）："
         Write-Host "    [回车] 继续等待安装完成（每 10 秒自动检测，装完自动继续）"
         Write-Host "    [1] 换镜像直链渠道安装（多安装源自动逐个尝试，下载在独立窗口进行）"
@@ -148,11 +148,12 @@ if (-not $SkipWinget) {
         $ans = Read-Host "  请选择（回车=继续等待 / 1 / 2 / 3 / 4）"
         switch ($ans) {
           "2" {
+            Close-SpawnedWindows
             if ($p.required) { Warn "已放弃必选工具 $($p.name) 安装（手动安装后重跑本脚本自动补齐）" }
             else { Warn "已放弃可选工具 $($p.name) 安装，继续移植" }
             $done = $true
           }
-          "3" { Warn "用户选择放弃本次移植，退出脚本"; exit 2 }
+          "3" { Close-SpawnedWindows; Warn "用户选择放弃本次移植，退出脚本"; exit 2 }
           "4" {
             Write-Host "    已新开 PowerShell 窗口非静默安装（可看安装进度/错误，可手动确认）..."
             Start-Process powershell -ArgumentList @("-NoProfile", "-NoExit", "-Command", "winget install --id $($p.id) -e --accept-source-agreements --accept-package-agreements") | Out-Null
@@ -188,8 +189,14 @@ if (-not $SkipWinget) {
               if ((Test-Path $dlFile) -and (Get-Item $dlFile).Length -ge 1MB) {
                 # 下载完成 → 启动提权安装窗口
                 Write-Host "    下载完成，已新开管理员 PowerShell 窗口执行静默安装（如弹出 UAC 请点『是』；安装期间窗口可见）..."
-                Start-InstallWindow $p $dlFile
-                $installStarted = $true
+                try {
+                  Start-InstallWindow $p $dlFile
+                  $installStarted = $true
+                } catch {
+                  Warn "无法弹出管理员窗口（可能 UAC 被禁用、用户拒绝提权或未以管理员运行）。请以管理员身份运行本脚本，或选 4 非静默窗口手动安装"
+                  $dlFile = $null
+                  $installStarted = $false
+                }
                 Start-Sleep -Seconds 10
               } else {
                 $sz = if (Test-Path $dlFile) { [math]::Round((Get-Item $dlFile).Length / 1MB, 1) } else { 0 }
@@ -205,6 +212,7 @@ if (-not $SkipWinget) {
       }
     }
   }
+  Close-SpawnedWindows
 } else { Warn "已跳过基础软件安装（-SkipWinget）" }
 
   # 安装后自动配置（2026-08-28 用户要求"完成全套工作"）：刷新当前会话 PATH，新装工具立即可用无需重开终端
