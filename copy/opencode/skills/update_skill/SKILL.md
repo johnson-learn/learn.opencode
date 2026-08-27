@@ -45,7 +45,7 @@ collaborates_with:
 ### 目标目录确定（记忆机制）
 - **首次调用必须指出同步目标目录**，格式：`update_skill：<目标目录路径>`（Windows UNC 如 `\\wsl.localhost\Ubuntu\home\github\learn.opencode`，或 WSL 路径如 `/home/github/learn.opencode`）
 - 首次调用未指出目录 → **提示用户**："请指出同步目标目录，格式：update_skill：<目录路径>"，等待用户给出后再继续
-- 目录记忆：本机状态文件 `<opencode配置目录>\skills\update_skill\sync_target.txt` 保存最近指定的目录；每次用户显式给出新目录 → 更新该文件
+- 目录记忆：本机状态文件 `C:\Users\<用户名>\.config\opencode\skills\update_skill\sync_target.txt` 保存最近指定的目录；每次用户显式给出新目录 → 更新该文件
 - 后续调用未指出目录 → 读取状态文件用最近目录；**幂等**：目录已存在（或默认目录已存在）且状态文件有效时，不再重复询问，直接使用
 - Windows UNC 与 WSL 路径互转：UNC `\\wsl.localhost\Ubuntu\...` ↔ WSL `/...`；git 操作一律在 WSL 路径下执行
 
@@ -69,7 +69,7 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 #### （第一步内）版本对齐检查（旧机器升级场景防倒退，必做）
 > 场景：本机是早期移植的旧版本（如旧路径体系、缺新 skill），远端已有其它机器的新提交。**必须防止旧本机内容覆盖仓库新内容（版本倒退）**。
 1. pull 后对比本机与仓库的差异方向：
-   - 本机全局配置目录：`<opencode配置目录>\`（含 skills、instructions.md、evolution.md、plugins）
+   - 本机全局配置目录：`C:\Users\<用户名>\.config\opencode\`（含 skills、instructions.md、evolution.md、plugins）
    - 仓库目录：`copy\opencode\`（占位符版本）
 2. 判定规则：
    - **仓库有、本机没有**的文件/skill → 这是远端新增 → **先反向合入本机**（复制仓库文件 → path_convert to_local → 覆盖到本机），本机完成升级
@@ -126,7 +126,7 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 
 > 修改提交到远端前，必须校验**具备不同电脑可移植性**——待提交内容不得含本机特征。
 1. **自动扫描**：`python <opencode配置目录>\tests\test_update_skill.py` 用例 8（提交前可移植性校验）——扫描待提交目录，检出"本机 home 真实路径 / 本机用户名路径"即违规；此用例已进入提交前自测用例库
-2. **人工核查**：硬编码盘符绝对路径（`<工具目录>`、`E:\` 等）只允许"安装约定位置"（`<工具目录>msys64`、`<工具目录>Program Files`、`<工具目录>Windows`、`<工具目录>Temp` 等任何机器安装后相同的位置）；本机特有目录（`<项目目录>` 等）必须占位符化
+2. **人工核查**：硬编码盘符绝对路径（`C:\`、`E:\` 等）只允许"安装约定位置"（`C:\msys64`、`C:\Program Files`、`C:\Windows`、`C:\Temp` 等任何机器安装后相同的位置）；本机特有目录（`E:\openCodeDefault` 等）必须占位符化
 3. 校验不通过 → 修复为占位符/动态推导 → 重跑用例 8 → 通过后才可进入 git 三步骤
 
 #### （第五步·推送分支）门面文档同步（仓库门面，用户 2026-08-26 定）
@@ -152,9 +152,10 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
    ```
    wsl -d Ubuntu -e bash -c "cp -r /mnt/c/Users/<用户名>/.config/opencode/skills/* /home/github/learn.opencode/copy/opencode/skills/ && cp /mnt/c/Users/<用户名>/.config/opencode/{instructions.md,evolution.md,opencode.jsonc} /home/github/learn.opencode/copy/opencode/ && mkdir -p /home/github/learn.opencode/copy/opencode/plugins && cp -r /mnt/c/Users/<用户名>/.config/opencode/plugins/* /home/github/learn.opencode/copy/opencode/plugins/"
    ```
+   **cp 后立即清理 STATE_FILES 与隐私防线（2026-08-27 隐私事故后固化）**：① 删除工作树残留的本机状态文件（`copy/opencode/skills/update_skill/path_map.txt`、`sync_target.txt`——gitignore 只挡 git add，挡不住 cp 带入工作树）；② 隐私扫描：工作树 grep 检查本机用户名路径（`C:\Users\<用户名>`）归零——**禁止在框架文件里硬编码任何具体隐私词**（硬编码等于二次泄漏，2026-08-27 教训）；③ 程序化防线：`python <opencode配置目录>\tests\test_repo_face.py`（含 STATE_FILES 与动态本机路径检查用例）。
 2. **合入本机脚本** → 仓库 `scripts/`（同样覆盖式合入）：
    ```
-   cp <用户临时目录>\opencode\*.ps1、*.py 与 <opencode配置目录>\tools\inject_skills.py、fetch_skills.py → copy/scripts/
+   cp C:\Users\<用户名>\AppData\Local\Temp\opencode\*.ps1、*.py 与 <opencode配置目录>\tools\inject_skills.py、fetch_skills.py → copy/scripts/
    ```
 3. **差异对比与裁决**：
    - `git status --short` 列出全部差异：`A`（本机新增→直接接受）、`M`（同文件两边可能都改）、`D`（仓库有本机无→**不删除，恢复保留**，除非确认已废弃）
@@ -186,10 +187,10 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 1. push 前记录旧 HEAD：`OLD=$(git rev-parse HEAD)`
 2. push 成功后检查远端：`git fetch origin && git log --oneline $OLD..origin/main | head`——有输出说明其它机器有新提交
 3. 有远端新提交 → `git pull --rebase origin main` → 提取变更文件：`git diff --name-only $OLD..HEAD` → 将这些文件**从仓库反向复制回本机**（差异合入、不删除本机文件）：
-   - `opencode/skills/...` → `<opencode配置目录>\skills\...`
-   - `opencode/instructions.md、evolution.md、opencode.jsonc` → `<opencode配置目录>\`
-   - `opencode/plugins/...` → `<opencode配置目录>\plugins\`
-   - `scripts/...` → `<用户临时目录>\opencode\`
+   - `opencode/skills/...` → `C:\Users\<用户名>\.config\opencode\skills\...`
+   - `opencode/instructions.md、evolution.md、opencode.jsonc` → `C:\Users\<用户名>\.config\opencode\`
+   - `opencode/plugins/...` → `C:\Users\<用户名>\.config\opencode\plugins\`
+   - `scripts/...` → `C:\Users\<用户名>\AppData\Local\Temp\opencode\`
 4. 反向合入的冲突处理：同名文件本机与远端都改过时，按"信息完整性优先"合并（本机当前内容为主、远端新增有效内容并入），无法自动合并的报告用户裁决
 5. 无远端新提交 → 报告"远端无新变化"，流程结束
 
@@ -208,7 +209,7 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 ## 环境注意
 
 - 目标仓库在 WSL 内（`/home/github/learn.opencode/copy`），本机 Windows 源经 `/mnt/c/` 访问；WSL 未运行时先 `wsl -d Ubuntu` 拉起
-- **目录记忆状态文件**：`<opencode配置目录>\skills\update_skill\sync_target.txt`（记录最近目标目录；首次调用必须由用户指出目录，后续默认用最近目录）
+- **目录记忆状态文件**：`C:\Users\<用户名>\.config\opencode\skills\update_skill\sync_target.txt`（记录最近目标目录；首次调用必须由用户指出目录，后续默认用最近目录）
 - 推送认证走 SSH（git@github.com）；若换 HTTPS 需配 token
 - 仓库内 `setup/`（install-wsl.ps1 等）、`README.md`、`INSTALL.md`、`REQUIREMENTS.md` 为移植配套文档，同步时保留不动
 - **风险规避**：同步前检查不包含任何密钥/token；`~/.lobehub-market/credentials.json` 等凭证一律不进入仓库

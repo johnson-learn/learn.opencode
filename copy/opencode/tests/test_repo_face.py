@@ -4,10 +4,10 @@ import os, re, sys, subprocess
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 pass_n, fail_n = 0, 0
-def check(name, cond):
+def check(name, cond, extra=""):
     global pass_n, fail_n
     if cond: pass_n += 1; print("  ✓ " + name)
-    else: fail_n += 1; print("  ✗ " + name)
+    else: fail_n += 1; print("  ✗ " + name + ("  [" + extra + "]" if extra else ""))
 
 REPO = r"\\wsl.localhost\Ubuntu\home\github\learn.opencode"
 MIRROR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "repo_face")
@@ -57,6 +57,32 @@ check("REQUIREMENTS 含 7 高价值工具关键词", all(x in q for x in ["playw
 # 5. 根 README 入口
 root = rd("README.md") if mode == "仓库直读" else rd("ROOT_README.md")
 check("根 README 含 6 个 skill 表述", "6 个 skill" in root or "6 个全局" in root)
+
+# 6. 隐私与可移植性防线（2026-08-27 隐私事故后固化）：真实仓库直读模式检查
+if mode == "仓库直读":
+    # 6a. STATE_FILES 不得出现在仓库工作树（cp 时可能带入，gitignore 只挡 add 不挡工作树残留）
+    state_files = [
+        "copy\\opencode\\skills\\update_skill\\path_map.txt",
+        "copy\\opencode\\skills\\update_skill\\sync_target.txt",
+    ]
+    for sf in state_files:
+        check("STATE_FILES 不在工作树: " + os.path.basename(sf), not os.path.exists(os.path.join(REPO, sf)))
+    # 6b. 本机隐私特征不得出现在被跟踪文件内容（工作树全量扫描；特征全部动态推导，不硬编码具体隐私词）
+    import glob as _g
+    banned = ["C:\\Users\\" + os.path.basename(os.path.expanduser("~"))]
+    hits = []
+    for ext in ("*.md", "*.py", "*.js", "*.jsonc", "*.txt", "*.ps1"):
+        for fp in _g.glob(os.path.join(REPO, "copy", "**", ext), recursive=True):
+            if "\\modules\\" in fp or "\\__pycache__\\" in fp or "archive" in fp:
+                continue
+            try:
+                c = open(fp, encoding="utf-8", errors="replace").read()
+            except Exception:
+                continue
+            for b in banned:
+                if b.lower() in c.lower():
+                    hits.append(fp.replace(REPO, "") + " -> " + b)
+    check("被跟踪文件无本机用户名路径", len(hits) == 0, "；".join(hits[:3]) if hits else "")
 
 print("\n结果：通过 %d 项，失败 %d 项" % (pass_n, fail_n))
 sys.exit(1 if fail_n else 0)
