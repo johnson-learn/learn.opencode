@@ -1080,3 +1080,9 @@
 - 菜单冒号式：『请选择：回车=继续等待检测；1=换镜像源下载安装；2=放弃本次安装；3=放弃本次移植』+ 单键 ReadKey 非交互回退
 - 删除全部窗口机制（Start-ChildWindow/Close-SpawnedWindows/taskkill/Start-DownloadWindow/Start-InstallWindow）；函数文件精简为 Install-FromMirror + Get-DynamicVersions
 - 模拟测试抓出真 bug：主窗口版 Start-Process 未加 Out-Null 致进程对象泄漏污染返回值（场景5 误判 true）→ 修复；sim 17/17、test_setup_ps1 57/57
+
+[2026-08-28] 后台化主窗口模式（用户问：下载时难道不能呈现选项？）：
+- winget/curl/msiexec 全部改 Start-BgProcess（-NoNewWindow 同控制台后台运行 + 输出重定向日志），主窗口菜单全程呈现可选
+- 状态机：winget 后台→回车推进（检测/进度显示）→1 换镜像源（杀后台 winget + curl 后台下载）→下载完成自动转 msiexec 后台安装→检测通过完成
+- 回车分支显示进度（curl 已下载 $sz MB / winget 安装中 / 安装中），任何时刻 1/2/3 随时可选
+- 函数文件新增 Start-BgProcess/Stop-BgProcess；test_setup_ps1 57/57、sim 17/17
