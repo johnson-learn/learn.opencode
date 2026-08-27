@@ -11,7 +11,7 @@ pc = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(pc)
 
 # 动态推导本机路径（可移植：新机器自动适配）
-HOME = os.environ.get("USERPROFILE", r"<工具目录>\Users\\default").replace("/", "\\")
+HOME = os.environ.get("USERPROFILE", r"C:\\Users\\default").replace("/", "\\")
 CFG_DIR = HOME + "\\.config\\opencode"
 TMP_DIR = HOME + "\\AppData\\Local\\Temp"
 
@@ -54,11 +54,11 @@ check("往返后与原路径一致", p2 == orig)
 print("[用例4] STATE_FILES 保护")
 walk_dir = os.path.join(tmp, "walktest")
 os.makedirs(walk_dir)
-open(os.path.join(walk_dir, "path_map.txt"), "w", encoding="utf-8").write(r"<项目目录>=" + HOME + "\\x")
+open(os.path.join(walk_dir, "path_map.txt"), "w", encoding="utf-8").write(r"E:\openCodeDefault=" + HOME + "\\x")
 open(os.path.join(walk_dir, "sync_target.txt"), "w", encoding="utf-8").write("\\\\wsl.localhost\\x")
 open(os.path.join(walk_dir, "normal.md"), "w", encoding="utf-8").write(HOME + "\\y")
 pc.walk_convert(walk_dir, pairs, "test")
-check("path_map.txt 未被动", (r"<项目目录>=" + HOME + "\\x") in open(os.path.join(walk_dir, "path_map.txt"), encoding="utf-8").read())
+check("path_map.txt 未被动", (r"E:\openCodeDefault=" + HOME + "\\x") in open(os.path.join(walk_dir, "path_map.txt"), encoding="utf-8").read())
 check("sync_target.txt 未被动", "\\\\wsl.localhost" in open(os.path.join(walk_dir, "sync_target.txt"), encoding="utf-8").read())
 check("普通文件被转换", ("<" + "用户目录" + ">") in open(os.path.join(walk_dir, "normal.md"), encoding="utf-8").read())
 

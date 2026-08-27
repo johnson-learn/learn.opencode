@@ -17,13 +17,13 @@ agents = open(os.path.join(CFG, "AGENTS.md"), encoding="utf-8").read()
 for sec in ["智能进化协议", "全局通用回答规则", "全局 skill 编写规范", "本机全局技能清单", "项目 skill"]:
     check("章节存在: " + sec, sec in ins)
 
-# 2. AGENTS.md 铁律 0~8 共 9 条
-nums = re.findall(r"^## (\d)\. ", agents, re.M)
-check("AGENTS.md 铁律 0~8 共 9 条", sorted(nums) == [str(i) for i in range(9)])
+# 2. AGENTS.md 铁律 0~9 共 10 条
+nums = re.findall(r"^## (\d+)\. ", agents, re.M)
+check("AGENTS.md 铁律 0~9 共 10 条", sorted(nums) == [str(i) for i in range(10)])
 
-# 3. instructions.md 引用的铁律编号不超过 8 且指向正确条款
-refs = re.findall(r"铁律第\s*(\d)\s*条", ins)
-check("instructions 引用铁律编号合法", all(int(n) <= 8 for n in refs))
+# 3. instructions.md 引用的铁律编号不超过 9 且指向正确条款
+refs = re.findall(r"铁律第\s*(\d+)\s*条", ins)
+check("instructions 引用铁律编号合法", all(int(n) <= 9 for n in refs))
 # 第 2 条=复盘进化 的对照
 m2 = re.search(r"^## 2\. (.*)$", agents, re.M)
 check("AGENTS.md 第 2 条为复盘进化", m2 and "复盘进化" in m2.group(1))

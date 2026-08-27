@@ -2,6 +2,7 @@
 # 框架健康检查脚本（health_check.py）——一键输出框架健康度报告
 # 检查项：①核心配置齐全 ②skill frontmatter 合法+体积门限 ③插件最近执行 ④测试全部可运行
 #        ⑤门禁最近会话 idle/drain 记录 ⑥evolution_log 待处理项 ⑦平台 API 依赖保障（实验性 hook 可用性）
+#        ⑧字符边界规范（框架文件 CRLF/BOM/编码一致性，铁律第 9 条防线）
 import os, sys, json, re, subprocess, glob, datetime
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
@@ -123,6 +124,19 @@ try:
         add_fail("平台 API 保障失败（实验性 hook 可能已被移除或二进制变动）：" + tail)
 except Exception as e:
     add_fail("平台 API 保障无法执行：" + str(e)[:80])
+
+# ⑧ 字符边界规范（铁律第 9 条防线：框架文件 CRLF/BOM/编码一致性）
+charset_test = os.path.join(TESTS, "test_charset.py")
+try:
+    r = subprocess.run([sys.executable, charset_test], capture_output=True, text=True,
+                       encoding="utf-8", errors="replace", timeout=180, cwd=TESTS)
+    if r.returncode == 0:
+        add_ok("字符边界规范通过（框架文件 UTF-8 无 BOM + LF 统一）")
+    else:
+        tail = (r.stdout + r.stderr)[-200:].replace("\n", " ")
+        add_fail("字符边界扫描失败（存在 CRLF/BOM/编码异常文件，需立即归一修复）：" + tail)
+except Exception as e:
+    add_fail("字符边界扫描无法执行：" + str(e)[:80])
 
 print("【框架健康度报告】 %s" % datetime.datetime.now().strftime("%Y-%m-%d %H:%M"))
 print("-" * 60)

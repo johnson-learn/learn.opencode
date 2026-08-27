@@ -76,9 +76,9 @@ check("提高 max_n 后全部补跑清理", "残留快照" in r.stdout)
 import importlib.util as _ilu7
 _gate = _ilu7.spec_from_file_location("gate", GATE)
 _gm = _ilu7.module_from_spec(_gate); _gate.loader.exec_module(_gm)
-check("classify_change 分类正确（skill）", _gm.classify_change(r"<工具目录>x\skills\foo_skill\SKILL.md") == "skill")
-check("classify_change 分类正确（test）", _gm.classify_change(r"<工具目录>x\tests\test_a.py") == "test")
-check("classify_change 分类正确（rule）", _gm.classify_change(r"<工具目录>x\regedit.md") == "rule")
+check("classify_change 分类正确（skill）", _gm.classify_change(r"C:\x\skills\foo_skill\SKILL.md") == "skill")
+check("classify_change 分类正确（test）", _gm.classify_change(r"C:\x\tests\test_a.py") == "test")
+check("classify_change 分类正确（rule）", _gm.classify_change(r"C:\x\regedit.md") == "rule")
 # 只改 skill 未同步配套 → 检出漏更
 w = _gm.check_docs_sync([os.path.join(CFG, r"skills\3gpp_skill\SKILL.md")])
 check("只改 SKILL.md 检出配套漏更（instructions/regedit/tests README）", len(w) == 3)

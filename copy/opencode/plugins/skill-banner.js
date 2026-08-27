@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, existsSync, appendFileSync, statSync } from "fs"
+import { readdirSync, readFileSync, existsSync, appendFileSync, statSync, writeFileSync, unlinkSync } from "fs"
 import { join } from "path"
 import { homedir } from "os"
 import { execSync, spawn } from "child_process"
@@ -9,6 +9,9 @@ const TRACE_FILE = join(HOME, ".config", "opencode", "skills", "default", "evolu
 const LOG_FILE = join(HOME, ".config", "opencode", "plugins", "plugin-evolution.log")
 const GATE = join(HOME, ".config", "opencode", "tools", "evolution_gate.py")
 const API_TEST = join(HOME, ".config", "opencode", "tests", "test_platform_api.py")
+// 进化待办文件（方案A 2026-08-27）：session.idle 时机器步骤结果写入本文件，
+// 下一会话 session.created 时读入并静默注入——旧会话不再被 prompt 唤醒
+const PENDING_FILE = join(HOME, ".config", "opencode", "skills", "default", "evolution_skill", "evolution_pending.json")
 
 // === 注册事件注入（E 类 100% 平台执行）：experimental.chat.system.transform ===
 // 平台在每次 LLM 请求构建系统提示时触发本 hook（LLMRequestPrep.prepare），
@@ -20,12 +23,13 @@ const INJECT_FILES = ["instructions.md", "regedit.md", "docs-sync.md", "tools-ma
 let injectCache = null
 
 function loadInjectContent() {
-  // mtime+size 缓存：文件未变时不重复读盘（hook 每次请求触发，须轻量）
+  // mtimeNs+size 缓存：文件未变时不重复读盘（hook 每次请求触发，须轻量）
+  // 用纳秒精度 mtimeNs（Node 12+），防毫秒精度下连续写文件 mtime 相同致缓存不刷新
   let key = ""
   for (const f of INJECT_FILES) {
     try {
-      const st = statSync(join(CONFIG_DIR, f))
-      key += f + ":" + st.mtimeMs + ":" + st.size + "|"
+      const st = statSync(join(CONFIG_DIR, f), { bigint: true })
+      key += f + ":" + st.mtimeNs.toString() + ":" + st.size.toString() + "|"
     } catch { key += f + ":missing|" }
   }
   if (injectCache && injectCache.key === key) return injectCache.text
@@ -129,6 +133,39 @@ function log(msg) {
   try { appendFileSync(LOG_FILE, new Date().toISOString() + " " + msg + "\n") } catch {}
 }
 
+function writePending(data) {
+  try { writeFileSync(PENDING_FILE, JSON.stringify(data)) } catch (e) {
+    log("写进化待办文件失败：" + (e && e.message ? String(e.message).slice(0, 150) : ""))
+  }
+}
+
+function readPending() {
+  try {
+    if (!existsSync(PENDING_FILE)) return null
+    return JSON.parse(readFileSync(PENDING_FILE, "utf8"))
+  } catch { return null }
+}
+
+function clearPending() {
+  try { unlinkSync(PENDING_FILE) } catch {}
+}
+
+function buildTaskText(gateOut, fiveOut) {
+  // 进化检查任务文本（6 项强制清单 + 门禁结果 + 五步补做）
+  return (
+    "【进化检查·程序化强制·不可跳过】本任务由插件在上一会话结束时生成、本会话创建时注入，必须完整执行，不得以任何理由跳过或精简。逐项执行：\n" +
+    (gateOut ? "【进化门禁·机器已完成】机制步骤已由 evolution_gate 脚本确定性执行，结果：\n" + gateOut.slice(0, 800) + "\n你只需补充智能部分（经验归纳/归属/edit 固化）：\n" : "") +
+    (fiveOut ? "【五步检查点·程序化强制】" + fiveOut.slice(0, 600) + "\n补做任务：按五步流程逐步输出【第一步·归纳】【第二步·归属】【第三步·edit】【第四步·流水】【第五步·校验】结构化中间结果（格式见 evolution_skill SKILL.md）后再执行固化。\n" : "") +
+    "1. 经验固化：回顾上一会话，按 instructions.md 智能进化协议五步流程，把可复用经验（新方法/工具/踩坑/风险规避）固化到对应 skill（自动执行）\n" +
+    "2. 工具登记：上一会话中用到/发现/提及的任何新工具、脚本、库——无论是否已写进具体 skill——必须登记到 tools-manifest.md（已在分类中的更新条目；新的先入「待补充」清单）\n" +
+    "3. 总表同步：若上一会话新增了 skill 依赖工具或本机配置变更，同步更新 tools-manifest.md\n" +
+    "4. 校验自测：对本次所有 skill 文件改动，跑 python <项目目录>\\temp\\skill_validate.py <opencode配置目录>\\skills；涉及可执行内容的行为自测\n" +
+    "5. 合并/拆分/迁移类发现：只输出「进化建议」清单供用户确认，不自动执行\n" +
+    "6. 全部完成且无新经验时，回复一行：「进化检查完成：本次无固化项」；否则回复固化项清单\n" +
+    "铁律：不得执行任何 git 同步（同步边界铁律，同步只能由用户显式 update_skill 触发）。"
+  )
+}
+
 function loadSkills() {
   if (!existsSync(SKILLS_DIR)) return []
   const out = []
@@ -137,7 +174,7 @@ function loadSkills() {
     if (!existsSync(f)) continue
     let text
     try { text = readFileSync(f, "utf8") } catch { continue }
-    const m = text.match(/^\ufeff?---\n([\s\S]*?)\n---/)
+    const m = text.match(/^\ufeff?---\r?\n([\s\S]*?)\r?\n---/)
     if (!m) continue
     const fm = m[1]
     const nm = (fm.match(/name:\s*(\S+)/) || [])[1] || name
@@ -202,52 +239,48 @@ export const SkillBanner = async ({ client }) => {
             } catch (e) {
               log("session.created 注册表提醒注入失败：" + (e && e.message ? e.message : String(e)))
             }
+            // 方案A（2026-08-27）：上一会话 idle 时写入的进化待办 → 静默注入本会话上下文
+            // （noReply=true 不唤醒模型；模型在本会话首次回复时看到任务并执行）
+            const pending = readPending()
+            if (pending) {
+              try {
+                await client.session.prompt({
+                  path: { id: sid },
+                  body: {
+                    noReply: true,
+                    parts: [{ type: "text", text: buildTaskText(pending.gateOut || "", pending.fiveOut || "") }],
+                  },
+                })
+                clearPending()
+                log("进化待办已注入新会话 " + sid + "（上一会话 " + (pending.prevSid || "未知") + " 遗留）")
+              } catch (e) {
+                log("进化待办注入失败：" + (e && e.message ? String(e.message).slice(0, 150) : ""))
+              }
+            }
           }
           return
         }
-        // 程序化进化触发：会话空闲（结束）时自动注入进化检查任务，不靠模型自觉
+        // 方案A（2026-08-27）：会话空闲时只跑机器步骤并写进化待办，不再向旧会话注入 prompt
+        // （防"会话已结束、窗口又被任务唤醒生成新对话"的时序问题）
         if (event.type === "session.idle") {
           const sid = props.sessionID || event.properties?.info?.id
           if (!sid) { log("session.idle 未取得 sessionID，props=" + JSON.stringify(props)); return }
-          if (injectedSessions.has(sid)) { log("session.idle 幂等跳过：会话 " + sid + " 已注入过进化检查"); return }
+          if (injectedSessions.has(sid)) { log("session.idle 幂等跳过：会话 " + sid + " 已写过进化待办"); return }
           injectedSessions.add(sid)
           recordTrace(sid, { phase: "idle" })
-          log("session.idle 触发，向会话 " + sid + " 注入进化检查任务")
-          // 进化门禁：机制步骤先由脚本确定性执行（流水兜底+自动测试）
+          log("session.idle 触发，执行机器步骤并写进化待办（会话 " + sid + "）")
+          // 进化门禁：机制步骤由脚本确定性执行（流水兜底+自动测试，纯文件操作无 UI 副作用）
           const gateOut = runGate("--check", sid)
           if (gateOut) {
             log("evolution_gate 门禁输出：\n" + gateOut.slice(0, 600))
           }
-          // 五步检查点程序化强制：检测本会话固化响应是否含五步标记，缺步警告附加到任务
+          // 五步检查点：检测本会话固化响应是否含五步标记
           const fiveOut = await runGate5step(client, sid)
           if (fiveOut) {
             log("五步检查点输出：\n" + fiveOut.slice(0, 500))
           }
-          try {
-            await client.session.prompt({
-              path: { id: sid },
-              body: {
-                noReply: false,
-                parts: [{
-                  type: "text",
-                  text:
-                    "【进化检查·程序化强制·不可跳过】本任务由插件在会话结束时自动注入，必须完整执行，不得以任何理由跳过或精简。逐项执行：\n" +
-                    (gateOut ? "【进化门禁·机器已完成】机制步骤已由 evolution_gate 脚本确定性执行，结果：\n" + gateOut.slice(0, 800) + "\n你只需补充智能部分（经验归纳/归属/edit 固化）：\n" : "") +
-                    (fiveOut ? "【五步检查点·程序化强制】" + fiveOut.slice(0, 600) + "\n补做任务：按五步流程逐步输出【第一步·归纳】【第二步·归属】【第三步·edit】【第四步·流水】【第五步·校验】结构化中间结果（格式见 evolution_skill SKILL.md）后再执行固化。\n" : "") +
-                    "1. 经验固化：回顾本会话，按 instructions.md 智能进化协议五步流程，把可复用经验（新方法/工具/踩坑/风险规避）固化到对应 skill（自动执行）\n" +
-                    "2. 工具登记：本会话中用到/发现/提及的任何新工具、脚本、库——无论是否已写进具体 skill——必须登记到 tools-manifest.md（已在分类中的更新条目；新的先入「待补充」清单）\n" +
-                    "3. 总表同步：若本会话新增了 skill 依赖工具或本机配置变更，同步更新 tools-manifest.md\n" +
-                    "4. 校验自测：对本次所有 skill 文件改动，跑 python <项目目录>\\temp\\skill_validate.py <opencode配置目录>\\skills；涉及可执行内容的行为自测\n" +
-                    "5. 合并/拆分/迁移类发现：只输出「进化建议」清单供用户确认，不自动执行\n" +
-                    "6. 全部完成且无新经验时，回复一行：「进化检查完成：本次无固化项」；否则回复固化项清单\n" +
-                    "铁律：不得执行任何 git 同步（同步边界铁律，同步只能由用户显式 update_skill 触发）。",
-                }                ],
-              },
-            })
-            log("进化检查任务注入成功，会话 " + sid)
-          } catch (e) {
-            log("进化检查任务注入失败，会话 " + sid + "，错误：" + (e && e.message ? e.message : String(e)))
-          }
+          writePending({ prevSid: sid, gateOut: gateOut, fiveOut: fiveOut, time: new Date().toISOString() })
+          log("进化待办已写入（等待下一会话创建时静默注入）")
         }
       } catch (e) {
         log("event 处理异常：" + (e && e.message ? e.message : String(e)))

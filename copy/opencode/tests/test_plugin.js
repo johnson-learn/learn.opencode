@@ -6,9 +6,10 @@ import { homedir } from "os"
 const HOME = homedir()
 const TRACE = join(HOME, ".config", "opencode", "skills", "default", "evolution_skill", "evolution_trace.jsonl")
 const LOG = join(HOME, ".config", "opencode", "plugins", "plugin-evolution.log")
+const PENDING = join(HOME, ".config", "opencode", "skills", "default", "evolution_skill", "evolution_pending.json")
 
 // 清理旧测试数据
-for (const f of [TRACE, LOG]) { try { unlinkSync(f) } catch {} }
+for (const f of [TRACE, LOG, PENDING]) { try { unlinkSync(f) } catch {} }
 
 // 加载插件模块
 const mod = await import("file://" + join(HOME, ".config", "opencode", "plugins", "skill-banner.js").replace(/\\/g, "/"))
@@ -53,48 +54,65 @@ await handler({ event: { type: "session.created", properties: { sessionID: "sess
 check("子会话不弹 toast", calls.toast.length === toastCountBefore)
 check("子会话不注入提醒", calls.prompt.length === promptCountBefore2)
 
-// === 测试 3：session.idle → 注入进化检查任务 ===
-console.log("[测试3] session.idle 注入进化检查")
+// === 测试 3：session.idle → 只跑机器步骤写待办，不向旧会话注入 prompt（方案A 时序修复） ===
+console.log("[测试3] session.idle 写进化待办（不再唤醒旧会话）")
 await handler({ event: { type: "session.idle", properties: { sessionID: "sess-main-001" } } })
-check("prompt 累计 2 次", calls.prompt.length === 2)
-const task = calls.prompt[1] && calls.prompt[1].body && calls.prompt[1].body.parts[0].text || ""
-check("任务含【进化检查】标记", task.includes("进化检查"))
-check("任务含工具登记要求", task.includes("tools-manifest"))
-check("任务含校验自测要求", task.includes("skill_validate"))
-check("任务含同步边界铁律", task.includes("git"))
-check("prompt 会话 ID 正确", calls.prompt[1].path.id === "sess-main-001")
+check("idle 后 prompt 不增加（旧会话不被唤醒）", calls.prompt.length === 1)
+check("进化待办文件已写入", existsSync(PENDING))
+const pending1 = existsSync(PENDING) ? JSON.parse(readFileSync(PENDING, "utf8")) : {}
+check("待办含上一会话 ID", pending1.prevSid === "sess-main-001")
+check("待办含机器步骤 gateOut（无快照时为空字符串也可）", "gateOut" in pending1 && "fiveOut" in pending1)
 
-// === 测试 3b：session.idle 幂等去重（同会话二次 idle 不重复注入） ===
+// === 测试 3b：session.idle 幂等去重（同会话二次 idle 不重复写待办） ===
 console.log("[测试3b] session.idle 幂等去重")
+const pendingTime = pending1.time
+await new Promise((r) => setTimeout(r, 10))
 await handler({ event: { type: "session.idle", properties: { sessionID: "sess-main-001" } } })
-check("同会话二次 idle 不重复注入", calls.prompt.length === 2)
+const pending1b = existsSync(PENDING) ? JSON.parse(readFileSync(PENDING, "utf8")) : {}
+check("同会话二次 idle 待办不重写", pending1b.time === pendingTime)
 
-// === 测试 3c：五步检查点程序化强制（会话含固化但缺五步标记 → 任务附缺步警告） ===
-console.log("[测试3c] 五步检查点缺步警告")
+// === 测试 3c：五步缺步 → 待办含警告 → 新会话创建时静默注入 ===
+console.log("[测试3c] 五步缺步 → 新会话静默注入")
 mockMessages = [{ info: { role: "assistant" }, parts: [{ type: "text", text: "进化：已固化 xxx\n但没有输出五步标记" }] }]
 await handler({ event: { type: "session.idle", properties: { sessionID: "sess-five-001" } } })
-check("prompt 累计 3 次", calls.prompt.length === 3)
-const fiveTask = calls.prompt[2] && calls.prompt[2].body && calls.prompt[2].body.parts[0].text || ""
-check("缺步时任务附【五步检查点·程序化强制】警告", fiveTask.includes("五步检查点·程序化强制"))
+const pending2 = existsSync(PENDING) ? JSON.parse(readFileSync(PENDING, "utf8")) : {}
+check("待办 fiveOut 含五步缺步警告", (pending2.fiveOut || "").includes("五步检查点"))
+await handler({ event: { type: "session.created", properties: { sessionID: "sess-five-created" } } })
+const lastPrompt = calls.prompt[calls.prompt.length - 1]
+const fiveTask = lastPrompt && lastPrompt.body && lastPrompt.body.parts[0].text || ""
+check("新会话收到进化检查任务（静默 noReply）", lastPrompt && lastPrompt.body.noReply === true && fiveTask.includes("进化检查"))
+check("任务附【五步检查点·程序化强制】警告", fiveTask.includes("五步检查点·程序化强制"))
 check("警告点名缺失步骤（第二步·归属）", fiveTask.includes("第二步·归属"))
 check("补做任务要求五步标记格式", fiveTask.includes("【第一步·归纳】"))
+check("注入后待办文件已清除", !existsSync(PENDING))
 
-// === 测试 3d：五步检查点齐全 → 任务不含缺步警告 ===
-console.log("[测试3d] 五步检查点齐全")
+// === 测试 3d：五步齐全 → 新会话任务不含缺步警告 ===
+console.log("[测试3d] 五步齐全")
 mockMessages = [{ info: { role: "assistant" }, parts: [{ type: "text", text: "进化：已固化 xxx\n【第一步·归纳】a\n【第二步·归属】b\n【第三步·edit】c\n【第四步·流水】d\n【第五步·校验】e" }] }]
 await handler({ event: { type: "session.idle", properties: { sessionID: "sess-five-002" } } })
-check("prompt 累计 4 次", calls.prompt.length === 4)
-const okTask = calls.prompt[3] && calls.prompt[3].body && calls.prompt[3].body.parts[0].text || ""
+await handler({ event: { type: "session.created", properties: { sessionID: "sess-five-created2" } } })
+const okTask = calls.prompt[calls.prompt.length - 1].body.parts[0].text || ""
 check("五步齐全时任务不含缺步警告", !okTask.includes("五步检查点·程序化强制"))
+check("待办再次清除", !existsSync(PENDING))
 
-// === 测试 3e：messages 拉取异常 → 五步检查静默跳过，任务照常注入 ===
+// === 测试 3e：messages 拉取异常 → 五步检查静默跳过，待办与注入不受影响 ===
 console.log("[测试3e] messages 异常容错")
 const origMessages = client.session.messages
 client.session.messages = async () => { throw new Error("messages api down") }
 await handler({ event: { type: "session.idle", properties: { sessionID: "sess-five-003" } } })
-check("异常时任务照常注入（prompt 累计 5 次）", calls.prompt.length === 5)
-check("异常时任务仍含进化检查主标记", (calls.prompt[4].body.parts[0].text || "").includes("进化检查"))
+check("异常时待办仍写入", existsSync(PENDING))
+await handler({ event: { type: "session.created", properties: { sessionID: "sess-five-created3" } } })
+const exTask = calls.prompt[calls.prompt.length - 1].body.parts[0].text || ""
+check("异常时任务仍含进化检查主标记", exTask.includes("进化检查"))
 client.session.messages = origMessages
+
+// === 测试 3f：无待办时新会话创建 → 只注入注册表提醒，不注入进化任务 ===
+console.log("[测试3f] 无待办时创建不注入")
+check("待办已清除（前置条件）", !existsSync(PENDING))
+const promptCountBefore3f = calls.prompt.length
+await handler({ event: { type: "session.created", properties: { sessionID: "sess-clean-004" } } })
+check("无待办时 prompt 只增 1 次（注册表提醒）", calls.prompt.length === promptCountBefore3f + 1)
+check("新增 prompt 为注册表提醒而非进化任务", calls.prompt[calls.prompt.length - 1].body.parts[0].text.includes("注册表必读"))
 
 // === 测试 4：session.idle 无 sessionID → 不崩且记日志 ===
 console.log("[测试4] session.idle 缺 sessionID")
@@ -104,13 +122,15 @@ check("无 sessionID 时 prompt 不增加", calls.prompt.length === promptCountA
 
 // === 测试 5：未知事件 → 无副作用 ===
 console.log("[测试5] 未知事件")
+const promptCountB5 = calls.prompt.length
+const toastCountB5 = calls.toast.length
 await handler({ event: { type: "session.unknown", properties: {} } })
-check("未知事件无副作用（toast/prompt 均不增加）", calls.prompt.length === promptCountAfter5 && calls.toast.length === toastCountBefore)
+check("未知事件无副作用（toast/prompt 均不增加）", calls.prompt.length === promptCountB5 && calls.toast.length === toastCountB5)
 
 // === 测试 6：轨迹与日志文件落盘 ===
 console.log("[测试6] 轨迹与日志落盘")
 check("evolution_trace.jsonl 已生成", existsSync(TRACE))
-check("plugin-evolution.log 已生成且含注入记录", existsSync(LOG) && readFileSync(LOG, "utf8").includes("进化检查任务注入成功"))
+check("plugin-evolution.log 已生成且含待办写入记录", existsSync(LOG) && readFileSync(LOG, "utf8").includes("进化待办已写入"))
 
 // === 测试 7：注册事件注入 hook 存在 ===
 console.log("[测试7] experimental.chat.system.transform hook")
@@ -131,21 +151,24 @@ check("含 docs-sync.md 注入标记", inj.includes("注入文件 docs-sync.md")
 check("含 tools-manifest.md 注入标记", inj.includes("注入文件 tools-manifest.md"))
 check("regedit.md 正文被注入（A 系统注入字样）", inj.includes("A 系统注入"))
 
-// === 测试 9：mtime 缓存——文件变化后注入更新 ===
+// === 测试 9：mtime 缓存——文件变化后注入更新（消毒式：按行过滤 marker，不依赖快照，防中断残留） ===
 console.log("[测试9] 缓存刷新")
 const MAN = join(HOME, ".config", "opencode", "tools-manifest.md")
-const origMan = readFileSync(MAN, "utf8")
-try {
-  appendFileSync(MAN, "\n<!-- CACHE_TEST_MARKER -->\n")
-  const out2 = { system: [] }
-  await hook({ sessionID: "sess-inj-2" }, out2)
-  check("文件变化后缓存刷新（新 marker 进入注入）", (out2.system[0] || "").includes("CACHE_TEST_MARKER"))
-} finally {
-  writeFileSync(MAN, origMan)
+const cleanMarkers = () => {
+  const cc = readFileSync(MAN, "utf8")
+  const cleaned = cc.replace(/\n<!-- CACHE_TEST_MARKER -->\n?/g, "")
+  if (cleaned !== cc) writeFileSync(MAN, cleaned)
 }
+cleanMarkers() // 防上次异常中断的残留污染真实文件
+appendFileSync(MAN, "\n<!-- CACHE_TEST_MARKER -->\n")
+const out2 = { system: [] }
+await hook({ sessionID: "sess-inj-2" }, out2)
+check("文件变化后缓存刷新（新 marker 进入注入）", (out2.system[0] || "").includes("CACHE_TEST_MARKER"))
+cleanMarkers() // 立即消毒，恢复真实文件
 const out3 = { system: [] }
 await hook({ sessionID: "sess-inj-3" }, out3)
 check("恢复文件后注入不再含 marker", !(out3.system[0] || "").includes("CACHE_TEST_MARKER"))
+cleanMarkers() // 收尾消毒（兜底）
 
 // === 测试 10：环境变量开关禁用 ===
 console.log("[测试10] 环境变量开关")
