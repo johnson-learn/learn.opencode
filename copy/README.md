@@ -45,7 +45,7 @@ git clone <你的GitHub仓库地址> copy
 cd copy/setup
 
 # 2. 一键安装（按需加开关：-SkipWsl -SkipPip 等；国内网络加 -UseChinaMirror）
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File setup\setup-windows.ps1 -UseChinaMirror
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File setup-windows.ps1 -UseChinaMirror
 
 # 3. 重启终端，opencode 启动即带 6 个全局 skill
 ```
