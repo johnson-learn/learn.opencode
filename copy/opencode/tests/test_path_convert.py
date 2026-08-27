@@ -73,6 +73,15 @@ check("不误报文档示例词 <文件>", "<文件>" not in unk)
 check("不误报 HTML 标签 </html>", "</html>" not in unk)
 check("不误报泛型 <int>", "<int>" not in unk)
 
+# 用例 5b：工具类占位符全集检出（空值未配置的 <工具目录> 等必须报残留，防"无残留"与 setup 报警矛盾）
+scan_dir2 = os.path.join(tmp, "scan2")
+os.makedirs(scan_dir2)
+open(os.path.join(scan_dir2, "s2.md"), "w", encoding="utf-8").write("残留 <工具目录>msys64 与 <LibreOffice目录> 与 <Node目录>")
+unk2 = pc.scan_unknown_placeholders(scan_dir2)
+check("检出工具类 <工具目录>（空值未配置也算残留）", "<工具目录>" in unk2)
+check("检出工具类 <LibreOffice目录>", "<LibreOffice目录>" in unk2)
+check("检出工具类 <Node目录>", "<Node目录>" in unk2)
+
 # === 用例 6：占位符形式语法合法性（tests 全目录 .py 必须可 ast.parse） ===
 print("[用例6] 占位符形式语法合法性（防止 \\U 转义类错误混入仓库）")
 import ast

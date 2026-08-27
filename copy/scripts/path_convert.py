@@ -132,8 +132,11 @@ def walk_convert(root, pairs, suffix):
                 print("[ok] " + os.path.relpath(p, root))
     print("=== %s 完成: %d 个文件转换" % (suffix, count))
 
-# 框架填写类占位符全集（与 setup-windows.ps1 的 dataKeys 一致；新增填写类需两处同步）
-FILL_KEYS = {"<资料目录>", "<3GPP文档库目录>", "<项目目录>", "<源码目录>", "<离线安装包目录>"}
+# 框架填写类占位符全集（与 setup-windows.ps1 第 7 节 $leftover 检测口径一致：5 数据类 + 5 工具类；
+# 新增填写类需两处同步）。注意：全集含工具类——path_map 中工具类空值（如 <工具目录>= 未探测到）时，
+# 对应占位符未转换属"未配置残留"，必须检出提示用户补 path_map，不得因空值过滤而漏报（2026-08-27 实测矛盾告警教训）
+FILL_KEYS = {"<资料目录>", "<3GPP文档库目录>", "<项目目录>", "<源码目录>", "<离线安装包目录>",
+             "<工具目录>", "<WSL安装目录>", "<LibreOffice目录>", "<Chrome目录>", "<Node目录>"}
 
 def scan_unknown_placeholders(root):
     """扫描目录中残留的框架占位符——只报告白名单全集（自动类 + 填写类 FILL_KEYS）内的残留。

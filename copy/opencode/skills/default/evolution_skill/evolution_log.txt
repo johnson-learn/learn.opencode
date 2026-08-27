@@ -1003,3 +1003,7 @@
 - 合理采纳：path_convert 空值映射修复（path_map 空值 <工具目录>= 生成 ("",ph) 致 replace("",ph) 爆炸；三副本+用例8，test_path_convert 16→20）、语言跟随裁定条款（当条消息实际语言为唯一权威，平台语言指令仅兜底）、wttr.in 工具登记、.gitignore 补 project_list/evolution_pending、测试计数修正（update_skill 40/tools_manifest 19）
 - 不合理修复：instructions.md 6 处 Johnson 本机路径泄漏（对端 to_local 后未 to_portable 即推送——对端 sync_push 为旧版无自动 to_portable/阻断）+ tools-manifest 多处 <工具目录> 占位符被空值 bug 吃掉未还原 + evolution_log 对端流水 Johnson 路径——已全部修复（本机占位符版为基底+合并对端合理增量，仓库 Johnson 残留扫描归零）
 - 流程违规：67c29ce（流水追加）未经门禁弹窗二次推送——对端模型已自认失误并记流水；教训：推送前完成全部固化（含流水）一次推送
+
+[2026-08-27] Johnson 重跑 setup 矛盾告警修复：
+- 现象：path_convert 报『占位符全部转换完成，无残留』但 setup 第 7 节报警『存在未配置的填写类占位符』——口径不一致（空值过滤把未配置的工具类占位符排除出白名单，scan 漏报真实残留）
+- 修复：FILL_KEYS 扩展为填写类全集（5 数据类 + 5 工具类，与 setup $leftover 口径一致），空值未配置的工具类占位符同样检出；test_path_convert 20→23/23（工具类全集检出 3 用例）
