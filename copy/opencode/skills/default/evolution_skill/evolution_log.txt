@@ -1063,3 +1063,8 @@
 - test_setup_ps1 56→57/57（出口清理断言：Close-SpawnedWindows 出现 ≥4 处）
 
 [2026-08-28] 用户实测报错修复：Start-Process -ArgumentList 含 null 报错（根因=Start-ChildWindow 用自动变量 \ 作参数名导致绑定混乱）→ 参数改名 \ + 启动前过滤 null 元素防御；模拟测试 20/20 全绿
+
+[2026-08-28] 新窗口未弹出修复（用户实测）：
+- 本机探针验证函数正常（窗口启动+下载 4035 字节）；Johnson 机器差异=从 UNC 工作目录跑 setup，新窗口继承 UNC cwd 启动失败
+- 修复：Start-ChildWindow 加 -WorkingDirectory $env:TEMP（本地目录启动）；主循环回车分支包 try-catch（窗口启动失败 Warn 显示错误而非静默）
+- 模拟测试 20/20、test_setup_ps1 57/57 全绿

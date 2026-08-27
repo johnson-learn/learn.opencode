@@ -85,9 +85,9 @@ function Start-ChildWindow([string]$file, [string[]]$childArgs, [bool]$runAs) {
   # 过滤 null 元素（2026-08-28 实测：$args 自动变量作参数名致数组含 null 报错，改名 + 防御）
   $childArgs = @($childArgs | Where-Object { $_ -ne $null })
   $proc = if ($runAs) {
-    Start-Process $file -Verb RunAs -WindowStyle Normal -ArgumentList $childArgs -PassThru
+    Start-Process $file -WorkingDirectory $env:TEMP -Verb RunAs -WindowStyle Normal -ArgumentList $childArgs -PassThru
   } else {
-    Start-Process $file -WindowStyle Normal -ArgumentList $childArgs -PassThru
+    Start-Process $file -WorkingDirectory $env:TEMP -WindowStyle Normal -ArgumentList $childArgs -PassThru
   }
   if ($proc) { $script:spawnedWindows += $proc }
 }
