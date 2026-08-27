@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, existsSync, appendFileSync } from "fs"
+import { readdirSync, readFileSync, existsSync, appendFileSync, statSync } from "fs"
 import { join } from "path"
 import { homedir } from "os"
 import { execSync, spawn } from "child_process"
@@ -8,6 +8,37 @@ const SKILLS_DIR = join(HOME, ".config", "opencode", "skills")
 const TRACE_FILE = join(HOME, ".config", "opencode", "skills", "default", "evolution_skill", "evolution_trace.jsonl")
 const LOG_FILE = join(HOME, ".config", "opencode", "plugins", "plugin-evolution.log")
 const GATE = join(HOME, ".config", "opencode", "tools", "evolution_gate.py")
+const API_TEST = join(HOME, ".config", "opencode", "tests", "test_platform_api.py")
+
+// === 注册事件注入（E 类 100% 平台执行）：experimental.chat.system.transform ===
+// 平台在每次 LLM 请求构建系统提示时触发本 hook（LLMRequestPrep.prepare），
+// 插件直读 4 个铁律/协议文件并 push 进 output.system，内容与 AGENTS.md 同级进入系统提示。
+// 环境变量 OPENCODE_DISABLE_MD_INJECT=1 可禁用。
+const CONFIG_DIR = join(HOME, ".config", "opencode")
+const INJECT_FILES = ["instructions.md", "regedit.md", "docs-sync.md", "tools-manifest.md"]
+
+let injectCache = null
+
+function loadInjectContent() {
+  // mtime+size 缓存：文件未变时不重复读盘（hook 每次请求触发，须轻量）
+  let key = ""
+  for (const f of INJECT_FILES) {
+    try {
+      const st = statSync(join(CONFIG_DIR, f))
+      key += f + ":" + st.mtimeMs + ":" + st.size + "|"
+    } catch { key += f + ":missing|" }
+  }
+  if (injectCache && injectCache.key === key) return injectCache.text
+  const parts = []
+  for (const f of INJECT_FILES) {
+    try { parts.push("<!-- 注入文件 " + f + " -->\n" + readFileSync(join(CONFIG_DIR, f), "utf8")) } catch {}
+  }
+  const text = parts.length
+    ? "【注册规则注入】以下内容由 skill-banner 插件注册的 experimental.chat.system.transform 事件在每次请求构建系统提示时平台直读注入（E 类 100% 执行），与 AGENTS.md 同级生效：\n\n" + parts.join("\n\n")
+    : ""
+  injectCache = { key, text }
+  return text
+}
 
 function runGate(action, sid) {
   // 进化门禁脚本：机制步骤（流水兜底/自动测试）确定性执行，不依赖模型自觉
@@ -32,6 +63,65 @@ function runGateAsync(action) {
     log("evolution_gate " + action + " 已异步启动（后台补跑，不阻塞会话）")
   } catch (e) {
     log("evolution_gate " + action + " 异步启动异常：" + (e && e.message ? String(e.message).slice(0, 150) : ""))
+  }
+}
+
+function runApiCheckAsync(client) {
+  // 平台 API 保障闭环：实验性 hook 依赖风险——opencode 升级移除 API 后首次会话即 toast 告警
+  try {
+    const child = spawn("python", [API_TEST], { windowsHide: true, stdio: "ignore" })
+    child.on("exit", (code) => {
+      if (code !== 0) {
+        try {
+          client.tui.showToast({
+            body: {
+              message:
+                "【框架风险告警】test_platform_api 未通过（rc=" + code + "）：experimental.chat.system.transform 可能已被当前 opencode 版本移除，注册事件注入机制失效。请跑 python " + API_TEST + " 查看详情，并按 regedit.md 注入策略回退预案处理。",
+              variant: "warning",
+            },
+          })
+        } catch (e) {
+          log("API 风险告警 toast 失败：" + String(e && e.message).slice(0, 120))
+        }
+        log("test_platform_api 未通过（rc=" + code + "），实验性 hook 依赖风险告警已触发")
+      } else {
+        log("test_platform_api 通过，平台 API 依赖正常")
+      }
+    })
+    child.on("error", (e) => log("test_platform_api 异步启动失败：" + String(e && e.message).slice(0, 150)))
+  } catch (e) {
+    log("runApiCheckAsync 异常：" + (e && e.message ? String(e.message).slice(0, 150) : ""))
+  }
+}
+
+async function runGate5step(client, sid) {
+  // 五步检查点程序化强制：拉取会话消息 → gate --check-5step 检测五步标记 → 返回缺步警告文本
+  let text = ""
+  try {
+    const resp = await client.session.messages({ path: { id: sid } })
+    const msgs = (resp && resp.data) || []
+    for (const m of msgs.slice(-40)) {
+      if (!m || !m.info || m.info.role !== "assistant") continue
+      for (const p of m.parts || []) {
+        if (p && p.type === "text" && p.text) text += p.text + "\n"
+      }
+    }
+  } catch (e) {
+    log("session.idle 拉取会话消息失败（五步检查跳过）：" + (e && e.message ? String(e.message).slice(0, 150) : ""))
+    return ""
+  }
+  if (!text) return ""
+  try {
+    execSync(`python "${GATE}" --check-5step`, {
+      timeout: 60000, encoding: "utf8", windowsHide: true, input: text,
+    })
+    return "" // rc=0：五步齐全或不适用，无需附加警告
+  } catch (e) {
+    // rc=1（缺步）时 execSync 抛异常但 stdout 含缺步清单，取出用于附加警告
+    const out = e && e.stdout ? String(e.stdout).trim() : ""
+    if (out && out.includes("五步检查点")) return out
+    log("gate --check-5step 执行失败：" + (e && e.message ? String(e.message).slice(0, 150) : ""))
+    return ""
   }
 }
 
@@ -68,6 +158,12 @@ function recordTrace(sessionId, agentInfo) {
 export const SkillBanner = async ({ client }) => {
   const injectedSessions = new Set()
   return {
+    "experimental.chat.system.transform": async (input, output) => {
+      if (process.env.OPENCODE_DISABLE_MD_INJECT === "1") return
+      if (!output || !Array.isArray(output.system)) return
+      const text = loadInjectContent()
+      if (text) output.system.push(text)
+    },
     event: async ({ event }) => {
       try {
         const props = event.properties || {}
@@ -80,6 +176,8 @@ export const SkillBanner = async ({ client }) => {
             body: { message: `本机全局技能（${skills.length} 个）\n` + lines, variant: "info" },
           })
           recordTrace(props.sessionID || "unknown", {})
+          // 平台 API 保障闭环：异步检测实验性 hook 可用性（升级移除 API 时首会话即告警）
+          runApiCheckAsync(client)
           // 自愈：异步后台补跑上次会话残留快照的门禁（防 idle 未触发单点故障；不阻塞会话创建）
           runGateAsync("--drain")
           runGate("--snapshot", props.sessionID || "unknown")
@@ -120,6 +218,11 @@ export const SkillBanner = async ({ client }) => {
           if (gateOut) {
             log("evolution_gate 门禁输出：\n" + gateOut.slice(0, 600))
           }
+          // 五步检查点程序化强制：检测本会话固化响应是否含五步标记，缺步警告附加到任务
+          const fiveOut = await runGate5step(client, sid)
+          if (fiveOut) {
+            log("五步检查点输出：\n" + fiveOut.slice(0, 500))
+          }
           try {
             await client.session.prompt({
               path: { id: sid },
@@ -130,6 +233,7 @@ export const SkillBanner = async ({ client }) => {
                   text:
                     "【进化检查·程序化强制·不可跳过】本任务由插件在会话结束时自动注入，必须完整执行，不得以任何理由跳过或精简。逐项执行：\n" +
                     (gateOut ? "【进化门禁·机器已完成】机制步骤已由 evolution_gate 脚本确定性执行，结果：\n" + gateOut.slice(0, 800) + "\n你只需补充智能部分（经验归纳/归属/edit 固化）：\n" : "") +
+                    (fiveOut ? "【五步检查点·程序化强制】" + fiveOut.slice(0, 600) + "\n补做任务：按五步流程逐步输出【第一步·归纳】【第二步·归属】【第三步·edit】【第四步·流水】【第五步·校验】结构化中间结果（格式见 evolution_skill SKILL.md）后再执行固化。\n" : "") +
                     "1. 经验固化：回顾本会话，按 instructions.md 智能进化协议五步流程，把可复用经验（新方法/工具/踩坑/风险规避）固化到对应 skill（自动执行）\n" +
                     "2. 工具登记：本会话中用到/发现/提及的任何新工具、脚本、库——无论是否已写进具体 skill——必须登记到 tools-manifest.md（已在分类中的更新条目；新的先入「待补充」清单）\n" +
                     "3. 总表同步：若本会话新增了 skill 依赖工具或本机配置变更，同步更新 tools-manifest.md\n" +

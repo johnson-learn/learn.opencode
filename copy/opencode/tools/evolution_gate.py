@@ -3,8 +3,13 @@
 # 用法：
 #   python evolution_gate.py --snapshot <会话ID>   会话开始时：记录规则文件状态快照
 #   python evolution_gate.py --check <会话ID>      会话结束时：检测改动→自动补流水→自动跑测试
+#   python evolution_gate.py --check-5step         从 stdin 读会话消息文本，检测五步检查点标记齐全性
+#   python evolution_gate.py --drain [max_n]       自愈补跑残留快照
 # 设计（用户 2026-08-26 定）：机制步骤（流水落盘/测试执行/一致性校验）由本脚本 100% 确定性执行，
 #   不依赖模型自觉；智能步骤（经验归纳/归属判断）仍由模型完成，脚本输出待补充清单。
+# 2026-08-27 新增 --check-5step：五步检查点程序化强制（用户高优先级未完成项落地）——
+#   模型执行固化的响应必须含【第一步·归纳】~【第五步·校验】五个标记，缺步由本脚本检出，
+#   插件 session.idle 调用本模式并把缺步警告附加到进化检查任务文本。
 import os, sys, json, subprocess, hashlib, datetime, tempfile
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -16,6 +21,9 @@ SNAP_DIR = os.path.join(tempfile.gettempdir(), "opencode_gate")
 WATCH_EXT = (".md", ".txt", ".py", ".js", ".jsonc")
 IGNORE_DIRS = ("__pycache__", "node_modules", ".git", "archive")
 STATE_FILES = ("path_map.txt", "sync_target.txt")
+
+# 五步检查点标记（与 evolution_skill SKILL.md 五步输出格式一致；改格式需同步 SKILL.md）
+FIVE_STEPS = ["第一步·归纳", "第二步·归属", "第三步·edit", "第四步·流水", "第五步·校验"]
 
 WATCH_ROOTS = [os.path.join(CFG, "skills"), os.path.join(CFG, "plugins"), os.path.join(CFG, "tools")]
 WATCH_FILES = [os.path.join(CFG, f) for f in ("AGENTS.md", "instructions.md", "regedit.md", "tools-manifest.md")]
@@ -59,6 +67,78 @@ def do_snapshot(sid):
     print("[gate] 快照完成：%d 个规则文件，log 大小 %d" % (len(data["files"]), data["log_size"]))
 
 
+def classify_change(fp):
+    """按 docs-sync.md 映射表分类改动文件 → 变更类型"""
+    rel = fp.replace("\\", "/")
+    if "/skills/" in rel and rel.endswith("SKILL.md"):
+        return "skill"
+    if "/tests/" in rel and (rel.endswith(".py") or rel.endswith(".js")):
+        return "test"
+    if "/tools/" in rel and rel.endswith(".py"):
+        return "tool"
+    if "/plugins/" in rel:
+        return "plugin"
+    base = os.path.basename(fp)
+    if base in ("AGENTS.md", "instructions.md", "regedit.md", "docs-sync.md", "tools-manifest.md"):
+        return "rule"
+    if base == "evolution.md":
+        return "rule"
+    return None
+
+# docs-sync 映射表程序化落地（单一数据源：直接解析 docs-sync.md，消除硬编码双份维护）
+DOCS_SYNC_FALLBACK = {
+    "skill": ["instructions.md", "regedit.md", "tests\\README.md"],
+    "test": ["tests\\README.md", "regedit.md"],
+    "tool": ["tools-manifest.md", "regedit.md"],
+    "plugin": ["regedit.md", "tests\\README.md"],
+    "rule": ["regedit.md", "instructions.md"],
+}
+# 变更类型 → docs-sync.md 行首关键词
+TYPE_ROW_KEY = {"skill": "skill 新增", "test": "测试用例新增", "tool": "工具新增",
+                "plugin": "插件变更", "rule": "流程/机制变更"}
+
+def parse_docs_sync():
+    """从 docs-sync.md 解析映射表（单一数据源）；解析失败回退硬编码表"""
+    try:
+        p = os.path.join(CFG, "docs-sync.md")
+        c = open(p, encoding="utf-8", errors="replace").read()
+        result = {}
+        for row in re.findall(r"\|\s*\*\*(.*?)\*\*\s*\|\s*(.*?)\s*\|", c):
+            title, files_col = row[0].strip(), row[1]
+            # 提取文件名（反引号内以 md/txt/py/js 结尾）
+            fnames = re.findall(r"`([^`]+\.(?:md|txt|py|js))`", files_col)
+            for key, kw in TYPE_ROW_KEY.items():
+                if title.startswith(kw):
+                    result[key] = [f.replace("\\", os.sep).replace("/", os.sep) for f in fnames]
+        if result:
+            return result
+    except Exception:
+        pass
+    return DOCS_SYNC_FALLBACK
+
+DOCS_SYNC_MAP = parse_docs_sync()
+
+def check_docs_sync(changed):
+    """配套漏更检测：改了 A，但 docs-sync 映射要求的 B 未同步改 → 输出警告"""
+    warnings = []
+    changed_set = {os.path.normpath(fp) for fp in changed}
+    for fp in changed:
+        ct = classify_change(fp)
+        if not ct:
+            continue
+        for req in DOCS_SYNC_MAP.get(ct, []):
+            req_path = os.path.normpath(os.path.join(CFG, req))
+            if req_path not in changed_set:
+                warnings.append((os.path.basename(fp), req))
+    if warnings:
+        print("[gate] 配套漏更检测：以下改动可能漏更配套文件（按 docs-sync.md 映射表）：")
+        for src, req in warnings:
+            print("  改了 %s → 应同步 %s（未检测到改动）" % (src, req))
+    else:
+        print("[gate] 配套漏更检测通过（docs-sync 映射要求的配套文件均已同步改动）")
+    return warnings
+
+
 def do_check(sid):
     sp = snap_path(sid)
     if not os.path.exists(sp):
@@ -78,6 +158,8 @@ def do_check(sid):
     print("[gate] 检测到 %d 个规则文件改动：" % len(changed))
     for fp in changed:
         print("  -", fp.replace(CFG, r"<opencode配置目录>"))
+    # 0. 配套漏更检测（docs-sync 映射表反向校验）
+    docs_sync_warnings = check_docs_sync(changed)
     # 1. 流水自动追加（若本会话模型未正常追加记录）
     log_size_now = os.path.getsize(LOG) if os.path.exists(LOG) else 0
     appended = False
@@ -149,7 +231,28 @@ def do_drain(max_n=3):
     return 0
 
 
+def do_check_5step():
+    """五步检查点检测：stdin 读会话消息文本，检测固化响应是否含五步标记。
+    返回 0=齐全/不适用，1=缺步（插件把缺步警告附加到进化检查任务）。
+    stdin 字节流按 utf-8 解码（与插件 execSync input / python subprocess encoding=utf-8 配对）。"""
+    text = sys.stdin.buffer.read().decode("utf-8", errors="replace")
+    has_cure = ("已固化" in text) and ("无固化项" not in text)
+    if not has_cure:
+        print("[gate] 本会话无固化动作（无『已固化』声明），五步检查点不适用")
+        return 0
+    missing = [s for s in FIVE_STEPS if ("【" + s + "】") not in text]
+    if not missing:
+        print("[gate] 五步检查点齐全（第一步·归纳~第五步·校验标记全部出现）")
+        return 0
+    print("[gate] 五步检查点缺失：%s" % "、".join(missing))
+    print("[gate] 五步检查点强制要求：执行固化必须按五步流程逐步输出【第一步·归纳】~【第五步·校验】"
+          "结构化中间结果（格式见 evolution_skill SKILL.md），缺失步骤请在补做任务中补齐并重新声明")
+    return 1
+
+
 if __name__ == "__main__":
+    if len(sys.argv) >= 2 and sys.argv[1] == "--check-5step":
+        sys.exit(do_check_5step())
     if len(sys.argv) >= 3 and sys.argv[1] == "--snapshot":
         sys.exit(do_snapshot(sys.argv[2]))
     if len(sys.argv) >= 3 and sys.argv[1] == "--check":

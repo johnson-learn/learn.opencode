@@ -5,7 +5,7 @@
 > 仓库（GitHub）里的文件必须保持**占位符形式**（可移植）；本机源文件保持**真实路径**（本机使用）。双向同步时自动转换，禁止把本机真实路径推上 GitHub。
 
 ### 占位符体系
-- **自动类**（转换时自动推导，无需用户填写）：`<用户目录>`、`<opencode配置目录>`、`<opencode数据目录>`、`<用户临时目录>`、`<用户AppData目录>`、`<用户桌面目录>`、`<WSL用户映射>`、`<Python脚本目录>`
+- **自动类**（转换时自动推导，无需用户填写）：`<用户目录>`、`<opencode配置目录>`、`<opencode数据目录>`、`<用户临时目录>`、`<用户AppData目录>`、`<用户桌面目录>`、`/mnt/c/Users/<用户目录>`、`<Python脚本目录>`
 - **工具类**（安装脚本自动探测本机实际安装目录并写入 path_map.txt，无需用户填写）：`<LibreOffice目录>`（找 soffice.com）、`<Chrome目录>`（找 chrome.exe）、`<Node目录>`（PATH 中 node 位置）、`<工具目录>`（找 w64devkit\bin\gcc.exe）、`<WSL安装目录>`（注册表 Lxss BasePath）
 - **数据类**（安装脚本交互选择：直接回车=默认目录，输入路径=用户定制；存于 path_map.txt）：`<资料目录>`（默认 `D:\opencode\doc\default`）、`<3GPP文档库目录>`（默认 `D:\opencode\doc\3gpp`）、`<项目目录>`（默认 `D:\opencode\project\default`）、`<源码目录>`（默认 `D:\opencode\code\default`）、`<离线安装包目录>`（默认 `D:\opencode\tool\default`）
 

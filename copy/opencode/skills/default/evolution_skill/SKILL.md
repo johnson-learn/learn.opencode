@@ -1,6 +1,8 @@
 ---
 name: evolution_skill
 description: 智能进化协议执行技能（全局 skill，默认触发）。Use when 需要执行进化固化——经验归纳与五步固化（踩坑/更优路径/新工具/机制缺陷/违反协议）、工具登记（tools-manifest.md）、注册表更新（regedit.md）、配套文档同步、进化建议产出（合并/拆分/迁移）、或响应插件注入的进化检查任务。AGENTS.md 铁律第 2 条每次响应复盘进化发现需固化时自动调用本技能。
+collaborates_with:
+  - update_skill
 ---
 
 # 智能进化协议执行技能（evolution_skill）
@@ -23,17 +25,18 @@ description: 智能进化协议执行技能（全局 skill，默认触发）。U
 > **进化门禁（evolution_gate.py，机制步骤确定性执行）**：插件在 session.created 调 `--snapshot`（记录规则文件快照）、session.idle 调 `--check`——脚本自动完成：检测本会话改动 / 流水兜底追加（模型未记录时）/ 按改动类型自动跑对应测试 / 输出待模型补充清单。**本技能只需完成智能部分**：经验归纳、归属判定、edit 固化到可执行载体。
 
 1. **触发确认**：踩坑 / 更优路径 / 新工具 / 机制缺陷 / 违反协议 → 需固化
-2. **五步固化**：归纳 → 归属 → edit 更新 → 追加进化流水 → 校验自测
-   - **历史流水 evolution_log.txt（只增不改）**：新记录必须**追加在文件尾部**，禁止替换既有条目（教训 2026-08-26：替换导致记录覆盖丢失）
-   - **进化规则 evolution.md（规则文件）**：规则/机制类经验提炼为规则条目写入 evolution.md——**更新前必须**：① 结合 evolution_log.txt 核对（不与历史教训矛盾）；② **弹窗让用户确认**（question 工具）是否更新；③ 确认后才 edit；④ 更新后跑 test_evolution_consistency.py
+2. **五步固化（每步先输出结构化中间结果再动作；标记格式程序化强制）**：
+   > **五步检查点强制输出格式（2026-08-27 起由插件+evolution_gate --check-5step 程序化检测，缺步自动告警补做）**：执行固化动作（声明"已固化"）时，响应中必须按序出现以下五个标记行，每行后跟该步的结构化中间结果；只做"无固化"声明（"进化：无新固化"）时不需要五步：
+   > `【第一步·归纳】` → 输出 `{经验描述, 经验类型(规则|记录|知识), 触发场景}`，一句精确描述、通用化（无本机路径）
+   > `【第二步·归属】` → 输出 `{主载体, 配套同步文件, 校验测试}`（**归属二分判定**）：规则/流程/机制类 → 主载体=对应 SKILL.md / instructions.md / regedit.md / AGENTS.md / evolution.md 规则文件（**只写 evolution_log.txt = 归属失败**）；记录/事实类 → 仅 evolution_log.txt；配套按 docs-sync.md 映射表列出；校验测试=test_regedit / test_instructions / test_evolution_consistency 等
+   > `【第三步·edit】` → 按归属清单逐个 edit 目标文件（每个 edit 后立即自检：改了什么/是否误删无关内容）
+   > `【第四步·流水】` → 追加 evolution_log.txt（**只增不改**：追加尾部，禁止替换既有条目——教训 2026-08-26：替换导致记录覆盖丢失）
+   > `【第五步·校验】` → 跑归属清单中的校验测试 + 行为实测（涉及命令实跑）；不通过立即修正
+   - **evolution.md 规则文件更新附加铁律**：更新前必须 ① 结合 evolution_log.txt 核对 ② **弹窗让用户确认**（question 工具）③ 确认后才 edit ④ 更新后跑 test_evolution_consistency.py
 3. **修改复盘核查（edit 完成后、自测前强制，用户 2026-08-26 定）**：改了什么/为什么改/有无误删误改无关内容？规则类内容是否已进全部应改载体（不只 evolution.md）？是否符合占位符/可移植性/归属二分铁律？配套文档是否同步？——核查通过才跑测试
-4. **归属二分判定（关键，防"规则当记录"遗漏）**：
-   - **规则/流程/机制类**（新增环节、流程步骤、执行约束、铁律、判定标准）→ **必须**写入可执行载体：对应 SKILL.md / instructions.md / regedit.md / AGENTS.md——只写 evolution.md = 归属失败
-   - **记录/事实类**（本次执行了什么、分析结论、历史流水）→ evolution.md 即可
-   - 固化后自检：本经验是规则还是记录？规则 → 已进可执行载体否？未进 → 立即补齐
 4. **注册表更新（强制）**：组件新增/变更 → 更新 regedit.md（位置/生效方式/说明）→ 跑 `python <opencode配置目录>\tests\test_regedit.py`
 5. **工具登记（强制）**：新工具/脚本/库 → tools-manifest.md
-6. **配套文档同步（强制，不许等用户提醒）**：结构/机制/工具变更 → README/INSTALL/REQUIREMENTS/tests\README.md 等同步；**流程类变更 → 必须同步 SKILL.md 与 regedit.md**
+6. **配套文档同步（强制，不许等用户提醒）**：结构/机制/工具变更 → README/INSTALL/REQUIREMENTS/tests\README.md 等同步；**流程类变更 → 必须同步 SKILL.md 与 regedit.md**；配套更新清单以 docs-sync.md 映射表为权威
 7. **回应末尾附进化行**：`进化：已固化 …` 或 `进化：无新固化`
 
 ## 五大进化能力

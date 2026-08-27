@@ -1,9 +1,27 @@
 ﻿---
 name: find_skill
 description: 网络资源获取与 GitHub 镜像加速技能（全局 skill，仅显式触发，不靠关键词自动调用）。Use ONLY when 用户消息显式包含 "find_skill：" 或 "find_skill:"，或以 "find_skill&"、"find_skill " 与其他技能名并列后跟冒号——冒号后为用户任务。加载后执行任务：GitHub 下载失败时走镜像渠道（raw 文件/release/tarball/git clone）、pip/npm 等包管理器换国内镜像源、从技能目录网站（skillsmp.com、skills.sh、LobeHub、smithery.ai、agentskills.io）搜索与获取 skill、3GPP/ETSI/arXiv 标准文献下载、抓取服务端渲染页面内容、HF 模型镜像下载等。触发场景：github 连不上、下载失败、网络超时、找镜像、换源、获取资源、下载文件、找 skill。普通消息仅提及下载/GitHub 但无 "find_skill：" 前缀时，不调用本技能。
+collaborates_with:
+  - files_skill
+  - 3gpp_skill
 ---
 
 # find_skill —— 网络资源获取与镜像加速接口
+
+## 典型触发场景
+
+- "find_skill：GitHub 下载失败，走镜像渠道"
+- "find_skill：从 skills.sh 获取一个 OCR skill"
+- "find_skill：下载 TS 38.331 规范 PDF"
+- "pip 安装超时，换个国内镜像源（隐式匹配可推荐本技能）"
+- "find_skill：抓取这个服务端渲染的网页内容"
+
+## 不处理的边界
+
+- 不做本地文件处理（推荐 files_skill）
+- 不做代码编译运行（推荐 program_skill）
+- 付费 API/需凭证的资源获取须先经用户确认
+
 
 ## 🛠 工具依赖清单（移植到新机器时先逐项检查）
 
