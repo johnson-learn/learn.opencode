@@ -41,8 +41,8 @@ copy\
 
 ```powershell
 # 1. 克隆仓库
-git clone <你的GitHub仓库地址> copy
-cd copy/setup
+git clone <你的GitHub仓库地址>
+进入\copy\setup
 
 # 2. 一键安装（按需加开关：-SkipWsl -SkipPip 等；国内网络加 -UseChinaMirror）
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File setup-windows.ps1 -UseChinaMirror
