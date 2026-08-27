@@ -19,7 +19,7 @@
 | evolution 一致性（evolution_log.txt 近 5 条「」声明落入规则文件/evolution.md 规则文件定位与弹窗确认流程抽查） | `test_evolution_consistency.py` | `python tests\test_evolution_consistency.py` | ✓ 15/15 |
 | evolution 门禁（快照/改动检测/流水兜底追加/自动测试触发/待补充清单/--drain 自愈补跑/max_n 限流/配套漏更检测/五步检查点） | `test_evolution_gate.py` | `python tests\test_evolution_gate.py` | ✓ 25/25 |
 | 健康检查（可运行/报告结构/七检查项/无失败项/regedit 登记/--run-quick 实跑） | `test_health_check.py` | `python tests\test_health_check.py` | ✓ 8/8 |
-| sync_push 推送门禁（无标记拒绝/非push拒绝/有效推送/标记清除/重推需重确认） | `test_sync_push.py` | `python tests\test_sync_push.py` | ✓ 7/7 |
+| sync_push 推送门禁（无标记拒绝/非push拒绝/有效推送/标记清除/重推需重确认/WSL 路径判定） | `test_sync_push.py` | `python tests\test_sync_push.py` | ✓ 11/11 |
 | docs-sync 映射表完整性（变更类型/校验测试存在/被 regedit+AGENTS 引用） | `test_docs_sync.py` | `python tests\test_docs_sync.py` | ✓ 19/19 |
 | 框架引用审计（框架自有文件引用存在性/旧术语残留/README 双向一致） | `test_audit_references.py` | `python tests\test_audit_references.py` | ✓ 3/3 |
 | 仓库门面一致性（门面文件与框架现状对照，WSL 不可达时回退 repo_face 镜像） | `test_repo_face.py` | `python tests\test_repo_face.py` | ✓ 14/14 |
