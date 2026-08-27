@@ -126,14 +126,20 @@ if (-not $SkipWinget) {
     foreach ($p in $pkgs) {
       $tier = if ($p.required) { "必选" } else { "可选" }
       if (& $p.check) { Ok "$($p.name) 已安装"; continue }
-      # 主窗口模式（2026-08-28 用户定：全部在主窗口进行，不弹新窗口）：
-      # winget 直接主窗口同步执行，输出与进度可见；装完检测，菜单冒号式呈现
-      Write-Host "  [$tier] $($p.name) 未安装，主窗口执行 winget 安装中..."
-      $wingetLog = Join-Path $env:TEMP ("opencode_winget_" + ($p.id -replace "[^A-Za-z0-9]", "_") + ".log")
-      winget install --id $p.id -e --silent --accept-source-agreements --accept-package-agreements --log "$wingetLog"
+      # 后台化主窗口模式（2026-08-28 用户要求：下载/安装期间菜单也必须全程呈现可选）：
+      # winget/curl/msiexec 全部 -NoNewWindow 后台运行 + 输出重定向日志，主窗口轮询检测与菜单
+      $bg = $null
+      $mode = "winget"
+      $mirrorIdx = 0
+      $dlFile = $null
+      $bgOut = Join-Path $env:TEMP ("opencode_bg_out_" + ($p.id -replace "[^A-Za-z0-9]", "_") + ".log")
+      $bgErr = Join-Path $env:TEMP ("opencode_bg_err_" + ($p.id -replace "[^A-Za-z0-9]", "_") + ".log")
+      Write-Host "  [$tier] $($p.name) 未安装，winget 后台安装中（本窗口菜单随时可选）..."
+      $bg = Start-BgProcess "winget" @("install", "--id", $p.id, "-e", "--silent", "--accept-source-agreements", "--accept-package-agreements") $bgOut $bgErr
+
       $done = $false
       while (-not $done) {
-        if (& $p.check) { Ok "$($p.name) 安装完成"; break }
+        if (& $p.check) { Stop-BgProcess $bg; Ok "$($p.name) 安装完成"; break }
         Write-Host "  本窗口选项（可随时选择，无倒计时）："
         Write-Host "  请选择：回车=继续等待检测；1=换镜像源下载安装；2=放弃本次$($(if ($p.required) { '必选' } else { '可选' }))工具安装；3=放弃本次移植"
         $ans = ""
@@ -146,45 +152,61 @@ if (-not $SkipWinget) {
         }
         switch ($ans) {
           "2" {
+            Stop-BgProcess $bg
             if ($p.required) { Warn "已放弃必选工具 $($p.name) 安装（手动安装后重跑本脚本自动补齐）" }
             else { Warn "已放弃可选工具 $($p.name) 安装，继续移植" }
             $done = $true
           }
-          "3" { Warn "用户选择放弃本次移植，退出脚本"; exit 2 }
+          "3" { Stop-BgProcess $bg; Warn "用户选择放弃本次移植，退出脚本"; exit 2 }
           "1" {
-            # 换源后主窗口同步下载安装（多源逐个尝试）
-            $mirrorOk = $false
-            $idx = 0
-            foreach ($url in $p.mirrors) {
-              $idx++
-              Write-Host "    镜像源 $idx/$($p.mirrors.Count) 主窗口下载安装中：$url"
-              $ext = [System.IO.Path]::GetExtension($url).ToLower()
-              $dl = Join-Path $env:TEMP ("opencode_dl_" + ($p.id -replace "[^A-Za-z0-9]", "_") + "_$idx" + $ext)
-              try {
-                curl.exe -L --connect-timeout 20 -o $dl $url
-                if ((Test-Path $dl) -and (Get-Item $dl).Length -ge 1MB) {
-                  Write-Host "    下载完成，静默安装中（$($p.name)；若提示权限不足请以管理员身份运行本脚本）..."
-                  if ($ext -eq ".msi") {
-                    Start-Process msiexec -ArgumentList @("/i", "`"$dl`"", "/qn", "/norestart") -Wait
-                  } else {
-                    Start-Process $dl -ArgumentList $p.silent -Wait
-                  }
-                  Start-Sleep -Seconds 5
-                  if (& $p.check) { $mirrorOk = $true; break }
-                  Write-Host "    该源安装完成但未检测到，换下一个源..."
-                } else {
-                  Write-Host "    该源下载失败或文件异常，换下一个源..."
-                  Remove-Item $dl -ErrorAction SilentlyContinue
-                }
-              } catch {
-                Write-Host "    该源异常：$($_.Exception.Message)，换下一个源..."
-              }
+            # 换镜像源：杀当前后台进程，启动下一镜像源 curl 后台下载
+            Stop-BgProcess $bg
+            $mirrorIdx++
+            if ($mirrorIdx -ge $p.mirrors.Count) { $mirrorIdx = 0 }
+            $ext = [System.IO.Path]::GetExtension($p.mirrors[$mirrorIdx]).ToLower()
+            $dlFile = Join-Path $env:TEMP ("opencode_dl_" + ($p.id -replace "[^A-Za-z0-9]", "_") + "_$($mirrorIdx + 1)" + $ext)
+            Remove-Item $dlFile -ErrorAction SilentlyContinue
+            Write-Host "    镜像源 $($mirrorIdx + 1)/$($p.mirrors.Count) 后台下载中（本窗口菜单随时可选）：$($p.mirrors[$mirrorIdx])"
+            $mode = "mirror-dl"
+            try {
+              $bg = Start-BgProcess "curl.exe" @("-L", "--connect-timeout", "20", "-o", $dlFile, $p.mirrors[$mirrorIdx]) $bgOut $bgErr
+            } catch {
+              Warn "下载启动失败：$($_.Exception.Message)"
+              $mode = "winget"
+              $bg = $null
             }
-            if ($mirrorOk) { Ok "$($p.name) 镜像源安装完成"; $done = $true }
-            else { Write-Host "    全部镜像源均失败：可回车继续等待检测 / 选 2 放弃 / 选 3 退出移植" }
           }
           default {
-            Write-Host "    等待安装完成中...（每 10 秒自动检测，装完自动继续）"
+            # 回车：驱动状态机 + 显示进度
+            if ($mode -eq "mirror-dl") {
+              if ($bg -and $bg.HasExited -and (Test-Path $dlFile) -and (Get-Item $dlFile).Length -ge 1MB) {
+                # 下载完成 → 启动 msiexec 后台安装
+                Write-Host "    下载完成，后台静默安装中（$($p.name)；若权限不足请以管理员身份运行本脚本）..."
+                $mode = "mirror-install"
+                $ext = [System.IO.Path]::GetExtension($dlFile).ToLower()
+                try {
+                  if ($ext -eq ".msi") {
+                    $bg = Start-BgProcess "msiexec" @("/i", "`"$dlFile`"", "/qn", "/norestart") $bgOut $bgErr
+                  } else {
+                    $bg = Start-BgProcess $dlFile $p.silent $bgOut $bgErr
+                  }
+                } catch {
+                  Warn "安装启动失败：$($_.Exception.Message)"
+                  $mode = "winget"
+                }
+              } elseif ($bg -and $bg.HasExited -and -not (Test-Path $dlFile)) {
+                Write-Host "    该源下载失败（进程已退出且无文件），可回车重试 / 选 1 换下一个源 / 选 2 放弃"
+                $mode = "winget"
+                $bg = $null
+              } else {
+                $sz = if (Test-Path $dlFile) { [math]::Round((Get-Item $dlFile).Length / 1MB, 1) } else { 0 }
+                Write-Host "    下载中...（已下载 $sz MB；菜单随时可选）"
+              }
+            } elseif ($mode -eq "mirror-install") {
+              Write-Host "    安装中，等待检测...（菜单随时可选）"
+            } else {
+              Write-Host "    winget 安装中，等待检测...（菜单随时可选）"
+            }
             Start-Sleep -Seconds 10
           }
         }
