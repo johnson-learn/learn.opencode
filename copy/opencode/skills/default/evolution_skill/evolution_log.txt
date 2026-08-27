@@ -31,7 +31,7 @@
 [2026-08-26] 用户质疑（机制验证） → 承认程序化机制仅纸面设计未实测；加固：① 插件加 plugin-evolution.log 日志（触发/成功/失败全记录，失败不再静默）；② 待实测方案：重启 opencode → 完成小对话 → 会话结束观察进化检查任务是否自动注入 + 查日志文件；③ 教训固化：程序化机制必须实测运行才算生效，写入机制后需标注"待实测"
 [2026-08-26] 插件自测（test_plugin.js） → 15/15 通过：session.created 主/子会话 toast 行为、session.idle 进化任务注入（六项强制清单）、缺 sessionID 容错、未知事件零副作用、轨迹与日志落盘；自测发现真 bug：edit 误删 export 闭合（已修复）；test_plugin.js 纳入行为自测清单
 [2026-08-26] 用户指出（commit message 摘要丢失） → 多个提交只剩 "sync:"（中文摘要经 PowerShell→wsl→bash 多层 shell 传递丢失）；修复：update_skill git 三步骤改为 printf 写 /tmp/cmsg.txt + git commit -F 文件方式传递；已存在裸 sync: 提交不改历史（共享仓库 amend 危险），向前修复
-[2026-08-26] 用户要求（修炼文件归档全局） → 自查发现 skill 修炼文件散落 <项目目录>\temp：建立全局 <opencode配置目录>\tools\ 目录（path_convert/inject_skills/fetch_skills/slim_skills/cross_move/generalize 六个核心修炼工具）+ tools\archive\（18 个一次性已执行脚本归档）；测试用例已在 tests\；更新全部路径引用（instructions/skills）；三套测试全绿（10+15+0 错误）；原则：一切 skill 修炼文件必须放全局目录随 update_skill 同步 GitHub，任务产物（图片/文档）才留在项目 temp
+[2026-08-26] 用户要求（修炼文件归档全局） → 自查发现 skill 修炼文件散落 E:\openCodeDefault\temp：建立全局 <opencode配置目录>\tools\ 目录（path_convert/inject_skills/fetch_skills/slim_skills/cross_move/generalize 六个核心修炼工具）+ tools\archive\（18 个一次性已执行脚本归档）；测试用例已在 tests\；更新全部路径引用（instructions/skills）；三套测试全绿（10+15+0 错误）；原则：一切 skill 修炼文件必须放全局目录随 update_skill 同步 GitHub，任务产物（图片/文档）才留在项目 temp
 [2026-08-26] 用户要求（修改复盘核查强制） → 用户判定本轮"规则只进 evolution.md 未进 SKILL.md"为低级错误（严重）；新环节固化：**每个文件修改完成后、自测前必须自我复盘核查**（「修改复盘核查」环节）——① 改了什么/为什么改/有无误删误改无关内容；② 规则类内容是否已进全部应改载体（不只 evolution.md）；③ 是否符合占位符/可移植性/归属二分铁律；④ 配套文档是否同步。核查通过才跑测试。固化位置：AGENTS.md 铁律第 8 条（改为"修改复盘核查 + 测试先行"）、evolution_skill 处理流程第 3 步、update_skill 第二步。低级错误根因深挖：进化流程只有"追加记录"检查，没有"修改动作完整性"检查——模型连续多个 edit 后容易漏掉应改载体，复盘核查正是补这个动作级的闭环
 [2026-08-26] 用户指正（弹窗确认三连） → ① 用户指出五步第四步应明确为「弹窗确认」——SKILL.md 第四步改标题「第四步：弹窗确认」并写明：必须用 question 工具弹窗（UI 交互选择+输入框），禁止回答正文文字提问代替，用户未确认前不得执行任何 commit/push；regedit.md 同步登记。② 用户指出"涉及弹窗确认却没有弹窗测试"——补 test_update_skill.py 用例 9（7 项：三态分支解析/未确认前无 commit/仅本地分支保留工作区/推送分支确认后 commit/规则完整性×3），40/40。③ 复查发现 tests/README.md 用例数停在 25（25→33→40 两轮漏更新）已修正。教训固化：每次新增机制必须同时新增测试用例并更新 tests/README.md 用例数与描述（铁律第 8 条执行缺口再次暴露——"进化：已固化"口头声明必须实际落盘 evolution.md，声明与 edit 动作必须成对）
 [2026-08-26] 用户指正（evolution.md 覆盖丢失） → 用户指出：evolution.md 应是历史流水，必须**追加新条目**，而我把新记录用 edit 替换了旧条目（"修改复盘核查强制"条被"弹窗确认三连"条覆盖丢失）——已恢复两条并存。根因：edit 工具以"oldString=旧条全文→newString=新条"的方式使用导致覆盖；正确做法=read 尾部→在最后一条后追加新条目，绝不替换既有条目。固化：evolution_skill 五步流程第 2 步明确"追加 evolution.md（只增不改，禁止替换既有条目）"；evolution.md 头部加本条规则声明
@@ -545,3 +545,10 @@
 [2026-08-27] 会话自动门禁（gate-test-1787820333） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
 - <opencode配置目录>\skills\_gate_test_skill\SKILL.md
 
+
+[2026-08-27] update_skill 双向同步（fe543a0/d514fbe/7701629 等 4 个提交）→ 3 个重大坑固化：
+- 坑1【隐私泄漏】：Windows git 提交 WSL 仓库时 author 用了 Windows git 个人身份邮箱（涉个人隐私，已脱敏不记录原文）推上 GitHub。修复：filter-branch 改写 author 为 johnson + force-with-lease 推送 + 删 filter-branch 备份 ref（refs/original，--all 仍可看到旧身份）。铁律固化：推送 git 一律用 WSL 内 git（用户指令），个人邮箱不得出现在任何提交；隐私词禁止硬编码进框架文件（含测试与流水）
+- 坑2【sync_push WSL 分支】：Windows git 经 UNC 操作 WSL 仓库三缺陷（SSH 无密钥 Host key verification failed / author 身份不一致 / filemode 语义差异）。修复：sync_push.py 检测 wsl.localhost 路径 → wsl -d Ubuntu bash 内执行 git（含 commit 消息文件路径转换），test_sync_push 7→11/11（WSL 路径判定与转换 4 例）
+- 坑3【子进程解码】：subprocess.run 读 wsl 输出 text=True 未指定 encoding，GBK 解码 UTF-8 字节流抛线程异常致错误信息丢失。修复：encoding=utf-8 + errors=replace
+- 附带修复：filemode 污染（drvfs 权限位 755 随 cp 进工作树，Windows add 记录为 644）——fe543a0 提交同时把历史 755 mode 全部归一 644；工作树 chmod 644 后 status 干净
+- 成果：collaborates_with 6 skill、注册事件注入、五步检查点、instructions 回滚、平台 API 保障等 24+ 项改动全部上 GitHub；推送前配套核查（docs-sync 逐项落实/本机路径残留扫描/可移植性用例 8）全过
