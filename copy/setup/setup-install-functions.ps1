@@ -79,13 +79,15 @@ function Close-SpawnedWindows {
   $script:spawnedWindows = @()
 }
 
-function Start-ChildWindow([string]$file, [string[]]$args, [bool]$runAs) {
+function Start-ChildWindow([string]$file, [string[]]$childArgs, [bool]$runAs) {
   # 关旧窗口（用户新选择时历史弹窗不堆积）
   Close-SpawnedWindows
+  # 过滤 null 元素（2026-08-28 实测：$args 自动变量作参数名致数组含 null 报错，改名 + 防御）
+  $childArgs = @($childArgs | Where-Object { $_ -ne $null })
   $proc = if ($runAs) {
-    Start-Process $file -Verb RunAs -WindowStyle Normal -ArgumentList $args -PassThru
+    Start-Process $file -Verb RunAs -WindowStyle Normal -ArgumentList $childArgs -PassThru
   } else {
-    Start-Process $file -WindowStyle Normal -ArgumentList $args -PassThru
+    Start-Process $file -WindowStyle Normal -ArgumentList $childArgs -PassThru
   }
   if ($proc) { $script:spawnedWindows += $proc }
 }
