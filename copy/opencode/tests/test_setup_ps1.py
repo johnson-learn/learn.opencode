@@ -21,6 +21,10 @@ if not os.path.exists(script_path):
     print("setup 脚本不可得（无仓库无镜像）→ 全部跳过")
     sys.exit(0)
 c = open(script_path, encoding="utf-8", errors="replace").read()
+c2 = ""
+fp2 = os.path.join(REPO, "copy", "setup", "setup-install-functions.ps1")
+if os.path.exists(fp2):
+    c2 = open(fp2, encoding="utf-8", errors="replace").read()
 
 # 1. 七个阶段开关齐全（与 INSTALL.md 阶段表一致）
 switches = ["SkipWinget", "SkipNpm", "SkipPip", "SkipWsl", "SkipDeploy", "UseChinaMirror", "NoPathRewrite"]
@@ -56,13 +60,27 @@ check("可选工具失败两选项（换源重试/放弃可选继续）", "放�
 check("放弃移植退出码（exit 2）", "exit 2" in c)
 check("静默失败兜底：非静默 PowerShell 安装窗口（可看进度可手动确认）", "已新开 PowerShell 窗口非静默安装" in c)
 check("镜像直链第二渠道（npmmirror 国内高速源 + 各包静默参数）", "registry.npmmirror.com" in c and "gh-proxy.com" in c and "dl.google.com" in c and "mirrors.tuna.tsinghua.edu.cn" in c)
-check("多安装源逐个尝试（mirrors 数组 + 换下一个源）", "mirrors = @" in c and "换下一个源" in c)
-check("镜像渠道安装函数（msi 走 msiexec / exe 直跑 / 下载校验 <1MB 判失败）", "Install-FromMirror" in c and "msiexec" in c and "Length -lt 1MB" in c)
+check("多安装源逐个尝试（mirrors 数组 + 换下一个源）", "mirrors = @" in c and "换下一个源" in c2)
+check("镜像渠道安装函数（msi 走 msiexec / exe 直跑 / 下载校验 <1MB 判失败）", "Install-FromMirror" in c2 and "msiexec" in c2 and "Length -lt 1MB" in c2)
+check("镜像渠道安装走管理员提权窗口（-Verb RunAs + UAC 提示 + 窗口可见）", "Start-Process powershell -Verb RunAs -Wait" in c2 and "弹出 UAC 请点『是』" in c2)
 check("镜像源全部失败后回到选项菜单（不再自动跳级）", "全部镜像源均失败" in c and "回到选项菜单" in c)
 check("非静默窗口为独立选项（[4]/[3] 可选）", "新开非静默 PowerShell 窗口安装" in c)
-check("LibreOffice 版本动态解析（防固定版本号被镜像站清理致全源 404）", "动态版本解析：Git" in c and "libreoffice/stable/" in c and "$loVer" in c)
-check("Git/Node/Python 全动态化（npmmirror 目录页 JSON 解析 + 兜底固定版）", "binary/git-for-windows/" in c and "binary/node/" in c and "binary/python/" in c and "gitVer" in c and "nodeVer" in c and "pyVer" in c)
-check("Node 动态解析限 LTS 偶数大版本", "% 2 -eq 0" in c)
+check("LibreOffice 版本动态解析（防固定版本号被镜像站清理致全源 404）", "动态版本解析：Git" in c and "libreoffice/stable/" in c2 and "$loVer" in c2)
+check("Git/Node/Python 全动态化（npmmirror 目录页 JSON 解析 + 兜底固定版）", "binary/git-for-windows/" in c2 and "binary/node/" in c2 and "binary/python/" in c2 and "gitVer" in c2 and "nodeVer" in c2 and "pyVer" in c2)
+check("Node 动态解析限 LTS 偶数大版本", "% 2 -eq 0" in c2)
+
+# 3.9 模拟测试（用户 2026-08-28 要求真模拟：mock curl/Start-Process 实际执行安装分支流转，非文本断言）
+if mode == "仓库直读":
+    sim = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_setup_sim.ps1")
+    funcs = os.path.join(REPO, "copy", "setup", "setup-install-functions.ps1")
+    try:
+        r = subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", sim, "-FuncFile", funcs],
+                           capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300)
+        check("模拟测试 test_setup_sim.ps1 执行通过（mock 分支流转 17/17）", r.returncode == 0 and "SIM_RESULT: pass=17 fail=0" in r.stdout)
+    except Exception:
+        check("模拟测试 test_setup_sim.ps1 执行通过（mock 分支流转 17/17）", False)
+else:
+    print("  （镜像回退模式：跳过模拟测试，函数文件不可得）")
 check("新窗口为 PowerShell 窗口（-NoExit 保留结果，UAC 提示）", "Start-Process powershell" in c and "-NoExit" in c and "弹出 UAC 请点" in c)
 check("检测双通道（命令 OR 安装位置文件，防新装 PATH 未刷新误判）", "C:\\Program Files\\nodejs\\node.exe" in c and "C:\\Program Files\\Git\\cmd\\git.exe" in c)
 

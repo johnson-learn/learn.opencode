@@ -54,38 +54,8 @@ function Test-Pkg([string]$id) {
   }
 }
 
-# 镜像直链第二渠道安装（2026-08-27 用户方案：winget 源国内经常不可达，镜像直链成功率更高；
-# 2026-08-28 多源化：每工具多个安装源按序尝试，任一成功即完成）
-# 逐个源：下载安装包 → 按扩展名区分静默安装方式（msi 走 msiexec，exe 直跑）→ 检测结果
-function Install-FromMirror($p) {
-  $idx = 0
-  foreach ($url in $p.mirrors) {
-    $idx++
-    try {
-      $ext = [System.IO.Path]::GetExtension($url).ToLower()
-      $dl = Join-Path $env:TEMP ("opencode_dl_" + ($p.id -replace "[^A-Za-z0-9]", "_") + "_$idx" + $ext)
-      Write-Host "    镜像源 $idx/$($p.mirrors.Count) 下载中：$url"
-      curl.exe -L --connect-timeout 20 -o $dl $url
-      if (-not (Test-Path $dl) -or (Get-Item $dl).Length -lt 1MB) {
-        Write-Host "    该源下载失败或文件异常（大小 <1MB），换下一个源..."
-        Remove-Item $dl -ErrorAction SilentlyContinue
-        continue
-      }
-      Write-Host "    下载完成，静默安装中（$($p.name)）..."
-      if ($ext -eq ".msi") {
-        Start-Process msiexec -ArgumentList @("/i", "`"$dl`"", "/qn", "/norestart") -Wait
-      } else {
-        Start-Process $dl -ArgumentList $p.silent -Wait
-      }
-      Start-Sleep -Seconds 5
-      if (& $p.check) { return $true }
-      Write-Host "    该源安装完成但未检测到，换下一个源..."
-    } catch {
-      Write-Host "    该源安装异常，换下一个源..."
-    }
-  }
-  return $false
-}
+# 安装核心逻辑独立模块（Install-FromMirror / Get-DynamicVersions）：setup 与模拟测试共用同一份代码
+. (Join-Path $PSScriptRoot "setup-install-functions.ps1")
 
 # 获取当前 python 的 pip Scripts 目录（--user 安装后 p2t 等命令所在位置）
 function Get-PipScriptsDir {
@@ -137,30 +107,9 @@ if (-not $SkipWinget) {
   if (-not (Test-Cmd "winget")) {
     Warn "winget 不存在，跳过软件安装。请手动安装 Git/Node/Python/Chrome/LibreOffice（见 REQUIREMENTS.md §1）"
   } else {
-    # 动态版本解析（2026-08-28 用户要求全部动态化：从 npmmirror 目录页 JSON 解析最新可用版本，
-    # 防镜像站清理历史版本致固定版本 404；解析失败回退固定版本兜底）
-    $gitVer = $null; $nodeVer = $null; $pyVer = $null
-    try {
-      $gitList = curl.exe -s --connect-timeout 15 "https://registry.npmmirror.com/-/binary/git-for-windows/" | ConvertFrom-Json
-      $gitVer = $gitList | Where-Object { $_ -match '^v\d+\.\d+\.\d+\.windows\.1/$' } | ForEach-Object { $_.Trim('/').TrimStart('v') } | Sort-Object { [version]($_ -replace '\.windows\.1$', '') } -Descending | Select-Object -First 1
-    } catch {}
-    try {
-      $nodeList = curl.exe -s --connect-timeout 15 "https://registry.npmmirror.com/-/binary/node/" | ConvertFrom-Json
-      $nodeVer = $nodeList | Where-Object { $_ -match '^v\d+\.\d+\.\d+/$' } | ForEach-Object { $_.Trim('/').TrimStart('v') } | Where-Object { ([int](($_ -split '\.')[0])) % 2 -eq 0 } | Sort-Object { [version]$_ } -Descending | Select-Object -First 1
-    } catch {}
-    try {
-      $pyList = curl.exe -s --connect-timeout 15 "https://registry.npmmirror.com/-/binary/python/" | ConvertFrom-Json
-      $pyVer = $pyList | Where-Object { $_ -match '^3\.12\.\d+/$' } | ForEach-Object { $_.Trim('/') } | Sort-Object { [version]$_ } -Descending | Select-Object -First 1
-    } catch {}
-    $loVer = $null
-    try {
-      $loIdx = curl.exe -s --connect-timeout 15 "https://mirrors.tuna.tsinghua.edu.cn/libreoffice/libreoffice/stable/"
-      $loVer = [regex]::Matches($loIdx, 'href="(\d+\.\d+\.\d+)/"') | ForEach-Object { $_.Groups[1].Value } | Sort-Object { [version]$_ } -Descending | Select-Object -First 1
-    } catch {}
-    if (-not $gitVer) { $gitVer = "2.45.2.windows.1" }
-    if (-not $nodeVer) { $nodeVer = "20.15.1" }
-    if (-not $pyVer) { $pyVer = "3.12.4" }
-    if (-not $loVer) { $loVer = "24.8.0" }
+    # 动态版本解析（独立模块 Get-DynamicVersions：npmmirror JSON 目录页 + 清华 HTML 目录页 + 兜底固定版）
+    $dyn = Get-DynamicVersions
+    $gitVer = $dyn.git; $nodeVer = $dyn.node; $pyVer = $dyn.py; $loVer = $dyn.lo
     Ok "动态版本解析：Git $gitVer / Node $nodeVer / Python $pyVer / LibreOffice $loVer"
     $pkgs = @(
       @{ id = "Git.Git";                         name = "Git for Windows"; required = $true;  check = { (Test-Cmd "git") -or (Test-Path "C:\Program Files\Git\cmd\git.exe") };
