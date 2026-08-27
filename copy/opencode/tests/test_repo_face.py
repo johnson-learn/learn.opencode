@@ -84,5 +84,19 @@ if mode == "仓库直读":
                     hits.append(fp.replace(REPO, "") + " -> " + b)
     check("被跟踪文件无本机用户名路径", len(hits) == 0, "；".join(hits[:3]) if hits else "")
 
+    # 6c. 多份 path_convert.py 副本一致性（2026-08-27 实测：copy/scripts 旧版漂移导致 setup 用旧逻辑刷屏 900+ 误报）
+    import hashlib as _hl
+    pc_paths = [
+        "copy\\scripts\\path_convert.py",
+        "copy\\opencode\\tools\\path_convert.py",
+        "copy\\opencode\\tests\\path_convert.py",
+    ]
+    pc_hashes = set()
+    for pp in pc_paths:
+        fp = os.path.join(REPO, pp)
+        if os.path.exists(fp):
+            pc_hashes.add(_hl.md5(open(fp, "rb").read()).hexdigest())
+    check("仓库内多份 path_convert.py 内容一致", len(pc_hashes) == 1, "不一致：" + str(len(pc_hashes)) + " 个版本")
+
 print("\n结果：通过 %d 项，失败 %d 项" % (pass_n, fail_n))
 sys.exit(1 if fail_n else 0)

@@ -99,7 +99,13 @@ STATE_FILES = {"path_map.txt", "sync_target.txt", "path_convert.py"}
 def walk_convert(root, pairs, suffix):
     count = 0
     for dirpath, dirnames, filenames in os.walk(root):
-        if ".git" in dirpath.split(os.sep):
+        rel = os.path.relpath(dirpath, root)
+        parts = rel.split(os.sep)
+        if ".git" in parts:
+            continue
+        # 测试与历史脚本目录不参与路径转换：测试文件用动态路径推导 + 模拟路径字符串字面量，
+        # 转换会污染测试数据（2026-08-27 实测：r"C:\tmp\repo" 被误转 <工具目录>tmp\repo）
+        if "tests" in parts or "archive" in parts:
             continue
         for fn in filenames:
             if fn.lower() in STATE_FILES:
@@ -120,12 +126,22 @@ def walk_convert(root, pairs, suffix):
                 print("[ok] " + os.path.relpath(p, root))
     print("=== %s 完成: %d 个文件转换" % (suffix, count))
 
+# 框架填写类占位符全集（与 setup-windows.ps1 的 dataKeys 一致；新增填写类需两处同步）
+FILL_KEYS = {"<资料目录>", "<3GPP文档库目录>", "<项目目录>", "<源码目录>", "<离线安装包目录>"}
+
 def scan_unknown_placeholders(root):
-    """扫描目录中残留的 <xxx> 占位符，返回未转换的占位符集合（to_local 后应只含用户尚未映射的填写类）"""
+    """扫描目录中残留的框架占位符——只报告白名单全集（自动类 + 填写类 FILL_KEYS）内的残留。
+    文档示例尖括号词（<文件>、<目录>、HTML/XML 标签、C++ 泛型 <int>、正则模式等）一律不报
+    （2026-08-27 实测：宽正则 r"<[^<>\\s]{2,40}>" 产生 900+ 行误报）。"""
+    known = set(build_local_map().keys()) | FILL_KEYS
     unknown = set()
     pat = re.compile(r"<[^<>\s]{2,40}>")
     for dirpath, dirnames, filenames in os.walk(root):
-        if ".git" in dirpath.split(os.sep):
+        rel = os.path.relpath(dirpath, root)
+        parts = rel.split(os.sep)
+        if ".git" in parts:
+            continue
+        if "tests" in parts or "archive" in parts:
             continue
         for fn in filenames:
             if fn.lower() in STATE_FILES:
@@ -139,7 +155,9 @@ def scan_unknown_placeholders(root):
             except (UnicodeDecodeError, OSError):
                 continue
             for m in pat.finditer(c):
-                unknown.add(m.group(0))
+                t = m.group(0)
+                if t in known:
+                    unknown.add(t)
     return unknown
 
 if __name__ == "__main__":

@@ -743,3 +743,8 @@
 - 坑3【填写类检测误报】：setup 第 7 节 grep 全目录把 tests/repo_face 镜像里故意保留的 <工具目录> 当残留。修复：检测排除 tests 目录
 - 坑4（旧版已修）：log 中 Select-String 路径 pattern \U 转义报错系旧版脚本（当前 377 行已为占位符 pattern）
 - 部署成效：基础软件/npm/pip/WSL/部署全 OK；7.5 注册事件注入验证通过；8.5 必备工具告警生效
+
+[2026-08-27] V1 部署 log 分析：
+- 已修复项生效确认：第 8 节全 OK（w64Dir 修复）、7.5 注册事件注入验证通过、8.5 告警正确消失
+- 残留问题【path_convert 双副本漂移】：setup-windows.ps1 的 $conv 指向 copy/scripts/path_convert.py（旧版），白名单化/tests 跳过修复只进了 copy/opencode/tools 与 tests 两份 → Johnson 机器 to_local 仍刷屏 900+ 误报。修复：scripts 版同步 + test_repo_face 新增多份副本 md5 一致性用例（18/18）
+- 环境项（非缺陷）：Store 版 Python 3.13 警告（pip 实际全部成功）；数据目录交互正常
