@@ -5,6 +5,13 @@
 # 镜像直链第二渠道安装（2026-08-27 用户方案：winget 源国内经常不可达，镜像直链成功率更高；
 # 2026-08-28 多源化：每工具多个安装源按序尝试，任一成功即完成）
 # 逐个源：下载安装包 → 按扩展名区分静默安装方式（msi 走 msiexec，exe 直跑）→ 检测结果
+# -*- coding: utf-8 -*-
+# setup 安装核心逻辑独立模块（2026-08-28 抽取）：setup-windows.ps1 引用 + 测试 mock 模拟共用同一份代码
+# 依赖 mock 的外部命令：curl.exe（下载）、Start-Process（安装窗口）——测试中可重定义这两个做模拟
+
+# 镜像直链第二渠道安装（2026-08-27 用户方案：winget 源国内经常不可达，镜像直链成功率更高；
+# 2026-08-28 多源化：每工具多个安装源按序尝试，任一成功即完成）
+# 逐个源：下载安装包 → 按扩展名区分静默安装方式（msi 走 msiexec，exe 直跑）→ 检测结果
 function Install-FromMirror($p) {
   $idx = 0
   foreach ($url in $p.mirrors) {
@@ -19,20 +26,15 @@ function Install-FromMirror($p) {
         Remove-Item $dl -ErrorAction SilentlyContinue
         continue
       }
-      Write-Host "    下载完成，已新开管理员 PowerShell 窗口执行静默安装（如弹出 UAC 请点『是』；安装期间窗口可见）..."
+      Write-Host "    下载完成，主窗口执行静默安装中（$($p.name)；若提示权限不足请以管理员身份运行本脚本）..."
       if ($ext -eq ".msi") {
-        Start-Process powershell -Verb RunAs -ArgumentList @("-NoProfile", "-Command", "msiexec /i `"$dl`" /qn /norestart") | Out-Null
+        Start-Process msiexec -ArgumentList @("/i", "`"$dl`"", "/qn", "/norestart") -Wait | Out-Null
       } else {
-        $silentArgs = ($p.silent -join " ")
-        Start-Process powershell -Verb RunAs -ArgumentList @("-NoProfile", "-Command", "& `"$dl`" $silentArgs") | Out-Null
+        Start-Process $dl -ArgumentList $p.silent -Wait | Out-Null
       }
-      # 轮询检测安装完成（2026-08-28 防挂起：UAC 未确认时 -Wait 会无限等待；
-      # 改为最长 5 分钟轮询，超时未检测到自动换下一源）
-      for ($wi = 0; $wi -lt 60; $wi++) {
-        if (& $p.check) { return $true }
-        Start-Sleep -Seconds 5
-      }
-      Write-Host "    该源安装窗口超时未检测到（可能 UAC 未确认或安装失败），换下一个源..."
+      Start-Sleep -Seconds 5
+      if (& $p.check) { return $true }
+      Write-Host "    该源安装完成但未检测到（可能权限不足或安装失败），换下一个源..."
     } catch {
       Write-Host "    该源安装异常，换下一个源..."
     }
@@ -68,63 +70,6 @@ function Get-DynamicVersions {
 }
 
 
-# 下载窗口（2026-08-28 状态机化：下载放新窗口可见进度，原窗口菜单始终可选）
-# 2026-08-28 窗口统一管理：所有子窗口可见；新窗口弹出时自动关闭历史子窗口（主 setup 窗口保留）
-$script:spawnedWindows = @()
-
-function Close-SpawnedWindows {
-  if ($script:spawnedWindows.Count -gt 0) {
-    Write-Host "    [窗口清理] 正在关闭 $($script:spawnedWindows.Count) 个历史弹窗..."
-  }
-  foreach ($proc in $script:spawnedWindows) {
-    if (-not $proc) { continue }
-    try {
-      # taskkill 进程树强杀（比 Stop-Process 更彻底：/T 含子进程 /F 强制）
-      & taskkill /PID $proc.Id /T /F 2>&1 | Out-Null
-    } catch {
-      Write-Host "    [窗口清理] 关闭进程 $($proc.Id) 失败：$($_.Exception.Message)"
-    }
-  }
-  $script:spawnedWindows = @()
-}
-
-function Start-ChildWindow([string]$file, [string[]]$childArgs, [bool]$runAs) {
-  # 关旧窗口（用户新选择时历史弹窗不堆积）
-  Close-SpawnedWindows
-  # 过滤 null 元素（2026-08-28 实测：$args 自动变量作参数名致数组含 null 报错，改名 + 防御）
-  $childArgs = @($childArgs | Where-Object { $_ -ne $null })
-  # 统一注入 -ExecutionPolicy Bypass（2026-08-28 实测：Restricted 策略机器子窗口 -Command 被拦截一闪而退；
-  # 若调用方已带该参数则跳过避免重复）
-  if ($childArgs -notcontains "-ExecutionPolicy") {
-    $childArgs = @("-ExecutionPolicy", "Bypass") + $childArgs
-  }
-  $proc = if ($runAs) {
-    Start-Process $file -WorkingDirectory $env:TEMP -Verb RunAs -WindowStyle Normal -ArgumentList $childArgs -PassThru
-  } else {
-    Start-Process $file -WorkingDirectory $env:TEMP -WindowStyle Normal -ArgumentList $childArgs -PassThru
-  }
-  if ($proc) { $script:spawnedWindows += $proc }
-}
-
-function Start-DownloadWindow([string]$url, [string]$dl) {
-  # 下载命令写临时脚本文件 + -File 执行（引号在文件内正常，消除 -Command 转义问题）；
-  # -NoExit：命令失败时窗口保留显示错误（2026-08-28 实测：瞬间关闭看不到错误）
-  $dlScript = Join-Path $env:TEMP ("opencode_download.ps1")
-  Set-Content -LiteralPath $dlScript -Value "curl.exe -L --connect-timeout 20 -o `"$dl`" $url" -Encoding UTF8
-  Start-ChildWindow "powershell" @("-NoProfile", "-ExecutionPolicy", "Bypass", "-NoExit", "-File", $dlScript) $false | Out-Null
-}
-
-# 提权安装窗口（msi 走 msiexec /qn；exe 走 silent 参数；UAC 弹窗确认）
-# 2026-08-28 修复：-Command 引号转义经 -ArgumentList 传递易被破坏（管理员窗口一闪而退、安装未执行），
-# 改为写临时安装脚本文件 + -File 执行（引号在文件内容里正常，零转义问题）
-function Start-InstallWindow($p, [string]$dl) {
-  $ext = [System.IO.Path]::GetExtension($dl).ToLower()
-  $instScript = Join-Path $env:TEMP ("opencode_install_" + ($p.id -replace "[^A-Za-z0-9]", "_") + ".ps1")
-  if ($ext -eq ".msi") {
-    Set-Content -LiteralPath $instScript -Value "msiexec /i `"$dl`" /qn /norestart" -Encoding UTF8
-  } else {
-    $silentArgs = ($p.silent -join " ")
-    Set-Content -LiteralPath $instScript -Value "& `"$dl`" $silentArgs" -Encoding UTF8
-  }
-  Start-ChildWindow "powershell" @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $instScript) $true | Out-Null
-}
+# 镜像直链第二渠道安装（2026-08-27 用户方案：winget 源国内经常不可达，镜像直链成功率更高；
+# 2026-08-28 多源化：每工具多个安装源按序尝试，任一成功即完成）
+# 逐个源：下载安装包 → 按扩展名区分静默安装方式（msi 走 msiexec，exe 直跑）→ 检测结果
