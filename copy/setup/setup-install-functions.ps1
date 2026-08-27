@@ -84,6 +84,11 @@ function Start-ChildWindow([string]$file, [string[]]$childArgs, [bool]$runAs) {
   Close-SpawnedWindows
   # 过滤 null 元素（2026-08-28 实测：$args 自动变量作参数名致数组含 null 报错，改名 + 防御）
   $childArgs = @($childArgs | Where-Object { $_ -ne $null })
+  # 统一注入 -ExecutionPolicy Bypass（2026-08-28 实测：Restricted 策略机器子窗口 -Command 被拦截一闪而退；
+  # 若调用方已带该参数则跳过避免重复）
+  if ($childArgs -notcontains "-ExecutionPolicy") {
+    $childArgs = @("-ExecutionPolicy", "Bypass") + $childArgs
+  }
   $proc = if ($runAs) {
     Start-Process $file -WorkingDirectory $env:TEMP -Verb RunAs -WindowStyle Normal -ArgumentList $childArgs -PassThru
   } else {
