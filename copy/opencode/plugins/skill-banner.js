@@ -31,8 +31,9 @@ function detectLang(text) {
 }
 
 function langLine() {
-  return "【语言指令·平台检测】当前用户消息检测为" + currentLang + "——请用" + currentLang +
-    "思考（含思考过程）并回答；任何情况下不得改用其它语言。"
+  return "【语言指令·平台检测】平台已检测用户最新消息为" + currentLang +
+    "——本次会话期间，后续任何时候你的全部思考（含思考过程）、回答、输出都必须使用" + currentLang +
+    "，直到平台下一次更新语言指令；任何情况下不得自行改用其它语言。"
 }
 
 function loadInjectContent() {

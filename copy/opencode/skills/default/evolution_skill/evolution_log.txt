@@ -936,3 +936,65 @@
 - 防御：非 user 消息不更新语言（防助手英文思考/流式输出污染检测）；无文本事件跳过；默认中文
 - 测试：test_plugin 45/45（语言检测 4 用例：中文/英文/非 user 不更新/无文本容错）
 - 待实测：part 结构（role 字段名）为二进制推断，真实 opencode 环境需中英文各提问一次验证检测生效
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-main-001） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\default\evolution_skill\evolution_log.txt
+
+[2026-08-27] 会话自动门禁（sess-five-created-again） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-five-created2） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-five-created3） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+
+[2026-08-27] 用户指正语言指令表述：『当前用户消息检测为X』易被模型误读为仅当前提问有效，后续不适用。改为持续性约束表述：『本次会话期间，后续任何时候你的全部思考（含思考过程）、回答、输出都必须使用X，直到平台下一次更新语言指令』。test_plugin 45→46/46（持续约束断言防回归）
