@@ -19,6 +19,22 @@ const INJECT_FILES = ["instructions.md", "regedit.md", "docs-sync.md", "tools-ma
 
 let injectCache = null
 
+// === 语言检测（2026-08-27 用户方案：平台确定性识别提问语言，直接下达语言指令） ===
+// 规则文本"用提问语言思考回答"是间接指令，部分模型无法识别自己的输入语言。
+// 平台在 message.part.updated 事件里检测用户消息语言（含 CJK 字符=中文，否则=英文），
+// system.transform 时把明确指令"请用中文/英文思考（含思考过程）并回答"注入系统提示。
+let currentLang = "中文"
+
+function detectLang(text) {
+  if (!text) return null
+  return /[\u4e00-\u9fff]/.test(text) ? "中文" : "英文"
+}
+
+function langLine() {
+  return "【语言指令·平台检测】当前用户消息检测为" + currentLang + "——请用" + currentLang +
+    "思考（含思考过程）并回答；任何情况下不得改用其它语言。"
+}
+
 function loadInjectContent() {
   // mtimeNs+size 缓存：文件未变时不重复读盘（hook 每次请求触发，须轻量）
   // 用纳秒精度 mtimeNs（Node 12+），防毫秒精度下连续写文件 mtime 相同致缓存不刷新
@@ -199,10 +215,29 @@ export const SkillBanner = async ({ client }) => {
       if (!output || !Array.isArray(output.system)) return
       const text = loadInjectContent()
       if (text) output.system.push(text)
+      output.system.push(langLine())
     },
     event: async ({ event }) => {
       try {
         const props = event.properties || {}
+        // 语言检测：用户消息文本部分更新时识别语言（平台确定性检测，模型无需自行判断）
+        if (event.type === "message.part.updated") {
+          try {
+            const part = props.part || {}
+            const text = part.text || (part.state && part.state.text) || ""
+            const role = part.role || (part.info && part.info.role) || ""
+            if (text && role === "user") {
+              const lang = detectLang(text)
+              if (lang && lang !== currentLang) {
+                currentLang = lang
+                log("语言检测：用户消息 → " + lang)
+              }
+            }
+          } catch (e) {
+            log("语言检测异常：" + (e && e.message ? String(e.message).slice(0, 120) : ""))
+          }
+          return
+        }
         if (event.type === "session.created") {
           if (props.parentID) return
           const skills = loadSkills()

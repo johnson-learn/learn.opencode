@@ -128,11 +128,11 @@ console.log("[测试7] experimental.chat.system.transform hook")
 const hook = plugin["experimental.chat.system.transform"]
 check("hook 存在且为函数", typeof hook === "function")
 
-// === 测试 8：注入 4 个 md 文件内容到 output.system ===
-console.log("[测试8] 系统提示注入 4 文件")
+// === 测试 8：注入 4 个 md 文件内容 + 语言指令到 output.system ===
+console.log("[测试8] 系统提示注入 4 文件 + 语言指令")
 const out1 = { system: ["orig-prompt"] }
 await hook({ sessionID: "sess-inj-1" }, out1)
-check("system 增加 1 个元素", out1.system.length === 2)
+check("system 增加 2 个元素（注入文件 + 语言指令）", out1.system.length === 3)
 check("原内容未变", out1.system[0] === "orig-prompt")
 const inj = out1.system[1] || ""
 check("注入带【注册规则注入】标记", inj.includes("注册规则注入"))
@@ -141,6 +141,8 @@ check("含 regedit.md 注入标记", inj.includes("注入文件 regedit.md"))
 check("含 docs-sync.md 注入标记", inj.includes("注入文件 docs-sync.md"))
 check("含 tools-manifest.md 注入标记", inj.includes("注入文件 tools-manifest.md"))
 check("regedit.md 正文被注入（A 系统注入字样）", inj.includes("A 系统注入"))
+const langInj = out1.system[2] || ""
+check("注入平台检测语言指令（默认中文）", langInj.includes("语言指令·平台检测") && langInj.includes("中文"))
 
 // === 测试 9：mtime 缓存——文件变化后注入更新（消毒式：按行过滤 marker，不依赖快照，防中断残留） ===
 console.log("[测试9] 缓存刷新")
@@ -184,6 +186,24 @@ for (let i = 0; i < 20; i++) {
   await new Promise((r) => setTimeout(r, 500))
 }
 check("日志含 test_platform_api 检查记录（异步闭环已触发）", apiLogged)
+
+// === 测试 13：平台语言检测（用户消息文本 → 明确语言指令注入） ===
+console.log("[测试13] 平台语言检测")
+await handler({ event: { type: "message.part.updated", properties: { part: { text: "你好，帮我查天气", role: "user" } } } })
+const outL1 = { system: [] }
+await hook({ sessionID: "sess-lang-1" }, outL1)
+check("中文用户消息 → 注入中文语言指令", (outL1.system[outL1.system.length - 1] || "").includes("检测为中文"))
+await handler({ event: { type: "message.part.updated", properties: { part: { text: "Hello, what's the weather", role: "user" } } } })
+const outL2 = { system: [] }
+await hook({ sessionID: "sess-lang-2" }, outL2)
+check("英文用户消息 → 注入英文语言指令", (outL2.system[outL2.system.length - 1] || "").includes("检测为英文"))
+await handler({ event: { type: "message.part.updated", properties: { part: { text: "assistant thinking in English", role: "assistant" } } } })
+const outL3 = { system: [] }
+await hook({ sessionID: "sess-lang-3" }, outL3)
+check("非用户消息不更新语言（保持英文）", (outL3.system[outL3.system.length - 1] || "").includes("检测为英文"))
+await handler({ event: { type: "message.part.updated", properties: { part: { role: "user" } } } })
+await handler({ event: { type: "message.part.updated", properties: {} } })
+check("无文本/空事件不崩", true)
 
 console.log("\n结果：通过 " + pass + " 项，失败 " + fail + " 项")
 process.exit(fail > 0 ? 1 : 0)
