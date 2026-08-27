@@ -9,7 +9,7 @@
 |---|---|---|---|
 | skill 结构（frontmatter/name/description/路由引用/体积门限） | `skill_validate.py` | `python tests\skill_validate.py <opencode配置目录>\skills` | ✓ 已建（门限可配置，见 skill_validate_config.json） |
 | skill_validate 配置机制（门限修改/忽略/持久化） | `test_skill_validate_config.py` | `python tests\test_skill_validate_config.py` | ✓ 7/7 |
-| skill-banner 插件（事件处理/任务注入/日志落盘/注册事件系统提示注入/五步检查点/API 风险告警闭环） | `test_plugin.js` | `node tests\test_plugin.js`（需 node） | ✓ 42/42（事件分支 20 + 注册事件注入 13 + 五步/API 闭环 9） |
+| skill-banner 插件（事件处理/任务注入/日志落盘/注册事件系统提示注入/五步检查点/API 风险告警闭环/待办内存传递） | `test_plugin.js` | `node tests\test_plugin.js`（需 node） | ✓ 40/40（事件分支 20 + 注册事件注入 13 + 五步/API/待办 7） |
 | 平台 API 依赖保障（opencode 二进制 hook 存在性/jsonc 通道/插件注册/注入文件就绪） | `test_platform_api.py` | `python tests\test_platform_api.py` | ✓ 11/11 |
 | 字符边界规范防线（框架文件 CRLF/BOM/编码一致性扫描 + 铁律第 9 条存在性） | `test_charset.py` | `python tests\test_charset.py` | ✓ 7/7 |
 | path_convert.py（往返转换/STATE_FILES/残留扫描白名单化/tests 与 archive 跳过转换） | `test_path_convert.py` | `python tests\test_path_convert.py` | ✓ 16/16 |

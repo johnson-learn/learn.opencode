@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, existsSync, appendFileSync, statSync, writeFileSync, unlinkSync } from "fs"
+import { readdirSync, readFileSync, existsSync, appendFileSync, statSync } from "fs"
 import { join } from "path"
 import { homedir } from "os"
 import { execSync, spawn } from "child_process"
@@ -9,9 +9,6 @@ const TRACE_FILE = join(HOME, ".config", "opencode", "skills", "default", "evolu
 const LOG_FILE = join(HOME, ".config", "opencode", "plugins", "plugin-evolution.log")
 const GATE = join(HOME, ".config", "opencode", "tools", "evolution_gate.py")
 const API_TEST = join(HOME, ".config", "opencode", "tests", "test_platform_api.py")
-// 进化待办文件（方案A 2026-08-27）：session.idle 时机器步骤结果写入本文件，
-// 下一会话 session.created 时读入并静默注入——旧会话不再被 prompt 唤醒
-const PENDING_FILE = join(HOME, ".config", "opencode", "skills", "default", "evolution_skill", "evolution_pending.json")
 
 // === 注册事件注入（E 类 100% 平台执行）：experimental.chat.system.transform ===
 // 平台在每次 LLM 请求构建系统提示时触发本 hook（LLMRequestPrep.prepare），
@@ -133,27 +130,29 @@ function log(msg) {
   try { appendFileSync(LOG_FILE, new Date().toISOString() + " " + msg + "\n") } catch {}
 }
 
+// 进化待办（方案A 2026-08-27）：session.idle 时机器步骤结果存入本模块级变量，
+// 下一会话 session.created 时读入并静默注入——旧会话不再被 prompt 唤醒。
+// 2026-08-27 由文件改为内存传递：文件读写存在间歇性竞态（test_plugin 实测偶发读不到刚写入的
+// pending 致注入失败），且 idle→created 传递发生在同一 opencode 进程内，内存变量 100% 可靠；
+// opencode 重启丢失一次进化检查可接受（机器步骤已由 gate 在 idle 时确定性执行）。
+let pendingTask = null
+
 function writePending(data) {
-  try { writeFileSync(PENDING_FILE, JSON.stringify(data)) } catch (e) {
-    log("写进化待办文件失败：" + (e && e.message ? String(e.message).slice(0, 150) : ""))
-  }
+  pendingTask = data
 }
 
 function readPending() {
-  try {
-    if (!existsSync(PENDING_FILE)) return null
-    return JSON.parse(readFileSync(PENDING_FILE, "utf8"))
-  } catch { return null }
+  return pendingTask
 }
 
 function clearPending() {
-  try { unlinkSync(PENDING_FILE) } catch {}
+  pendingTask = null
 }
 
 function buildTaskText(gateOut, fiveOut) {
-  // 进化检查任务文本（6 项强制清单 + 门禁结果 + 五步补做）
+  // 进化检查任务文本（6 项强制清单 + 门禁结果 + 五步补做 + 执行时机）
   return (
-    "【进化检查·程序化强制·不可跳过】本任务由插件在上一会话结束时生成、本会话创建时注入，必须完整执行，不得以任何理由跳过或精简。逐项执行：\n" +
+    "【进化检查·程序化强制·不可跳过】本任务由插件在上一会话结束时生成、本会话创建时注入，必须完整执行，不得以任何理由跳过或精简。**执行时机：本会话你第一次回复时，先输出进化检查结论一行（「进化检查完成：本次无固化项」或固化项清单），再回答用户问题。**逐项执行：\n" +
     (gateOut ? "【进化门禁·机器已完成】机制步骤已由 evolution_gate 脚本确定性执行，结果：\n" + gateOut.slice(0, 800) + "\n你只需补充智能部分（经验归纳/归属/edit 固化）：\n" : "") +
     (fiveOut ? "【五步检查点·程序化强制】" + fiveOut.slice(0, 600) + "\n补做任务：按五步流程逐步输出【第一步·归纳】【第二步·归属】【第三步·edit】【第四步·流水】【第五步·校验】结构化中间结果（格式见 evolution_skill SKILL.md）后再执行固化。\n" : "") +
     "1. 经验固化：回顾上一会话，按 instructions.md 智能进化协议五步流程，把可复用经验（新方法/工具/踩坑/风险规避）固化到对应 skill（自动执行）\n" +

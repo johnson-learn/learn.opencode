@@ -56,7 +56,7 @@
 
 | 注册项 | 位置 | 生效 | 说明 |
 |---|---|---|---|
-| skill-banner.js | `plugins\skill-banner.js` | E | session.created：toast 技能清单 + 注入"读 regedit.md"提醒（noReply）+ **异步平台 API 保障检查（test_platform_api 失败即 toast 风险告警）**；session.idle：注入进化检查 6 项强制清单兜底 + **五步检查点程序化强制（拉会话消息→gate --check-5step→缺步警告并入任务）**；**experimental.chat.system.transform：平台直读 4 铁律/协议文件注入系统提示（mtime 缓存，OPENCODE_DISABLE_MD_INJECT=1 禁用）**；写 evolution_trace.jsonl / plugin-evolution.log |
+| skill-banner.js | `plugins\skill-banner.js` | E | session.created：toast 技能清单 + 注入"读 regedit.md"提醒（noReply）+ **异步平台 API 保障检查（test_platform_api 失败即 toast 风险告警）** + **读上一会话进化待办（模块级内存传递，idle 写入→created 静默注入任务，含执行时机指令）**；session.idle：机器步骤（gate --check）+ 五步检查点（拉会话消息→gate --check-5step）+ **写进化待办到内存（不再向旧会话 prompt，防唤醒已结束会话）**；**experimental.chat.system.transform：平台直读 4 铁律/协议文件注入系统提示（mtime 缓存，OPENCODE_DISABLE_MD_INJECT=1 禁用）**；写 evolution_trace.jsonl / plugin-evolution.log |
 
 ## 工具层（修炼工具）
 
@@ -79,7 +79,7 @@
 |---|---|---|---|
 | skill_validate.py | `tests\skill_validate.py` | G | 每次 skill 改动后强制（铁律第 8 条）；体积门限可配置（--set-limit/--ignore/--ignore-all） |
 | test_skill_validate_config.py | `tests\test_skill_validate_config.py` | G | skill_validate 配置机制改动后强制（7/7） |
-| test_plugin.js | `tests\test_plugin.js` | G | 插件改动后强制（42/42：事件分支 20 + 注册事件注入 13 + 五步检查点/API 告警闭环 9） |
+| test_plugin.js | `tests\test_plugin.js` | G | 插件改动后强制（40/40：事件分支 20 + 注册事件注入 13 + 五步检查点/API 告警闭环/待办内存传递 7） |
 | test_charset.py | `tests\test_charset.py` | G | 字符边界规范防线：框架文件 CRLF/BOM/UTF-8 解码扫描 + 铁律第 9 条存在性（7/7）；health_check 第⑧项必跑；扫描失败立即归一修复再交付 |
 | test_platform_api.py | `tests\test_platform_api.py` | G | **平台 API 依赖保障**：opencode 二进制仍实现 experimental.chat.system.transform hook / jsonc 通道 / 插件注册 / 4 注入文件就绪（11/11）——opencode 升级或移除该实验性 API 时此测试失败告警；每次 health_check --run 必跑 |
 | test_path_convert.py | `tests\test_path_convert.py` | G | path_convert 改动后强制（16/16：往返转换/STATE_FILES/残留扫描白名单化/tests 与 archive 目录跳过转换） |
