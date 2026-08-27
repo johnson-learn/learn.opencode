@@ -1050,3 +1050,9 @@
 - 下载改独立窗口（Start-DownloadWindow 可见进度），原窗口菜单保持可用；安装窗口 -Wait 改轮询防挂起（UAC 未确认不再无限等待，5 分钟超时换下一源）
 - 函数文件新增 Start-DownloadWindow/Start-InstallWindow（主循环与模拟测试共用）；[2] 放弃文案按必选/可选动态
 - 模拟测试加 mock Start-Sleep 加速（轮询场景秒级完成）；test_setup_ps1 56/56、test_setup_sim 17/17
+
+[2026-08-28] 管理员窗口未弹出修复（用户实测）：
+- 根因：Start-InstallWindow 用 Start-Process -Command 传 msiexec 命令，内嵌引号经 -ArgumentList 传递被破坏（管理员窗口一闪而退、安装未执行、UAC 未见）
+- 修复：写临时安装脚本文件（Set-Content UTF8）+ Start-Process -File 执行——引号在文件内容里正常，零转义问题
+- 加固：主循环对提权启动加 try-catch，UAC 禁用/用户拒绝/非管理员时明确提示（以管理员运行本脚本或选 4 非静默窗口）
+- 模拟测试 17/17、test_setup_ps1 56/56 全绿

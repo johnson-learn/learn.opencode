@@ -188,8 +188,14 @@ if (-not $SkipWinget) {
               if ((Test-Path $dlFile) -and (Get-Item $dlFile).Length -ge 1MB) {
                 # 下载完成 → 启动提权安装窗口
                 Write-Host "    下载完成，已新开管理员 PowerShell 窗口执行静默安装（如弹出 UAC 请点『是』；安装期间窗口可见）..."
-                Start-InstallWindow $p $dlFile
-                $installStarted = $true
+                try {
+                  Start-InstallWindow $p $dlFile
+                  $installStarted = $true
+                } catch {
+                  Warn "无法弹出管理员窗口（可能 UAC 被禁用、用户拒绝提权或未以管理员运行）。请以管理员身份运行本脚本，或选 4 非静默窗口手动安装"
+                  $dlFile = $null
+                  $installStarted = $false
+                }
                 Start-Sleep -Seconds 10
               } else {
                 $sz = if (Test-Path $dlFile) { [math]::Round((Get-Item $dlFile).Length / 1MB, 1) } else { 0 }

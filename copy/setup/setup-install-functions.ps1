@@ -74,12 +74,16 @@ function Start-DownloadWindow([string]$url, [string]$dl) {
 }
 
 # 提权安装窗口（msi 走 msiexec /qn；exe 走 silent 参数；UAC 弹窗确认）
+# 2026-08-28 修复：-Command 引号转义经 -ArgumentList 传递易被破坏（管理员窗口一闪而退、安装未执行），
+# 改为写临时安装脚本文件 + -File 执行（引号在文件内容里正常，零转义问题）
 function Start-InstallWindow($p, [string]$dl) {
   $ext = [System.IO.Path]::GetExtension($dl).ToLower()
+  $instScript = Join-Path $env:TEMP ("opencode_install_" + ($p.id -replace "[^A-Za-z0-9]", "_") + ".ps1")
   if ($ext -eq ".msi") {
-    Start-Process powershell -Verb RunAs -ArgumentList @("-NoProfile", "-Command", "msiexec /i `"$dl`" /qn /norestart") | Out-Null
+    Set-Content -LiteralPath $instScript -Value "msiexec /i `"$dl`" /qn /norestart" -Encoding UTF8
   } else {
     $silentArgs = ($p.silent -join " ")
-    Start-Process powershell -Verb RunAs -ArgumentList @("-NoProfile", "-Command", "& `"$dl`" $silentArgs") | Out-Null
+    Set-Content -LiteralPath $instScript -Value "& `"$dl`" $silentArgs" -Encoding UTF8
   }
+  Start-Process powershell -Verb RunAs -ArgumentList @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $instScript) | Out-Null
 }
