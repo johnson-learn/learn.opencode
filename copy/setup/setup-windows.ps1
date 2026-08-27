@@ -137,6 +137,7 @@ if (-not $SkipWinget) {
       $lastSize = 0
       while (-not $done) {
         if (& $p.check) { Stop-WorkerWindow; Ok "$($p.name) 安装完成"; break }
+        Write-Host "    [主窗口] 尚未检测到 $($p.name)（命令可用或安装位置文件存在即视为安装完成）"
         Write-Host "  本窗口选项（可随时选择，无倒计时）："
         Write-Host "  请选择：回车=继续等待检测；1=换镜像源下载安装；2=放弃本次$($(if ($p.required) { '必选' } else { '可选' }))工具安装；3=放弃本次移植"
         $ans = ""
@@ -176,6 +177,7 @@ if (-not $SkipWinget) {
           }
           default {
             # 回车：推进状态机；先查工作窗口完成信号（新窗口装完提醒主窗口）
+            Write-Host "    [主窗口] 收到输入，检测安装状态中..."
             $workerDoneFile = (Join-Path $env:TEMP ("opencode_worker_cmd.txt" + ".done"))
             if (Test-Path $workerDoneFile) {
               $doneMsg = Get-Content $workerDoneFile -Raw -ErrorAction SilentlyContinue
