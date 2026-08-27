@@ -272,11 +272,14 @@ if (-not $SkipDeploy) {
   $nodeDir = ""
   try { if (Test-Cmd "node") { $nodeDir = Split-Path -Parent (Get-Command node).Source } } catch {}
 
-  # w64devkit：从 PATH 或常见盘符探测
+  # w64devkit：从现有盘符动态探测（不硬编码盘符，防无该盘符机器 Join-Path 报错）
   $toolDir = ""
-  foreach ($p in @("C:\w64devkit", "D:\w64devkit", "E:\w64devkit")) {
-    if (Test-Path (Join-Path $p "w64devkit\bin\gcc.exe")) { $toolDir = Split-Path $p; break }
-  }
+  try {
+    foreach ($d in @(Get-PSDrive -PSProvider FileSystem -ErrorAction SilentlyContinue | ForEach-Object { $_.Root })) {
+      $cand = Join-Path $d "w64devkit"
+      if (Test-Path (Join-Path $cand "w64devkit\bin\gcc.exe")) { $toolDir = $d; break }
+    }
+  } catch {}
 
   # WSL 安装目录：从注册表 BasePath 探测
   $wslDir = ""
@@ -376,17 +379,19 @@ if (-not $SkipDeploy) {
     } else { Warn "path_convert.py 不存在（scripts 目录缺失），跳过路径改写" }
   } else { Warn "已跳过路径改写（-NoPathRewrite）" }
 
-# ---------- 5.5 规则注入验证 ----------
-# ---------- 7.5 规则注入验证（语言跟随/输出规则依赖 instructions.md 生效） ----------
+# ---------- 7.5 规则注入验证（注册事件注入体系：skill-banner system.transform 直读 4 规则文件） ----------
   Step "7.5 验证全局规则注入"
-  $okJson = (Test-Path (Join-Path $ConfigDir "opencode.jsonc")) -and (Select-String -Path (Join-Path $ConfigDir "opencode.jsonc") -Pattern "instructions" -Quiet)
-  $okMd = Test-Path (Join-Path $ConfigDir "instructions.md")
-  if ($okJson -and $okMd) {
-    Ok "opencode.jsonc 已注册 instructions.md，规则文件已部署"
-  } else {
-    Warn "规则注入缺失！请确认 $ConfigDir 下有 opencode.jsonc（含 instructions 注册）与 instructions.md"
+  $okPlugin = (Test-Path (Join-Path $ConfigDir "plugins\skill-banner.js")) -and (Select-String -Path (Join-Path $ConfigDir "plugins\skill-banner.js") -Pattern "experimental.chat.system.transform" -Quiet)
+  $okFiles = $true
+  foreach ($f in @("instructions.md", "regedit.md", "docs-sync.md", "tools-manifest.md")) {
+    if (-not (Test-Path (Join-Path $ConfigDir $f))) { $okFiles = $false }
   }
-  Write-Host "  语言规则验证：重启 opencode 后，用中文提问，回答应为中文；若仍为英文，说明 instructions 未加载" -ForegroundColor Yellow
+  if ($okPlugin -and $okFiles) {
+    Ok "注册事件注入体系完整（skill-banner system.transform + 4 规则文件已部署）"
+  } else {
+    Warn "规则注入缺失！请确认 $ConfigDir 下有 plugins\skill-banner.js（注册 experimental.chat.system.transform）与 instructions/regedit/docs-sync/tools-manifest 四文件"
+  }
+  Write-Host "  语言规则验证：重启 opencode 后，用中文提问，回答应为中文；若仍为英文，说明规则未加载" -ForegroundColor Yellow
 # ---------- 8. 汇总验证 ----------
 Step "8. 验证汇总"
 
@@ -408,12 +413,31 @@ $checks = @(
   @{ name = "soffice";         ok = (Test-Soffice) },
   @{ name = "Chrome";          ok = (Test-Path "C:\Program Files\Google\Chrome\Application\chrome.exe") -or (Test-Path "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe") },
   @{ name = "skills 部署";     ok = (Test-Path (Join-Path $ConfigDir "skills\3gpp_skill\SKILL.md")) },
-  @{ name = "辅助脚本部署";    ok = (Test-Path (Join-Path $ToolDir "extract-docx.ps1")) }
+  @{ name = "辅助脚本部署";    ok = (-not [string]::IsNullOrEmpty($ToolDir)) -and (Test-Path (Join-Path $ToolDir "extract-docx.ps1")) }
 )
 foreach ($c in $checks) {
   if ($c.ok) { Ok $c.name } else { Warn "$($c.name) 缺失（见 REQUIREMENTS.md 手动补装）" }
+}
+# ---------- 8.5 必备工具缺失醒目告警（2026-08-27 其它电脑安装实测反馈：失败只打警告容易被忽略） ----------
+$requiredMissing = @()
+$optionalMissing = @()
+foreach ($c in $checks) {
+  if ($c.ok) { continue }
+  if ($c.name -in @("opencode CLI", "python", "p2t", "git")) { $requiredMissing += $c.name }
+  else { $optionalMissing += $c.name }
+}
+if ($requiredMissing.Count -gt 0) {
+  Write-Host ""
+  Write-Host "  ⚠ 必备工具缺失或安装失败（核心功能受影响）：$($requiredMissing -join '、')" -ForegroundColor Red
+  Write-Host "  影响：opencode CLI=无法运行本框架；python=全部测试与脚本不可用；p2t=公式识别不可用；git=版本控制与同步不可用" -ForegroundColor Yellow
+  Write-Host "  补救：工具装好后重跑本脚本自动补齐（已装项自动跳过）：" -ForegroundColor Yellow
+  Write-Host "    powershell.exe -NoProfile -ExecutionPolicy Bypass -File setup-windows.ps1" -ForegroundColor Yellow
+}
+if ($optionalMissing.Count -gt 0) {
+  Write-Host "  ℹ 可选工具缺失（不影响核心使用）：$($optionalMissing -join '、')（见 REQUIREMENTS.md 手动补装）" -ForegroundColor Cyan
 }
 Write-Host ""
 Write-Host "完成。请重启 opencode（或新开终端）使 skill 生效。" -ForegroundColor Cyan
 Write-Host "提示：p2t 首次使用会自动下载模型（约 1~2 GB）；网络慢时执行：" -ForegroundColor Cyan
 Write-Host '  $env:HF_ENDPOINT = "https://hf-mirror.com"' -ForegroundColor Cyan
+if ($requiredMissing.Count -gt 0) { exit 1 }

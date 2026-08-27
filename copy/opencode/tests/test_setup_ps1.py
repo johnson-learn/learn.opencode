@@ -38,6 +38,19 @@ check("调用 path_convert.py", "path_convert.py" in c)
 check("占位符交互（Ask-Dir 数据类目录）", "Ask-Dir" in c)
 check("旧机路径改写已由占位符体系取代（无旧路径硬编码改写段）", "$OLD_EDRIVE" not in c or "path_convert" in c)
 
+# 3.5 安装移植 log 反馈修复（2026-08-27 实测：无 E 盘机器 Join-Path 报错 + 验证逻辑过时）
+check("w64devkit 探测不硬编码盘符（动态枚举现有盘符）", "Get-PSDrive -PSProvider FileSystem" in c and "E:\\w64devkit" not in c)
+check("7.5 验证改为注册事件注入体系（system.transform）", "experimental.chat.system.transform" in c)
+check("7.5 不再要求 opencode.jsonc 含 instructions 注册", "含 instructions 注册" not in c)
+check("辅助脚本部署检查有 ToolDir 空值防护", "IsNullOrEmpty($ToolDir)" in c)
+
+# 3.6 必备工具缺失醒目告警（用户 2026-08-27 要求：缺失/安装失败必须醒目提醒）
+check("必备工具缺失告警块存在（8.5）", "必备工具缺失" in c)
+check("必备清单区分（opencode CLI/python/p2t/git）", all(x in c for x in ["opencode CLI", "p2t", "git"]))
+check("可选工具提示区分（不影响核心使用）", "不影响核心使用" in c)
+check("补救重跑命令提示", "setup-windows.ps1" in c and "重跑" in c)
+check("必备缺失时非零退出码（exit 1）", "exit 1" in c)
+
 # 4. PowerShell 语法可解析（AST）
 try:
     r = subprocess.run(["powershell", "-NoProfile", "-Command",

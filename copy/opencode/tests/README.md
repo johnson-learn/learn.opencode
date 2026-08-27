@@ -23,7 +23,7 @@
 | docs-sync 映射表完整性（变更类型/校验测试存在/被 regedit+AGENTS 引用） | `test_docs_sync.py` | `python tests\test_docs_sync.py` | ✓ 19/19 |
 | 框架引用审计（框架自有文件引用存在性/旧术语残留/README 双向一致） | `test_audit_references.py` | `python tests\test_audit_references.py` | ✓ 3/3 |
 | 仓库门面一致性（门面文件与框架现状对照 + STATE_FILES 残留 + 本机路径动态扫描，WSL 不可达时回退 repo_face 镜像） | `test_repo_face.py` | `python tests\test_repo_face.py` | ✓ 17/17 |
-| setup-windows.ps1（开关完整性/部署范围/path_convert 体系/AST 语法解析） | `test_setup_ps1.py` | `python tests\test_setup_ps1.py` | ✓ 21/21 |
+| setup-windows.ps1（开关完整性/部署范围/path_convert 体系/AST 语法/盘符动态探测/注册事件注入验证/ToolDir 空值防护/必备工具缺失告警） | `test_setup_ps1.py` | `python tests\test_setup_ps1.py` | ✓ 30/30 |
 
 > skill_validate 体积门限：默认 8KB，超限输出「待决清单」，用户选择（--set-limit 改门限 / --ignore 忽略指定 / --ignore-all 忽略全部）写入 `skill_validate_config.json` 持久化，后续一致性生效（当前本机门限 15KB，用户 2026-08-26 设定）。
 
