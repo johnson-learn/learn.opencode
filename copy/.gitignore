@@ -24,3 +24,5 @@ opencode/skills/update_skill/path_map.txt
 *.jsonl
 # 参考模块内的测试数据/样本（baselines 等，使用框架功能不需要）
 **/modules/*/tests/
+opencode/skills/update_skill/project_list.txt
+opencode/skills/default/evolution_skill/evolution_pending.json

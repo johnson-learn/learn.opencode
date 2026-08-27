@@ -101,6 +101,17 @@ if os.path.isfile(src):
 else:
     check("源不存在（本机未部署 Temp\\opencode）→ 跳过一致性", True)
 
+# === 用例 8：path_map 空值映射过滤（防 replace("", ph) 全局插入爆炸，2026-08-27 实测） ===
+print("[用例8] 空值映射过滤（<工具目录>= 空值不产生空 key 映射）")
+pmap2 = pc.build_portable_map()
+check("portable map 无空 key", all(real.strip() for real, _ in pmap2))
+lmap2 = pc.build_local_map()
+check("local map 无空值（to_local 不误删占位符）", all(real.strip() for real in lmap2.values()))
+txt8 = "- **自动类**（转换时自动推导）：" + ("<" + "用户目录" + ">") + "、" + ("<" + "opencode配置目录" + ">") + ""
+conv8 = pc.convert(txt8, pmap2)
+check("空值场景 convert 无全局插入（文本未爆炸膨胀）", len(conv8) <= len(txt8) * 3)
+check("convert 防御：显式空 key 对直接跳过", pc.convert("hello world", [("", "<空key>")]) == "hello world")
+
 shutil.rmtree(tmp, ignore_errors=True)
 print("\n结果：通过 %d 项，失败 %d 项" % (pass_n, fail_n))
 sys.exit(1 if fail_n else 0)

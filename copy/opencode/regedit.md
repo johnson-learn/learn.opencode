@@ -56,7 +56,7 @@
 
 | 注册项 | 位置 | 生效 | 说明 |
 |---|---|---|---|
-| skill-banner.js | `plugins\skill-banner.js` | E | session.created：toast 技能清单 + 注入"读 regedit.md"提醒（noReply）+ **异步平台 API 保障检查（test_platform_api 失败即 toast 风险告警）** + **读上一会话进化待办（模块级内存传递，idle 写入→created 静默注入任务，含执行时机指令）**；session.idle：机器步骤（gate --check）+ 五步检查点（拉会话消息→gate --check-5step）+ **写进化待办到内存（不再向旧会话 prompt，防唤醒已结束会话）**；**message.part.updated：平台语言检测（用户消息 CJK 判定→明确语言指令注入系统提示，模型无需自行识别提问语言）**；**experimental.chat.system.transform：平台直读 4 铁律/协议文件注入系统提示 + 语言指令（mtime 缓存，OPENCODE_DISABLE_MD_INJECT=1 禁用）**；写 evolution_trace.jsonl / plugin-evolution.log |
+| skill-banner.js | `plugins\skill-banner.js` | E | session.created：toast 技能清单 + 注入"读 regedit.md"提醒（noReply）+ **异步平台 API 保障检查（test_platform_api 失败即 toast 风险告警）** + **读上一会话进化待办（模块级内存传递，idle 写入→created 静默注入任务，含执行时机指令）**；session.idle：机器步骤（gate --check）+ 五步检查点（拉会话消息→gate --check-5step）+ **写进化待办到内存（不再向旧会话 prompt，防唤醒已结束会话）**；**message.part.updated：平台语言检测（用户消息 CJK 判定→明确语言指令注入系统提示，模型无需自行识别提问语言）——2026-08-27 实测缺陷：本机未触发（plugin-evolution.log 无检测记录），currentLang 恒为初始"中文"，语言指令失效，规则兜底已写入 instructions.md 裁定条款**；**experimental.chat.system.transform：平台直读 4 铁律/协议文件注入系统提示 + 语言指令（mtime 缓存，OPENCODE_DISABLE_MD_INJECT=1 禁用）**；写 evolution_trace.jsonl / plugin-evolution.log |
 
 ## 工具层（修炼工具）
 
@@ -82,10 +82,10 @@
 | test_plugin.js | `tests\test_plugin.js` | G | 插件改动后强制（46/46：事件分支 20 + 注册事件注入 14 + 五步检查点/API 告警闭环/待办内存传递 7 + 平台语言检测 5） |
 | test_charset.py | `tests\test_charset.py` | G | 字符边界规范防线：框架文件 CRLF/BOM/UTF-8 解码扫描 + 铁律第 9 条存在性（7/7）；health_check 第⑧项必跑；扫描失败立即归一修复再交付 |
 | test_platform_api.py | `tests\test_platform_api.py` | G | **平台 API 依赖保障**：opencode 二进制仍实现 experimental.chat.system.transform hook / jsonc 通道 / 插件注册 / 4 注入文件就绪（11/11）——opencode 升级或移除该实验性 API 时此测试失败告警；每次 health_check --run 必跑 |
-| test_path_convert.py | `tests\test_path_convert.py` | G | path_convert 改动后强制（16/16：往返转换/STATE_FILES/残留扫描白名单化/tests 与 archive 目录跳过转换） |
-| test_update_skill.py | `tests\test_update_skill.py` | G | 同步机制改动后强制（14/14，隔离临时仓库） |
+| test_path_convert.py | `tests\test_path_convert.py` | G | path_convert 改动后强制（20/20：往返转换/STATE_FILES/残留扫描白名单化/tests 与 archive 跳过转换/空值映射过滤） |
+| test_update_skill.py | `tests\test_update_skill.py` | G | 同步机制改动后强制（40/40，隔离临时仓库） |
 | test_regedit.py | `tests\test_regedit.py` | G | 注册表改动后强制（本表与实际文件系统一致性） |
-| test_tools_manifest.py | `tests\test_tools_manifest.py` | G | 工具总表改动后强制（分类计数吻合/待补充无重复/包可导入/表结构，21/21） |
+| test_tools_manifest.py | `tests\test_tools_manifest.py` | G | 工具总表改动后强制（分类计数吻合/待补充无重复/包可导入/表结构，19/19） |
 | test_instructions.py | `tests\test_instructions.py` | G | instructions.md 改动后强制（章节/铁律互查/引用存在/技能清单与目录一致/编写规范，31/31） |
 | test_evolution_gate.py | `tests\test_evolution_gate.py` | G | evolution_gate 改动后强制（快照/改动检测/流水兜底/自动测试触发/待补充清单/--drain 自愈补跑/max_n 限流/配套漏更检测/五步检查点，25/25） |
 | test_health_check.py | `tests\test_health_check.py` | G | health_check 改动后强制（可运行/报告结构/七检查项/无失败项/regedit 登记/--run-quick 实跑，8/8） |
