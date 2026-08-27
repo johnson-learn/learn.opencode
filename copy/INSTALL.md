@@ -6,11 +6,11 @@
 
 ```powershell
 # 克隆仓库（或解压 zip）
-git clone <仓库地址> copy
-cd copy
+git clone <仓库地址>
+进入\copy\setup
 
 # 一键安装：软件 + npm/pip 源 + WSL + 部署 skill/配置/脚本 + 路径自动改写
-powershell -NoProfile -ExecutionPolicy Bypass -File setup\setup-windows.ps1 -UseChinaMirror
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File setup-windows.ps1 -UseChinaMirror
 ```
 
 脚本各阶段说明（均可单独跳过）：
