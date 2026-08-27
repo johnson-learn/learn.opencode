@@ -18,6 +18,10 @@ while ($true) {
     Remove-Item $f -Force -ErrorAction SilentlyContinue
     if ($c -and $c.Trim()) {
       try { iex $c } catch { Write-Host ("[工作窗口] 命令执行失败：" + $_.Exception.Message) }
+      if ($LASTEXITCODE -ne $null -and $LASTEXITCODE -ne 0) {
+        Write-Host ("[工作窗口] 命令退出码 " + $LASTEXITCODE + "（可能失败：权限不足/安装包异常，见 REQUIREMENTS.md）")
+      }
+      $global:LASTEXITCODE = $null
     }
   }
   Start-Sleep -Milliseconds 400
@@ -25,8 +29,10 @@ while ($true) {
 '@
     Set-Content -LiteralPath $script:workerScript -Value $loop -Encoding UTF8
     $env:WORKER_CMD = $script:workerCmdFile
-    $script:workerProc = Start-Process powershell -ArgumentList @("-NoProfile", "-ExecutionPolicy", "Bypass", "-NoExit", "-File", $script:workerScript) -PassThru
-    Write-Host "    [工作窗口] 已弹出（后续所有工具的下载安装都在此窗口进行）"
+    # 管理员化工作窗口（2026-08-28 实测：普通权限 msiexec 装 Program Files 静默失败致"一直没反应"）：
+    # -Verb RunAs 弹 UAC 一次（请点『是』），此后 winget/curl/msiexec 全部有权限
+    $script:workerProc = Start-Process powershell -Verb RunAs -ArgumentList @("-NoProfile", "-ExecutionPolicy", "Bypass", "-NoExit", "-File", $script:workerScript) -PassThru
+    Write-Host "    [工作窗口] 已弹出（管理员权限，UAC 请点『是』；后续所有工具的下载安装都在此窗口进行）"
   }
   # 原子写命令文件（临时文件 + Move 替换，防 worker 读到半截文件）
   $tmpFile = $script:workerCmdFile + ".tmp"
