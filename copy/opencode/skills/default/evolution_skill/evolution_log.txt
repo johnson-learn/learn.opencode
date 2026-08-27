@@ -554,7 +554,7 @@
 - 成果：collaborates_with 6 skill、注册事件注入、五步检查点、instructions 回滚、平台 API 保障等 24+ 项改动全部上 GitHub；推送前配套核查（docs-sync 逐项落实/本机路径残留扫描/可移植性用例 8）全过
 
 [2026-08-27] 其它电脑首次安装 log 实测修复（安装移植log.txt）：
-- 坑1：setup-windows.ps1 第 277 行 w64devkit 探测硬编码盘符候选（<工具目录>D:/E:）→ 无 E 盘机器 Join-Path 抛 DriveNotFoundException + Test-Path 空值二次报错。修复：Get-PSDrive -PSProvider FileSystem 动态枚举现有盘符探测
+- 坑1：setup-windows.ps1 第 277 行 w64devkit 探测硬编码盘符候选（D:/E:）→ 无 E 盘机器 Join-Path 抛 DriveNotFoundException + Test-Path 空值二次报错。修复：Get-PSDrive -PSProvider FileSystem 动态枚举现有盘符探测
 - 坑2：第 7.5 节验证逻辑过时——要求 opencode.jsonc 含 instructions 注册，但框架已回滚该字段（1.18 不消费）。修复：改为注册事件注入体系验证（skill-banner.js 含 experimental.chat.system.transform + 4 规则文件存在）
 - 坑3：第 8 节汇总 ToolDir 为空时 Join-Path 报错。修复：IsNullOrEmpty 空值防护
 - 测试：test_setup_ps1 21→25/25（4 新用例防回归）；镜像 tests/repo_face/setup-windows.ps1 同步
@@ -734,13 +734,13 @@
 
 [2026-08-27] update_skill 同步 27 项（提交 3d87a79）：
 - 方案A时序修复 + 字符边界规范全套 + test_charset 新增 + path_convert tests/archive 跳过转换修复 + test_plugin 45 用例 + 14 文件归一 + 登记同步，全量测试全绿，本机用户名扫描归零
-- 踩坑【path_convert 误转测试代码】：to_portable 把测试文件里的模拟路径字符串（r"<工具目录>tmp\repo"、"<工具目录>Users\"+动态拼接）当本机特征转成占位符，破坏测试逻辑——根因 path_map.txt 的 <工具目录>=<工具目录> 映射过宽。修复：walk_convert 跳过 tests/ 与 archive/ 目录（测试一律动态推导路径，不参与占位符转换）；test_path_convert 13/13。教训：占位符转换必须排除含模拟路径字面量的目录
+- 踩坑【path_convert 误转测试代码】：to_portable 把测试文件里的模拟路径字符串（r"tmp\repo"、"Users\"+动态拼接）当本机特征转成占位符，破坏测试逻辑——根因 path_map.txt 的 = 映射过宽。修复：walk_convert 跳过 tests/ 与 archive/ 目录（测试一律动态推导路径，不参与占位符转换）；test_path_convert 13/13。教训：占位符转换必须排除含模拟路径字面量的目录
 - 连带清理：仓库 tests 文件历史误转的占位符版恢复真实字面量（test_evolution_gate/test_update_skill 等）；repo_face/INSTALL.md 保持仓库占位符版并回写本机镜像一致
 
 [2026-08-27] 第二次部署 log 分析（Johnson 机器 UNC 直连仓库跑 setup）→ 4 项修复：
 - 坑1【PS 变量大小写不敏感】：w64devkit 探测段用 $toolDir（小写）覆盖第 24 行的 $ToolDir（辅助脚本目录）→ 探测失败时辅助脚本目录被清空 → 第 8 节误报『辅助脚本部署缺失』。修复：独立变量 $w64Dir（test_setup_ps1 31/31 防回归）
 - 坑2【残留占位符扫描 900+ 误报】：scan_unknown_placeholders 宽正则 r"<[^<>\s]{2,40}>" 把 HTML 标签/泛型/文档示例词（<文件>、</html>、<int>）全当占位符。修复：白名单化（自动类+填写类全集 FILL_KEYS），test_path_convert 13→16/16
-- 坑3【填写类检测误报】：setup 第 7 节 grep 全目录把 tests/repo_face 镜像里故意保留的 <工具目录> 当残留。修复：检测排除 tests 目录
+- 坑3【填写类检测误报】：setup 第 7 节 grep 全目录把 tests/repo_face 镜像里故意保留的  当残留。修复：检测排除 tests 目录
 - 坑4（旧版已修）：log 中 Select-String 路径 pattern \U 转义报错系旧版脚本（当前 377 行已为占位符 pattern）
 - 部署成效：基础软件/npm/pip/WSL/部署全 OK；7.5 注册事件注入验证通过；8.5 必备工具告警生效
 
@@ -758,7 +758,7 @@
 - 根因：update_skill 流程 cp 后漏跑 to_portable → 含本机路径的 instructions.md 被推上 GitHub（sync_push 当时仅警告不阻断）
 - 修复1：sync_push 推送前**自动执行 to_portable**（对仓库 copy/opencode 目录，幂等）——流程漏步不再可能
 - 修复2：可移植性特征扫描由警告升级为**阻断**（git status 变更列表逐个扫描，检出 Users\用户名 特征即拒绝）
-- 修复3：instructions.md 第 33 行本机路径示例占位符化（<工具目录>Users\<用户名>）
+- 修复3：instructions.md 第 33 行本机路径示例占位符化（Users\<用户名>）
 - test_sync_push 14→16/16（自动转换 + 阻断两用例）；已推送 8a2aebd，自动 to_portable 生效 rc=0
 [2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
 - <opencode配置目录>\tools-manifest.md
@@ -998,3 +998,7 @@
 
 
 [2026-08-27] 用户指正语言指令表述：『当前用户消息检测为X』易被模型误读为仅当前提问有效，后续不适用。改为持续性约束表述：『本次会话期间，后续任何时候你的全部思考（含思考过程）、回答、输出都必须使用X，直到平台下一次更新语言指令』。test_plugin 45→46/46（持续约束断言防回归）
+
+[2026-08-27] 会话复盘（天气查询）：发现 wttr.in 零安装天气查询服务（webfetch https://wttr.in/<城市>?lang=zh 即可，无需安装）。已登记 tools-manifest.md E 类网络与同步（新增 1 项，速览计数 4→5）。来源：本会话；验证状态：本机实测北京 ✓
+
+[2026-08-27] 会话复盘（语言跟随分裂事故）：英文提问轮出现'思考中文、回答英文'。根因双层：① 机制缺陷——skill-banner.js 的 message.part.updated 语言检测本机实测未触发（plugin-evolution.log 无记录），currentLang 恒为初始'中文'，每次 system.transform 注入'用中文思考'指令；② 模型执行缺陷——未按语言跟随铁律以当条消息实际语言兜底，盲从失效指令。已固化：instructions.md 第 1 条新增裁定条款（当条消息实际语言为唯一权威，平台指令仅会话基调兜底）；regedit.md 插件层登记缺陷；evolution.md 新增规则 5；来源：本会话；验证状态：✓ 本机实测。

@@ -13,6 +13,7 @@
 2. **注册事件注入（E 类平台直读）**：opencode 1.18 系列不消费 instructions 字段（实测：解析进配置但系统提示构建只认 AGENTS.md/CLAUDE.md/CONTEXT.md）；平台注入通道=skill-banner 注册 experimental.chat.system.transform（每次请求构建系统提示时直读 instructions/regedit/docs-sync/tools-manifest 四文件 push 进 output.system，mtime 缓存，OPENCODE_DISABLE_MD_INJECT=1 禁用）
 3. **平台 API 依赖保障**：experimental.chat.system.transform 是实验性 API——test_platform_api.py（11/11）硬检查二进制 hook 实现存在性，health_check 第⑦项必跑，插件 session.created 异步检测失败即 toast 告警；失效回退预案：重启 instructions 字段（若新版实现）→ 铁律第 0 条 B 类路径
 4. **experimental API 使用前提**：opencode 配置字段"被解析≠被消费"——必须用 debug config + 二进制字符串证据 + 新对话实测三段法核实后才可依赖
+5. **语言跟随裁定规则**：语言跟随的唯一权威依据=当条消息实际语言（思考/回答/输出三者一致跟随）；平台语言指令（【语言指令·平台检测】）只是会话默认基调兜底，与当条消息冲突或平台检测失效（未触发/恒旧值）时一律以当条消息实际语言为准——实测事故：message.part.updated 语言检测本机未触发（plugin-evolution.log 无记录），指令恒为"中文"致英文提问轮"思考中文、回答英文"分裂；规则兜底写入 instructions.md 第 1 条裁定条款
 
 ### 2026-08-26
 1. **进化门禁机制（evolution_gate.py）**：机制步骤（流水兜底追加/自动测试/一致性校验/改动检测/五步检查点检测）由脚本确定性执行——插件 session.created 调 --snapshot、session.idle 调 --check、五步标记由 --check-5step 检测；模型只负责智能部分（经验归纳/归属判定/edit 固化）。解决"提示语体系无法 100% 保证必须步骤执行"的物理上限

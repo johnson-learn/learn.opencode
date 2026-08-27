@@ -12,10 +12,10 @@
 | skill-banner 插件（事件处理/任务注入/日志落盘/注册事件系统提示注入/五步检查点/API 风险告警闭环/待办内存传递/平台语言检测持续约束） | `test_plugin.js` | `node tests\test_plugin.js`（需 node） | ✓ 46/46（事件分支 20 + 注册事件注入 14 + 五步/API/待办 7 + 语言检测 5） |
 | 平台 API 依赖保障（opencode 二进制 hook 存在性/jsonc 通道/插件注册/注入文件就绪） | `test_platform_api.py` | `python tests\test_platform_api.py` | ✓ 11/11 |
 | 字符边界规范防线（框架文件 CRLF/BOM/编码一致性扫描 + 铁律第 9 条存在性） | `test_charset.py` | `python tests\test_charset.py` | ✓ 7/7 |
-| path_convert.py（往返转换/STATE_FILES/残留扫描白名单化/tests 与 archive 跳过转换） | `test_path_convert.py` | `python tests\test_path_convert.py` | ✓ 16/16 |
+| path_convert.py（往返转换/STATE_FILES/残留扫描白名单化/tests 与 archive 跳过转换/空值映射过滤） | `test_path_convert.py` | `python tests\test_path_convert.py` | ✓ 20/20 |
 | update_skill 双向同步（调用解析/commit 摘要/状态保护/对称回退判定/五步流程要素/模拟远端操作/可移植性校验/弹窗确认分支） | `test_update_skill.py` | `python tests\test_update_skill.py`（需 Windows git，隔离临时仓库） | ✓ 40/40 |
-| 注册表一致性（regedit.md ↔ 文件系统 ↔ AGENTS.md 互查） | `test_regedit.py` | `python tests\test_regedit.py` | ✓ 47/47 |
-| tools-manifest 完整性（分类计数吻合/待补充无重复/包可导入/表结构） | `test_tools_manifest.py` | `python tests\test_tools_manifest.py` | ✓ 21/21 |
+| 注册表一致性（regedit.md ↔ 文件系统 ↔ AGENTS.md 互查） | `test_regedit.py` | `python tests\test_regedit.py` | ✓ 48/48 |
+| tools-manifest 完整性（分类计数吻合/待补充无重复/包可导入/表结构） | `test_tools_manifest.py` | `python tests\test_tools_manifest.py` | ✓ 19/19 |
 | instructions.md 规则一致性（章节/铁律互查/引用存在/技能清单与目录一致/编写规范） | `test_instructions.py` | `python tests\test_instructions.py` | ✓ 31/31 |
 | evolution 一致性（evolution_log.txt 近 5 条「」声明落入规则文件/evolution.md 规则文件定位与弹窗确认流程抽查） | `test_evolution_consistency.py` | `python tests\test_evolution_consistency.py` | ✓ 15/15 |
 | evolution 门禁（快照/改动检测/流水兜底追加/自动测试触发/待补充清单/--drain 自愈补跑/max_n 限流/配套漏更检测/五步检查点） | `test_evolution_gate.py` | `python tests\test_evolution_gate.py` | ✓ 25/25 |

@@ -60,7 +60,8 @@ def build_local_map():
         "<WSL用户映射>": "/mnt/c/Users/" + os.path.basename(h.rstrip("\\")),
         "<Python脚本目录>": h + "AppData\\Roaming\\Python\\Python312\\Scripts",
     }
-    m.update(load_path_map())  # 填写类（<项目目录>等）
+    # 填写类（<项目目录>等）；过滤空值映射（如 <工具目录>= 未填写），防止 to_local 误删占位符
+    m.update({ph: real for ph, real in load_path_map().items() if ph.strip() and real.strip()})
     return m
 
 # 本机真实路径 -> 占位符（to_portable 用）；必须含所有本机已知路径
@@ -77,15 +78,20 @@ def build_portable_map():
         (h + "AppData\\Roaming\\Python\\Python312\\Scripts", "<Python脚本目录>"),
         (h.rstrip("\\"), "<用户目录>"),
     ]
-    # 填写类反向
+    # 填写类反向；过滤空值映射（path_map 中 <工具目录>= 等未填写项），
+    # 否则生成 ("", ph) 会让 convert 的 replace("", ph) 在文本中每字符间插入占位符（2026-08-27 实测爆炸）
     for ph, real in pm.items():
-        m.append((real, ph))
+        if ph.strip() and real.strip():
+            m.append((real, ph))
     # 排序：长路径优先
     m.sort(key=lambda x: len(x[0]), reverse=True)
     return m
 
 def convert(text, pairs):
     for real, ph in pairs:
+        # 防御：空 key 映射（path_map 空值填写）直接跳过，防 replace("", ph) 全局插入
+        if not real or not ph:
+            continue
         text = text.replace(real, ph)
         # URL 风格（正斜杠，如 file:///<工具目录>Users/x）也替换
         real_slash = real.replace("\\", "/")
