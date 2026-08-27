@@ -1061,3 +1061,5 @@
 - 状态机所有出口统一 Close-SpawnedWindows：安装成功 break 前 / [2] 放弃 / [3] 退出前 / foreach 全部工具处理完兜底
 - 保证：进入下一个工具、跳过剩余环节、退出移植、安装完成继续部署——任何场景历史子窗口（下载/安装/非静默）全部关闭，主 setup 窗口保留
 - test_setup_ps1 56→57/57（出口清理断言：Close-SpawnedWindows 出现 ≥4 处）
+
+[2026-08-28] 用户实测报错修复：Start-Process -ArgumentList 含 null 报错（根因=Start-ChildWindow 用自动变量 \ 作参数名导致绑定混乱）→ 参数改名 \ + 启动前过滤 null 元素防御；模拟测试 20/20 全绿
