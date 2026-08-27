@@ -170,6 +170,7 @@ if (-not $SkipWinget) {
           }
           default {
             # 回车：驱动"下载 → 安装 → 检测"流水线推进一步
+            try {
             if ($mirrorIdx -lt 0) {
               $mirrorIdx = 0
             }
@@ -206,6 +207,12 @@ if (-not $SkipWinget) {
             } else {
               Write-Host "    安装窗口运行中，等待检测...（UAC 未确认或安装失败时可随时选 1 换源 / 2 放弃 / 3 退出）"
               Start-Sleep -Seconds 10
+            }
+            } catch {
+              Warn "窗口启动失败：$($_.Exception.Message)。请确认本机可从本地目录启动 PowerShell 窗口；可改选 4 非静默窗口或 2 放弃"
+              $dlFile = $null
+              $installStarted = $false
+              Start-Sleep -Seconds 5
             }
           }
         }
