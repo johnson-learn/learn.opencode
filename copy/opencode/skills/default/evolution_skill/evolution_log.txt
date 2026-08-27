@@ -81,3 +81,467 @@
 [2026-08-26] 会话自动门禁（gate-test-1787756118） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
 - <opencode配置目录>\skills\_gate_test_skill\SKILL.md
 
+[2026-08-26] 会话自动门禁（gate-test-1787757372） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787812301） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787812330） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787812744） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787813283） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 优化方案执行（docx 方案 8 条逐条弹窗确认） → 执行 7 条跳过 1 条（CI）：①opencode.jsonc 注入策略（instructions/regedit/docs-sync/tools-manifest 进 A 类，配套 regedit 生效方式登记+docs-sync 配置变更行）；②gate 配套漏更检测（classify_change+check_docs_sync 按 docs-sync 映射反向校验，19/19）；③health_check.py 一键健康检查（5/5，首跑抓到 13 条骨架待归纳）；④evolution_skill 五步检查点（每步结构化中间结果）；⑤sync_push.py 推送门禁脚本化（无弹窗确认标记直接拒绝 commit/push，7/7）+ 同步预览 diff 摘要；⑥4 业务 skill 触发场景+负向边界；⑦CI 跳过（用户决定）；⑧collaborates_with 协作字段 6 skill。踩坑：插入脚本 c[:end_of_title+1] 截断 4 个 SKILL.md 至 762 字节——已从仓库恢复并修正为 head+block+rest 保留原内容；教训：批量文本插入脚本必须先备份/可恢复源（仓库即是备份），且插入逻辑必须保留原文
+
+[2026-08-27] 会话自动门禁（gate-test-1787815186） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815190） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815194） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815198） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815202） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815206） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815209） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815213） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815217） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815221） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815225） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815229） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815233） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815237） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815241） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815245） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815248） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815252） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815256） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815260） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815264） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815268） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815272） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815276） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815280） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815284） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815288） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815292） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815321） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815326） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815330） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815334） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815338） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815342） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815346） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815350） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815354） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815358） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815362） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815366） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815370） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815374） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815378） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815381） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815385） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815389） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815393） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815397） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815401） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815405） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815409） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815413） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815417） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815421） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815425） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815429） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815433） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815437） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815441） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815445） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815449） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815453） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815457） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815461） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815465） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815469） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815473） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815477） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815488） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815492） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815496） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815500） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815504） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815508） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815513） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815517） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815520） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815524） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815528） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815532） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815536） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815540） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815543） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815547） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815551） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815555） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815559） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815563） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815567） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815570） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815574） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815578） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815582） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815587） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815623） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815627） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815631） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815635） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815639） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815643） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815646） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815650） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815654） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815658） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815661） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815665） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815669） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815673） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815677） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815681） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815684） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815688） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815692） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815696） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815700） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815704） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815708） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815712） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815716） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815720） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815723） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815727） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815731） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815735） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787815739） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787816008） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787816020） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787816048） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+
+[2026-08-27] opencode 平台注入排查（1.18.18）：
+- 实测系统提示仅含 2 个 AGENTS.md（全局+项目），instructions 字段未注入
+- opencode debug config 显示 instructions 字段被解析进配置；二进制代码证实 1.18 系统提示构建只认 AGENTS.md/CLAUDE.md/CONTEXT.md，无 instructions 消费逻辑
+- npm dist-tags：latest=1.18.23（1.18 线 2025-06 停产）；instructions 字段是 0.x dev/beta 线（tui-v2 重写）功能
+- 1.18.18 有插件事件 experimental.chat.system.transform（平台每次请求构建系统提示时触发，output.system 数组可 push）——本机版本注入系统提示的唯一通道
+- opencode run 本机 Bun segfault（Windows x64 baseline），不可用于无头实测
+- 坑：PowerShell 直调 opencode/npm 报 SecurityError（执行策略禁 .ps1），需 cmd /c 包装
+- 待办：regedit.md 注入策略（A 类 100% 注入）前提已证伪，待方案拍板后修正（注册事件注入 E 类 / 回退 B/F/G/H）
+[2026-08-27] 会话自动门禁（sess-main-001） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\regedit.md
+
+
+[2026-08-27] 注册事件注入方案实施（用户拍板）：
+- skill-banner.js 新增 experimental.chat.system.transform hook：mtime+size 缓存直读 4 铁律/协议文件（instructions/regedit/docs-sync/tools-manifest）push 进 output.system；环境变量 OPENCODE_DISABLE_MD_INJECT=1 禁用；异常 output 结构容错
+- test_plugin.js 补 13 用例（hook 存在/4 文件注入/缓存刷新/开关禁用/异常容错）→ 33/33 全绿
+- regedit.md：铁律层 4 文件生效方式 A（原B/F/G/H）→ E（原 B/F/G/H）；注入策略注释实测修正；插件层/测试层登记同步；test_regedit 48/48
+- 配套：instructions.md 机制缺陷教训补可靠通道清单；tests\README.md test_plugin 33/33；tools-manifest.md G 类登记 opencode debug/npm dist-tags（test_tools_manifest 19/19）
+- 待验证：重启 opencode 后新对话实测系统提示是否含 4 文件内容
+
+[2026-08-27] instructions 字段回滚（用户指令：架构清晰、无残留）：
+- opencode.jsonc 移除 instructions 字段（现仅保留 \）
+- test_inject_verify.py 删除；regedit.md 测试层与 tests\\README.md 登记行同步删除
+- regedit.md 注入策略注释、instructions.md 机制缺陷教训、docs-sync.md 配置变更行措辞同步更新
+- 注入架构收敛为单一通道：插件注册事件 experimental.chat.system.transform（E 类）；AGENTS.md A 类原生；B/F/G/H 双保险保留
+[2026-08-27] 会话自动门禁（sess-main-001） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+
+[2026-08-27] 用户三点意见处理（第1项落地+第2项待办+第3项分析）：
+- 第1项：新建 test_platform_api.py（11/11）硬检查 experimental.chat.system.transform 二进制实现存在性/jsonc 通道/插件注册/4 注入文件就绪；health_check.py 加第⑦检查项（每次健康检查必跑）；regedit+instructions 注入策略补回退预案（①重启 instructions 字段（若新版实现）②铁律第0条 B 类路径）；首次跑抓出 exe 定位到 opencode.CMD 包装脚本致二进制检查误报的坑（修复：npm 布局枚举优先+解析 .CMD 内 %~dp0 相对路径）
+- 第2项：五步检查点程序化落地仍未实施（gate 检查五步标记方案待用户确认）
+- 第3项：注入内容位于 system 数组末尾，AGENTS.md 在前符合铁律优先级设计；稀释风险由铁律第0条强制 read 双保险兜底，不改代码
+[2026-08-27] 会话自动门禁（gate-test-1787820077） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787820085） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787820093） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787820100） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787820121） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787820162） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+
+[2026-08-27] 未完成项落地+风险闭环（用户指令：未落地的落地、有风险的解决）：
+- 五步检查点程序化落地（v10/v11 未完成的高优先级项）：evolution_gate.py 新增 --check-5step（stdin 读会话消息，固化响应缺【第X步·XX】标记即检出）；skill-banner.js session.idle 拉取会话消息→gate 检测→缺步警告并入进化检查任务；evolution_skill SKILL.md 与 instructions.md 五步流程同步强制标记格式
+- 风险闭环：skill-banner.js session.created 异步跑 test_platform_api，opencode 升级移除实验性 hook 后首会话即 toast 告警
+- 测试：test_evolution_gate 19→25/25（五步检测 6 用例）、test_plugin 33→42/42（五步/API 闭环 9 用例）、regedit/instructions/tests-README 同步登记
+- 踩坑：gate --check-5step 首次用 sys.stdin.read() 在 Windows 下与 subprocess utf-8 input 编码不配对（GBK 解码致『已固化』检测失败）→ 改 sys.stdin.buffer.read().decode('utf-8')；execSync rc=0 时也返回 stdout 致『齐全』信息误入任务文本 → 改 rc=0 返回空串
+[2026-08-27] 会话自动门禁（gate-test-1787820297） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787820333） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+

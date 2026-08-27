@@ -1,6 +1,8 @@
 ---
 name: update_skill
 description: 技能双向同步更新技能（全局 skill，仅显式触发，不靠关键词自动调用）。Use ONLY when 用户消息显式包含 "update_skill" 字样（"update_skill：" 带冒号+片段序列、或裸 "update_skill" 无冒号、或 "update_skill&" 与其它技能名并列）。加载后执行任务：消息按中文冒号（英文冒号同）分割为片段序列，从左到右依次执行——片段四分类：① update_skill 标记片段=执行双向同步（功能1：本机全局 opencode 配置的新改动差异合入仓库并 commit/push；功能2：检查远端新提交并反向合入本机）；② 路径片段=记录目标目录；③ 约束片段（含"别/不要/禁止/只"等词，如"别反复修改"）=约束其后双向更新为零修改模式（噪音恢复不提交、无实质进化不 push）；④ 问题片段=按全局回答规则回答。多标记意义：首轮更新吸收远端→中间问题基于最新状态回答→末轮更新对齐收尾。裸 "update_skill"=仅双向更新。普通消息仅提及同步/git 但无 "update_skill" 字样时，不调用本技能。
+collaborates_with:
+  - evolution_skill
 ---
 # update_skill —— 技能同步更新技能
 
@@ -134,6 +136,13 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 2. **更新方式**：直接在仓库工作树编辑门面文件，随本次 commit/push 一并上 GitHub（弹窗确认时展示门面变更清单）
 3. **无权限机器不受影响**：门面维护只在有权限机器的 update_skill 流程内；无权限机器 `git pull` 即得更新后的门面与 skill，不需执行 update_skill 修改
 4. **程序化核查**：`python <opencode配置目录>\tests\test_repo_face.py`（门面一致性测试：README 技能清单 vs skills 目录、INSTALL 关键步骤存在、REQUIREMENTS 权威引用）——挂入第三步自测
+
+#### （第五步·推送分支）同步预览 + 弹窗确认脚本化（优化 5）
+
+1. **同步预览（弹窗前自动生成）**：`git status --short` + `git diff --stat` + `git diff --numstat` 生成 diff 摘要（改了哪些文件 / 增删行数 / 关键改动点）——用户在弹窗确认时有依据可看
+2. **弹窗确认**（question 工具弹窗，禁止文字代替）：用户选"推送" → 模型写确认标记文件 `<opencode配置目录>\skills\update_skill\.push_confirm.json`（`{"choice":"push","user":"user","time":"<ISO时间>"}`）
+3. **推送脚本化（不依赖 LLM 自觉）**：`python <opencode配置目录>\tools\sync_push.py <确认标记文件> <git仓库目录> <commit消息文件>`——脚本强制校验确认标记（无标记/非 push 选择 → **直接拒绝** commit/push）；推送成功后自动清除标记（一次确认只允许一次推送，再次推送需重新弹窗）
+4. commit 消息：先写 `/tmp/cmsg.txt`（Python subprocess 写入，防 shell 层中文丢失），再交 sync_push.py 执行
 
 #### （第五步·推送分支）同步三环节（差异合入模式，禁止简单删除替换）
 

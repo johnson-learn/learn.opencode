@@ -9,14 +9,17 @@
 |---|---|---|---|
 | skill 结构（frontmatter/name/description/路由引用/体积门限） | `skill_validate.py` | `python tests\skill_validate.py <opencode配置目录>\skills` | ✓ 已建（门限可配置，见 skill_validate_config.json） |
 | skill_validate 配置机制（门限修改/忽略/持久化） | `test_skill_validate_config.py` | `python tests\test_skill_validate_config.py` | ✓ 7/7 |
-| skill-banner 插件（事件处理/任务注入/日志落盘） | `test_plugin.js` | `node tests\test_plugin.js`（需 node） | ✓ 20/20 |
+| skill-banner 插件（事件处理/任务注入/日志落盘/注册事件系统提示注入/五步检查点/API 风险告警闭环） | `test_plugin.js` | `node tests\test_plugin.js`（需 node） | ✓ 42/42（事件分支 20 + 注册事件注入 13 + 五步/API 闭环 9） |
+| 平台 API 依赖保障（opencode 二进制 hook 存在性/jsonc 通道/插件注册/注入文件就绪） | `test_platform_api.py` | `python tests\test_platform_api.py` | ✓ 11/11 |
 | path_convert.py（往返转换/STATE_FILES/残留扫描） | `test_path_convert.py` | `python tests\test_path_convert.py` | ✓ 9/9 |
 | update_skill 双向同步（调用解析/commit 摘要/状态保护/对称回退判定/五步流程要素/模拟远端操作/可移植性校验/弹窗确认分支） | `test_update_skill.py` | `python tests\test_update_skill.py`（需 Windows git，隔离临时仓库） | ✓ 40/40 |
 | 注册表一致性（regedit.md ↔ 文件系统 ↔ AGENTS.md 互查） | `test_regedit.py` | `python tests\test_regedit.py` | ✓ 47/47 |
 | tools-manifest 完整性（分类计数吻合/待补充无重复/包可导入/表结构） | `test_tools_manifest.py` | `python tests\test_tools_manifest.py` | ✓ 21/21 |
 | instructions.md 规则一致性（章节/铁律互查/引用存在/技能清单与目录一致/编写规范） | `test_instructions.py` | `python tests\test_instructions.py` | ✓ 31/31 |
 | evolution 一致性（evolution_log.txt 近 5 条「」声明落入规则文件/evolution.md 规则文件定位与弹窗确认流程抽查） | `test_evolution_consistency.py` | `python tests\test_evolution_consistency.py` | ✓ 15/15 |
-| evolution 门禁（快照/改动检测/流水兜底追加/自动测试触发/待补充清单/--drain 自愈补跑/max_n 限流） | `test_evolution_gate.py` | `python tests\test_evolution_gate.py` | ✓ 14/14 |
+| evolution 门禁（快照/改动检测/流水兜底追加/自动测试触发/待补充清单/--drain 自愈补跑/max_n 限流/配套漏更检测/五步检查点） | `test_evolution_gate.py` | `python tests\test_evolution_gate.py` | ✓ 25/25 |
+| 健康检查（可运行/报告结构/七检查项/无失败项/regedit 登记/--run-quick 实跑） | `test_health_check.py` | `python tests\test_health_check.py` | ✓ 8/8 |
+| sync_push 推送门禁（无标记拒绝/非push拒绝/有效推送/标记清除/重推需重确认） | `test_sync_push.py` | `python tests\test_sync_push.py` | ✓ 7/7 |
 | docs-sync 映射表完整性（变更类型/校验测试存在/被 regedit+AGENTS 引用） | `test_docs_sync.py` | `python tests\test_docs_sync.py` | ✓ 19/19 |
 | 框架引用审计（框架自有文件引用存在性/旧术语残留/README 双向一致） | `test_audit_references.py` | `python tests\test_audit_references.py` | ✓ 3/3 |
 | 仓库门面一致性（门面文件与框架现状对照，WSL 不可达时回退 repo_face 镜像） | `test_repo_face.py` | `python tests\test_repo_face.py` | ✓ 14/14 |

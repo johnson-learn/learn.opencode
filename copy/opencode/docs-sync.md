@@ -2,7 +2,7 @@
 
 > 本表是"框架变更后配套文档更新"的唯一权威清单（用户 2026-08-26 定）。
 > 使用方式：任何变更发生后，按「变更类型」行查「必须同步更新的文件」列逐项更新，并跑「校验方式」列测试。
-> 登记：regedit.md 数据层；铁律第 8 条引用；evolution_gate 改动检测后按本表自动跑校验测试。
+> 登记：regedit.md 铁律层（A 类系统注入）；铁律第 8 条引用；evolution_gate 的 --check 按本表程序化反向校验（改了 A 但应同步的 B 未改 → 输出漏更警告）。
 > 本表自身变更 → 更新 regedit.md 登记说明并跑 test_regedit.py。
 
 | 变更类型 | 必须同步更新的文件 | 校验方式（程序化） |
@@ -15,4 +15,5 @@
 | **目录/结构变更（文件移动等）** | 全部引用该路径的文件 + regedit.md 位置列 | test_regedit（文件存在反查）、test_instructions |
 | **数据/状态文件变更** | regedit.md 数据层登记说明 | test_regedit |
 | **插件变更** | regedit.md 插件层、tests\README.md | test_plugin、test_regedit |
+| **opencode.jsonc 配置变更**（配置项增减等） | regedit.md 铁律层生效方式登记更新 + 重启 opencode 验证变更生效 | test_regedit |
 | **仓库门面文档变更**（根 README、copy\README/INSTALL/REQUIREMENTS） | 仓库工作树直接编辑（不在本机全局目录）；update_skill 第五步「门面文档同步」环节核查+推送 | test_repo_face |

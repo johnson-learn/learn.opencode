@@ -1,9 +1,27 @@
 ﻿---
 name: program_skill
 description: 编程开发综合技能（全局 skill，仅显式触发，不靠关键词自动调用）。Use ONLY when 用户消息显式包含 "program_skill：" 或 "program_skill:"，或以 "program_skill&"、"program_skill " 与其他技能名并列后跟冒号——冒号后为用户任务。加载后执行任务：C/C++/Python/Shell/Java/JavaScript/TypeScript/Go/Rust 等编程语言开发、前端开发（HTML/CSS/React/Vue）、后端开发（数据库/API/框架）、构建部署、代码质量与重构、编程学习等。默认在 WSL Linux 环境（Ubuntu 22.04）编译运行。普通消息仅提及编程/代码但无 "program_skill：" 前缀时，不调用本技能。
+collaborates_with:
+  - files_skill
+  - find_skill
 ---
 
 # program_skill —— 编程开发综合技能
+
+## 典型触发场景
+
+- "program_skill：写一个 C 程序并编译运行"
+- "program_skill：Python 脚本处理 CSV 并画图"
+- "program_skill：这个段错误怎么排查（gdb 调试）"
+- "帮我写个 Bash 脚本批量重命名（隐式匹配可推荐本技能）"
+- "program_skill：CMake 工程构建流程讲解"
+
+## 不处理的边界
+
+- 不做文档/PDF/图片处理（推荐 files_skill）
+- 不做 3GPP 协议分析（推荐 3gpp_skill）
+- 默认 WSL Linux 环境编译运行；Windows 原生需求须用户明确
+
 
 ## 🛠 工具依赖清单（移植到新机器时先逐项检查）
 

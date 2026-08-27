@@ -1,8 +1,27 @@
 ﻿---
 name: files_skill
 description: 综合文件识别与文档处理统一接口技能（全局 skill，仅显式触发，不靠关键词自动调用）。Use ONLY when 用户消息显式包含 "files_skill：" 或 "files_skill:"，或以 "files_skill&"、"files_skill " 与其他技能名并列后跟冒号——冒号后为用户任务。加载后执行任务：识别、读取、提取或处理任何文件资料（PDF、Word/docx、PPT/pptx、Excel/xlsx、图片、Markdown、EPUB、HWP 等），包括图片识别（OCR）、公式识别（转 LaTeX）、文字提取、流程图识别（转 Mermaid）、表格提取、文档转换、翻译、公文写作等。普通消息仅提及 PDF/Word 等关键词但无 "files_skill：" 前缀时，不调用本技能。
+collaborates_with:
+  - 3gpp_skill
+  - find_skill
+  - program_skill
 ---
 # files_skill —— 统一文件识别接口
+
+## 典型触发场景
+
+- "files_skill：把这份扫描 PDF 转成可搜索 PDF"
+- "files_skill：识别图片中的公式并转 LaTeX"
+- "files_skill：提取这个 docx 的文本和图片式公式"
+- "把这个 PDF 翻译成中文并保留排版（隐式匹配可推荐本技能）"
+- "files_skill：批量把 doc/docx 转成 PDF"
+
+## 不处理的边界
+
+- 不处理 3GPP 标准内容的语义分析（推荐 3gpp_skill）
+- 不写业务代码（推荐 program_skill）
+- 付费 API 子技能（Nutrient/LandingAI/translate-image 等）须先经用户确认
+
 
 ## 通用输出规则（全部任务遵守）
 

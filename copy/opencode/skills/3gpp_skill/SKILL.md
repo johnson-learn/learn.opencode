@@ -1,8 +1,26 @@
 ﻿---
 name: 3gpp_skill
 description: 3GPP 移动通信标准专家技能（全局 skill，仅显式触发，不靠关键词自动调用）。Use ONLY when 用户消息显式包含 "3gpp_skill：" 或 "3gpp_skill:"，或以 "3gpp_skill&"、"3gpp_skill " 与其他技能名并列后跟冒号——冒号后为用户任务。加载后执行任务：回答 3GPP 标准问题（5G NR / LTE / 4G / 6G / 3G / 2G）、协议讲解（PHY/MAC/RLC/PDCP/RRC/NAS 各层）、规范编号与访问（TS/TR/FTP 目录）、参数配置链讲解、端到端流程串联、通信领域文献综述等。铁律：一切以 3GPP 官网（www.3gpp.org）及 FTP 存档文档为准，其它资料仅可参考。普通消息仅提及 5G/LTE/NR 等关键词但无 "3gpp_skill：" 前缀时，不调用本技能。
+collaborates_with:
+  - files_skill
+  - find_skill
 ---
 # 3gpp_skill —— 3GPP 移动通信标准专家接口
+
+## 典型触发场景
+
+- "3gpp_skill：查 TS 38.211 的 PDSCH 资源映射"
+- "3gpp_skill：解释 5G NR 的随机接入流程（RACH）"
+- "3gpp_skill：LTE 与 NR 的 PDCP 层功能对比"
+- "分析这个 5G 基站 MAC 层调度逻辑（隐式匹配可推荐本技能）"
+- "TS 38.331 RRC 信令参数配置链讲解"
+
+## 不处理的边界
+
+- 不处理非 3GPP 私有协议（厂商私有实现）
+- 不做代码实现（推荐 program_skill）
+- 不处理 3GPP 之外的标准化组织（IEEE/ITU 等）——除非与 3GPP 直接相关
+
 
 ## ⚠ 权威源声明（最高优先级）
 

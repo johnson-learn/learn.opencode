@@ -11,7 +11,7 @@
 - **主机制：全局 AGENTS.md 铁律注入**。`~\.config\opencode\AGENTS.md` 会被 opencode 作为全局规则加载进**每个会话的系统提示**（已验证：会话上下文可见其全文）。铁律第 2 条即"每次响应后强制复盘进化"，执行点=**每次回答结束前自查**（踩坑/更优路径/新工具/机制缺陷/违反协议 → 加载 `evolution_skill`（进化执行器）按五步流程固化并在回答末尾附"进化：已固化…/无新固化"）。这是唯一每次都必然对模型可见的机制。
 - **兜底机制：skill-banner 插件 `session.idle`（会话结束）注入「进化检查任务」**（client.session.prompt 程序化发送）——弥补模型在会话中被中断、未及固化的情况；但它发生在会话结束时，**不能作为主执行点**（教训：把执行点绑在会话外=模型上下文不可见=全靠用户推动）
 - **注入任务为强制清单，不可跳过、不可精简**：① 经验固化（五步流程）；② 工具登记（本会话用到的任何新工具/脚本/库必须登记 tools-manifest.md）；③ 总表同步（skill 依赖或本机配置变更）；④ 校验自测（skill_validate.py + 行为自测）；⑤ 合并/拆分/迁移只出建议；⑥ 完成后回复固化项清单或"无固化项"
-- **机制缺陷教训（2026-08-26 实测）**：协议写在不加载进上下文的文件（instructions.md 的 opencode.jsonc instructions 字段引用无效）= 模型看不见 = 框架从不执行。任何规则若要模型执行，必须先确认它在每次会话的系统提示中可见（唯一可靠位置：全局/项目 AGENTS.md；其次 skill description 进入 skill 列表）
+- **机制缺陷教训（2026-08-26 实测 + 2026-08-27 修正）**：协议写在不加载进上下文的文件（instructions.md 的 opencode.jsonc instructions 字段引用无效）= 模型看不见 = 框架从不执行。任何规则若要模型执行，必须先确认它在每次会话的系统提示中可见（可靠通道：① 全局/项目 AGENTS.md（A 类原生注入）；② skill-banner 插件 `experimental.chat.system.transform` 注册事件注入（E 类，2026-08-27 实施：平台每次请求构建系统提示时直读 instructions/regedit/docs-sync/tools-manifest 四文件 push 进 output.system）；③ skill description 进入 skill 列表）。**版本事实与回退预案**：opencode.jsonc instructions 字段在 1.18 系列（1.18.18 实测）解析但不消费（1.18 系统提示构建只认 AGENTS.md/CLAUDE.md/CONTEXT.md），是 0.x dev/beta 线功能——该字段已回滚移除（2026-08-27 用户指令），系统提示注入由注册事件承担；experimental.chat.system.transform 是实验性 API，其可用性由 test_platform_api.py 持续检测，失效时回退：① 重启 instructions 字段（若新版已实现）② 铁律第 0 条强制 read 的 B 类路径
 - 每次任务回答过程中如遇踩坑/新发现，可即时记录（额外触发点）
 - 轨迹记录：插件同时把会话轨迹追加到 `~\.config\opencode\skills\default\evolution_skill\evolution_trace.jsonl`（供合并/拆分分析用）
 
@@ -35,11 +35,12 @@
   - 判断标准：换一台干净机器，经验能否照做？不能则重写为通用表述
 
 ### 归纳与固化流程（五步 + 每步校验自测，缺一不可）
-1. **归纳**：从本次会话提取可复用的新经验，用一两句话精确表述（按可移植性要求通用化）
-2. **归属**：判断更新到哪个 skill 的哪个章节（工具依赖清单/处理流程/铁律/环境注意/路由表/访问技巧）或 instructions.md
-3. **更新**：用 edit 工具增补/修订对应章节，保持既有结构，不重写全文；新经验标注来源与验证状态
-4. **记录**：追加到 `~\.config\opencode\skills\default\evolution_skill\evolution_log.txt`（日期 + 来源 + 更新点，只增不改）；规则/机制类经验同时提炼写入 `~\.config\opencode\skills\default\evolution_skill\evolution.md`（进化规则，更新前须弹窗确认）
-5. **校验与自测（每条进化强制，不得跳过）**：
+> **五步检查点程序化强制（2026-08-27 起）**：执行固化（响应含"已固化"声明）时必须按序输出五个标记行，每行跟该步结构化中间结果；evolution_gate --check-5step 由插件 session.idle 自动检测，缺步即注入补做警告。只声明"无新固化/无固化项"时不需要五步。
+1. **归纳**【第一步·归纳】：从本次会话提取可复用的新经验，用一两句话精确表述（按可移植性要求通用化）
+2. **归属**【第二步·归属】：判断更新到哪个 skill 的哪个章节（工具依赖清单/处理流程/铁律/环境注意/路由表/访问技巧）或 instructions.md
+3. **更新**【第三步·edit】：用 edit 工具增补/修订对应章节，保持既有结构，不重写全文；新经验标注来源与验证状态
+4. **记录**【第四步·流水】：追加到 `~\.config\opencode\skills\default\evolution_skill\evolution_log.txt`（日期 + 来源 + 更新点，只增不改）；规则/机制类经验同时提炼写入 `~\.config\opencode\skills\default\evolution_skill\evolution.md`（进化规则，更新前须弹窗确认）
+5. **校验与自测（每条进化强制，不得跳过）**【第五步·校验】：
    - **内容正确性核查**：命令/路径/参数是否准确可执行；与既有条目有无矛盾重复；来源标注与验证状态标注是否齐全；通用性达标（无硬编码本机路径）
    - **结构化自测**：跑 `python <项目目录>\temp\skill_validate.py <opencode配置目录>\skills`——frontmatter 合法、name 匹配目录、description ≤1024、路由表引用路径存在
    - **行为自测（涉及可执行内容时）**：新增/修改的命令、脚本、流程**实际执行一次验证**（如新增 p2t 参数用法→实际跑一遍）；无法实测的标注"未实测，待验证"并列入 evolution_log.txt 待验证清单

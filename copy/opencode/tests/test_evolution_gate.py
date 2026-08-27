@@ -72,8 +72,45 @@ check("超限快照保留待下次 drain", len(snaps_left) == 3)
 r = run("--drain", "10")
 check("提高 max_n 后全部补跑清理", "残留快照" in r.stdout)
 
-# 清理临时 skill + 从 log 移除测试追加？（log 只增不改——测试追加的骨架留在 log 是污染，但"只增不改"禁删。处理：测试使用独立 log？gate 的 LOG 固定。为不污染，测试后把刚追加的骨架条目标记为测试条目？不能删。折中：保留（它记录了 gate 机制验证事实，无害））
+# 7. 配套漏更检测（docs-sync 映射反向校验，优化1）
+import importlib.util as _ilu7
+_gate = _ilu7.spec_from_file_location("gate", GATE)
+_gm = _ilu7.module_from_spec(_gate); _gate.loader.exec_module(_gm)
+check("classify_change 分类正确（skill）", _gm.classify_change(r"<工具目录>x\skills\foo_skill\SKILL.md") == "skill")
+check("classify_change 分类正确（test）", _gm.classify_change(r"<工具目录>x\tests\test_a.py") == "test")
+check("classify_change 分类正确（rule）", _gm.classify_change(r"<工具目录>x\regedit.md") == "rule")
+# 只改 skill 未同步配套 → 检出漏更
+w = _gm.check_docs_sync([os.path.join(CFG, r"skills\3gpp_skill\SKILL.md")])
+check("只改 SKILL.md 检出配套漏更（instructions/regedit/tests README）", len(w) == 3)
+# 配套都改了 → 通过
+w2 = _gm.check_docs_sync([os.path.join(CFG, r"skills\3gpp_skill\SKILL.md"),
+                          os.path.join(CFG, "instructions.md"),
+                          os.path.join(CFG, "regedit.md"),
+                          os.path.join(CFG, r"tests\README.md")])
+check("配套齐改时漏更检测通过", len(w2) == 0)
+
+# 8. 五步检查点（--check-5step，用户高优先级未完成项落地）
+def run5(text):
+    return subprocess.run([sys.executable, GATE, "--check-5step"], input=text,
+                          capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60)
+r = run5("本会话无固化。")
+check("无固化动作时五步检查不适用（rc=0）", r.returncode == 0 and "不适用" in r.stdout)
+full = "进化：已固化 xxx\n【第一步·归纳】a\n【第二步·归属】b\n【第三步·edit】c\n【第四步·流水】d\n【第五步·校验】e\n"
+r = run5(full)
+check("五步标记齐全时通过（rc=0）", r.returncode == 0 and "齐全" in r.stdout)
+partial = "进化：已固化 xxx\n【第一步·归纳】a\n【第三步·edit】c\n"
+r = run5(partial)
+check("缺步检出（rc=1）", r.returncode == 1 and "缺失" in r.stdout)
+check("缺步清单点名缺失步骤", ("第二步·归属" in r.stdout) and ("第四步·流水" in r.stdout) and ("第五步·校验" in r.stdout))
+none = "本次响应无任何固化声明。"
+r = run5(none)
+check("无固化声明不适用（rc=0）", r.returncode == 0 and "不适用" in r.stdout)
+r = run5("进化检查完成：本次无固化项")
+check("『无固化项』声明不适用五步（rc=0）", r.returncode == 0 and "不适用" in r.stdout)
+
+# 清理临时 skill（try/finally 保证：即使中途断言失败也清理，防 _gate_test_skill 残留污染 regedit 测试）
 import shutil
+tmp_skill = os.path.join(CFG, "skills", "_gate_test_skill")
 shutil.rmtree(tmp_skill, ignore_errors=True)
 print("  （注：gate 测试在 evolution_log.txt 追加的骨架条目保留——只增不改铁律）")
 

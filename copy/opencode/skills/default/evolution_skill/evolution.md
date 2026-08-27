@@ -8,8 +8,14 @@
 
 ## 现行进化规则（按固化时间倒序，均来自 evolution_log.txt 沉淀）
 
+### 2026-08-27
+1. **五步检查点程序化强制**：执行固化（声明"已固化"）必须按序输出【第一步·归纳】~【第五步·校验】标记行；evolution_gate --check-5step 由插件 session.idle 自动检测（拉会话消息→缺步检出→警告并入进化检查任务）；只声明"无固化"不需五步
+2. **注册事件注入（E 类平台直读）**：opencode 1.18 系列不消费 instructions 字段（实测：解析进配置但系统提示构建只认 AGENTS.md/CLAUDE.md/CONTEXT.md）；平台注入通道=skill-banner 注册 experimental.chat.system.transform（每次请求构建系统提示时直读 instructions/regedit/docs-sync/tools-manifest 四文件 push 进 output.system，mtime 缓存，OPENCODE_DISABLE_MD_INJECT=1 禁用）
+3. **平台 API 依赖保障**：experimental.chat.system.transform 是实验性 API——test_platform_api.py（11/11）硬检查二进制 hook 实现存在性，health_check 第⑦项必跑，插件 session.created 异步检测失败即 toast 告警；失效回退预案：重启 instructions 字段（若新版实现）→ 铁律第 0 条 B 类路径
+4. **experimental API 使用前提**：opencode 配置字段"被解析≠被消费"——必须用 debug config + 二进制字符串证据 + 新对话实测三段法核实后才可依赖
+
 ### 2026-08-26
-1. **进化门禁机制（evolution_gate.py）**：机制步骤（流水兜底追加/自动测试/一致性校验/改动检测）由脚本确定性执行——插件 session.created 调 --snapshot、session.idle 调 --check；模型只负责智能部分（经验归纳/归属判定/edit 固化）。解决"提示语体系无法 100% 保证必须步骤执行"的物理上限
+1. **进化门禁机制（evolution_gate.py）**：机制步骤（流水兜底追加/自动测试/一致性校验/改动检测/五步检查点检测）由脚本确定性执行——插件 session.created 调 --snapshot、session.idle 调 --check、五步标记由 --check-5step 检测；模型只负责智能部分（经验归纳/归属判定/edit 固化）。解决"提示语体系无法 100% 保证必须步骤执行"的物理上限
 2. **本文件定位**：进化规则文件（非历史流水）；历史流水独立于 evolution_log.txt
 2. **进化规则更新流程**：核对历史（evolution_log.txt）→ 弹窗确认 → 更新本文件 → 校验自测
 3. **evolution_log.txt 只增不改**：追加尾部，禁止替换既有条目
