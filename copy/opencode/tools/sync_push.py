@@ -32,8 +32,10 @@ def run_git(args, repo):
         wp = to_wsl_path(repo)
         inner = "git -C %s %s" % (sh_quote(wp), " ".join(sh_quote(a) for a in args))
         return subprocess.run(["wsl", "-d", "Ubuntu", "-e", "bash", "-c", inner],
-                              capture_output=True, text=True)
-    return subprocess.run(["git", "-C", repo] + args, capture_output=True, text=True)
+                              capture_output=True, text=True,
+                              encoding="utf-8", errors="replace")
+    return subprocess.run(["git", "-C", repo] + args, capture_output=True, text=True,
+                          encoding="utf-8", errors="replace")
 
 
 def main():
