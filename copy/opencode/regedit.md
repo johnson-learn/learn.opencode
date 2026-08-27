@@ -82,7 +82,7 @@
 | test_plugin.js | `tests\test_plugin.js` | G | 插件改动后强制（46/46：事件分支 20 + 注册事件注入 14 + 五步检查点/API 告警闭环/待办内存传递 7 + 平台语言检测 5） |
 | test_charset.py | `tests\test_charset.py` | G | 字符边界规范防线：框架文件 CRLF/BOM/UTF-8 解码扫描 + 铁律第 9 条存在性（7/7）；health_check 第⑧项必跑；扫描失败立即归一修复再交付 |
 | test_platform_api.py | `tests\test_platform_api.py` | G | **平台 API 依赖保障**：opencode 二进制仍实现 experimental.chat.system.transform hook / jsonc 通道 / 插件注册 / 4 注入文件就绪（11/11）——opencode 升级或移除该实验性 API 时此测试失败告警；每次 health_check --run 必跑 |
-| test_path_convert.py | `tests\test_path_convert.py` | G | path_convert 改动后强制（20/20：往返转换/STATE_FILES/残留扫描白名单化/tests 与 archive 目录跳过转换/空值映射过滤） |
+| test_path_convert.py | `tests\test_path_convert.py` | G | path_convert 改动后强制（23/23：往返转换/STATE_FILES/残留扫描白名单化/tests 与 archive 目录跳过转换/空值映射过滤/工具类全集检出） |
 | test_update_skill.py | `tests\test_update_skill.py` | G | 同步机制改动后强制（40/40，隔离临时仓库） |
 | test_regedit.py | `tests\test_regedit.py` | G | 注册表改动后强制（本表与实际文件系统一致性） |
 | test_tools_manifest.py | `tests\test_tools_manifest.py` | G | 工具总表改动后强制（分类计数吻合/待补充无重复/包可导入/表结构，19/19） |
