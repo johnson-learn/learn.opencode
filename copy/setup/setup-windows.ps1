@@ -126,20 +126,16 @@ if (-not $SkipWinget) {
     foreach ($p in $pkgs) {
       $tier = if ($p.required) { "必选" } else { "可选" }
       if (& $p.check) { Ok "$($p.name) 已安装"; continue }
-      # 后台化主窗口模式（2026-08-28 用户要求：下载/安装期间菜单也必须全程呈现可选）：
-      # winget/curl/msiexec 全部 -NoNewWindow 后台运行 + 输出重定向日志，主窗口轮询检测与菜单
-      $bg = $null
+      # 单一工作窗口模式（2026-08-28 用户定：只弹一个工作窗口，后续所有下载安装都在该窗口进行）
+      Write-Host "  [$tier] $($p.name) 未安装，winget 安装命令已发送到工作窗口（本窗口菜单随时可选）..."
+      Start-WorkerCommand "winget install --id $($p.id) -e --silent --accept-source-agreements --accept-package-agreements"
+      $done = $false
       $mode = "winget"
       $mirrorIdx = 0
       $dlFile = $null
-      $bgOut = Join-Path $env:TEMP ("opencode_bg_out_" + ($p.id -replace "[^A-Za-z0-9]", "_") + ".log")
-      $bgErr = Join-Path $env:TEMP ("opencode_bg_err_" + ($p.id -replace "[^A-Za-z0-9]", "_") + ".log")
-      Write-Host "  [$tier] $($p.name) 未安装，winget 后台安装中（本窗口菜单随时可选）..."
-      $bg = Start-BgProcess "winget" @("install", "--id", $p.id, "-e", "--silent", "--accept-source-agreements", "--accept-package-agreements") $bgOut $bgErr
-
-      $done = $false
+      $lastSize = 0
       while (-not $done) {
-        if (& $p.check) { Stop-BgProcess $bg; Ok "$($p.name) 安装完成"; break }
+        if (& $p.check) { Stop-WorkerWindow; Ok "$($p.name) 安装完成"; break }
         Write-Host "  本窗口选项（可随时选择，无倒计时）："
         Write-Host "  请选择：回车=继续等待检测；1=换镜像源下载安装；2=放弃本次$($(if ($p.required) { '必选' } else { '可选' }))工具安装；3=放弃本次移植"
         $ans = ""
@@ -152,60 +148,62 @@ if (-not $SkipWinget) {
         }
         switch ($ans) {
           "2" {
-            Stop-BgProcess $bg
+            Stop-WorkerWindow
             if ($p.required) { Warn "已放弃必选工具 $($p.name) 安装（手动安装后重跑本脚本自动补齐）" }
             else { Warn "已放弃可选工具 $($p.name) 安装，继续移植" }
             $done = $true
           }
-          "3" { Stop-BgProcess $bg; Warn "用户选择放弃本次移植，退出脚本"; exit 2 }
+          "3" { Stop-WorkerWindow; Warn "用户选择放弃本次移植，退出脚本"; exit 2 }
           "1" {
-            # 换镜像源：杀当前后台进程，启动下一镜像源 curl 后台下载
-            Stop-BgProcess $bg
+            # 换镜像源：下一镜像源下载命令发送到工作窗口
             $mirrorIdx++
             if ($mirrorIdx -ge $p.mirrors.Count) { $mirrorIdx = 0 }
             $ext = [System.IO.Path]::GetExtension($p.mirrors[$mirrorIdx]).ToLower()
             $dlFile = Join-Path $env:TEMP ("opencode_dl_" + ($p.id -replace "[^A-Za-z0-9]", "_") + "_$($mirrorIdx + 1)" + $ext)
             Remove-Item $dlFile -ErrorAction SilentlyContinue
-            Write-Host "    镜像源 $($mirrorIdx + 1)/$($p.mirrors.Count) 后台下载中（本窗口菜单随时可选）：$($p.mirrors[$mirrorIdx])"
+            Write-Host "    镜像源 $($mirrorIdx + 1)/$($p.mirrors.Count) 下载命令已发送到工作窗口（菜单随时可选）：$($p.mirrors[$mirrorIdx])"
             $mode = "mirror-dl"
+            $lastSize = 0
             try {
-              $bg = Start-BgProcess "curl.exe" @("-L", "--connect-timeout", "20", "-o", $dlFile, $p.mirrors[$mirrorIdx]) $bgOut $bgErr
+              Start-WorkerCommand "curl.exe -L --connect-timeout 20 -o `"$dlFile`" $($p.mirrors[$mirrorIdx])"
             } catch {
-              Warn "下载启动失败：$($_.Exception.Message)"
+              Warn "发送下载命令失败：$($_.Exception.Message)"
               $mode = "winget"
-              $bg = $null
+              $dlFile = $null
             }
           }
           default {
-            # 回车：驱动状态机 + 显示进度
+            # 回车：推进状态机
             if ($mode -eq "mirror-dl") {
-              if ($bg -and $bg.HasExited -and (Test-Path $dlFile) -and (Get-Item $dlFile).Length -ge 1MB) {
-                # 下载完成 → 启动 msiexec 后台安装
-                Write-Host "    下载完成，后台静默安装中（$($p.name)；若权限不足请以管理员身份运行本脚本）..."
-                $mode = "mirror-install"
-                $ext = [System.IO.Path]::GetExtension($dlFile).ToLower()
-                try {
-                  if ($ext -eq ".msi") {
-                    $bg = Start-BgProcess "msiexec" @("/i", "`"$dlFile`"", "/qn", "/norestart") $bgOut $bgErr
-                  } else {
-                    $bg = Start-BgProcess $dlFile $p.silent $bgOut $bgErr
+              if (Test-Path $dlFile) {
+                $sz = (Get-Item $dlFile).Length
+                if ($sz -ge 1MB -and $sz -eq $lastSize) {
+                  # 下载完成（大小两次检测稳定）→ 发送安装命令到工作窗口
+                  Write-Host "    下载完成，安装命令已发送到工作窗口（$($p.name)；若权限不足请以管理员身份运行本脚本）..."
+                  $mode = "mirror-install"
+                  $ext = [System.IO.Path]::GetExtension($dlFile).ToLower()
+                  try {
+                    if ($ext -eq ".msi") {
+                      Start-WorkerCommand "msiexec /i `"$dlFile`" /qn /norestart"
+                    } else {
+                      Start-WorkerCommand "& `"$dlFile`" $($p.silent -join ' ')"
+                    }
+                  } catch {
+                    Warn "发送安装命令失败：$($_.Exception.Message)"
+                    $mode = "winget"
                   }
-                } catch {
-                  Warn "安装启动失败：$($_.Exception.Message)"
-                  $mode = "winget"
+                } else {
+                  $lastSize = $sz
+                  $szMB = [math]::Round($sz / 1MB, 2)
+                  Write-Host "    下载中...（已下载 $szMB MB；工作窗口可见进度，菜单随时可选）"
                 }
-              } elseif ($bg -and $bg.HasExited -and -not (Test-Path $dlFile)) {
-                Write-Host "    该源下载失败（进程已退出且无文件），可回车重试 / 选 1 换下一个源 / 选 2 放弃"
-                $mode = "winget"
-                $bg = $null
               } else {
-                $sz = if (Test-Path $dlFile) { [math]::Round((Get-Item $dlFile).Length / 1MB, 1) } else { 0 }
-                Write-Host "    下载中...（已下载 $sz MB；菜单随时可选）"
+                Write-Host "    等待下载开始...（工作窗口可见进度，菜单随时可选）"
               }
             } elseif ($mode -eq "mirror-install") {
-              Write-Host "    安装中，等待检测...（菜单随时可选）"
+              Write-Host "    安装中，等待检测...（工作窗口可见进度，菜单随时可选）"
             } else {
-              Write-Host "    winget 安装中，等待检测...（菜单随时可选）"
+              Write-Host "    winget 安装中，等待检测...（工作窗口可见进度，菜单随时可选）"
             }
             Start-Sleep -Seconds 10
           }

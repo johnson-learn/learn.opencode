@@ -59,12 +59,12 @@ check("必选工具失败三选项（换镜像源/放弃必选/放弃移植）",
 check("可选工具失败两选项（换源重试/放弃可选继续）", "已放弃可选工具" in c)
 check("放弃移植退出码（exit 2）", "exit 2" in c)
 check("主窗口模式无窗口清理逻辑残留", "Close-SpawnedWindows" not in c and "taskkill" not in c and "Start-DownloadWindow" not in c)
-check("安装后台化（msiexec -NoNewWindow 后台 + 权限不足提示）", "Start-BgProcess \"msiexec\"" in c and "权限不足请以管理员身份运行本脚本" in c)
+check("安装命令发送到工作窗口（msiexec）+ 权限不足提示", "Start-WorkerCommand \"msiexec" in c and "权限不足请以管理员身份运行本脚本" in c)
 check("镜像直链第二渠道（npmmirror 国内高速源 + 各包静默参数）", "registry.npmmirror.com" in c and "gh-proxy.com" in c and "dl.google.com" in c and "mirrors.tuna.tsinghua.edu.cn" in c)
 check("多安装源逐个尝试（mirrors 数组 + 换下一个源）", "mirrors = @" in c and "换下一个源" in c2)
 check("镜像渠道安装函数（msi 走 msiexec / exe 直跑 / 下载校验 <1MB 判失败）", "Install-FromMirror" in c2 and "msiexec" in c2 and "Length -lt 1MB" in c2)
-check("镜像渠道后台下载安装（curl 后台 + 进度显示）", "Start-BgProcess \"curl.exe\"" in c and "已下载 $sz MB" in c)
-check("镜像源失败后菜单可继续选择", "该源下载失败" in c and "可回车重试 / 选 1 换下一个源 / 选 2 放弃" in c)
+check("镜像渠道下载命令发送到工作窗口 + 进度显示", "Start-WorkerCommand \"curl.exe" in c and "下载中...（已下载" in c)
+check("工作窗口模式菜单全程可选", "菜单随时可选" in c and "请选择：回车=继续等待检测；1=换镜像源下载安装" in c)
 check("主窗口模式无 [4] 非静默窗口选项", "非静默" not in c)
 check("LibreOffice 版本动态解析（防固定版本号被镜像站清理致全源 404）", "动态版本解析：Git" in c and "libreoffice/stable/" in c2 and "$loVer" in c2)
 check("Git/Node/Python 全动态化（npmmirror 目录页 JSON 解析 + 兜底固定版）", "binary/git-for-windows/" in c2 and "binary/node/" in c2 and "binary/python/" in c2 and "gitVer" in c2 and "nodeVer" in c2 and "pyVer" in c2)
@@ -82,7 +82,7 @@ if mode == "仓库直读":
         check("模拟测试 test_setup_sim.ps1 执行通过（mock 分支流转 17/17）", False)
 else:
     print("  （镜像回退模式：跳过模拟测试，函数文件不可得）")
-check("winget 后台执行（-NoNewWindow 无新窗口 + 菜单全程可选）", "Start-BgProcess \"winget\"" in c and "菜单随时可选" in c)
+check("winget 命令发送到单一工作窗口", "Start-WorkerCommand \"winget" in c and "后续所有下载安装都在该窗口进行" in c)
 check("检测双通道（命令 OR 安装位置文件，防新装 PATH 未刷新误判）", "C:\\Program Files\\nodejs\\node.exe" in c and "C:\\Program Files\\Git\\cmd\\git.exe" in c)
 
 # 3.8 安装后自动配置（用户 2026-08-28 要求"完成全套工作"：环境变量/镜像源持久化）
