@@ -25,8 +25,8 @@
 | Git for Windows | 版本控制 | `winget install Git.Git` | `git --version` |
 | Node.js LTS | node/npm/npx | `winget install OpenJS.NodeJS.LTS` | `node --version` |
 | Python 3.12 | 一切脚本基础 | `winget install Python.Python.3.12` | `python --version` |
-| Google Chrome | headless 校验、浏览器渲染 | `winget install Google.Chrome` | 检查 `C:\Program Files\Google\Chrome\Application\chrome.exe` |
-| LibreOffice 26.x | 批量文档转 PDF/转换 | `winget install TheDocumentFoundation.LibreOffice` | `soffice.com --headless -env:UserInstallation=file:///C:/Temp/LO --version` |
+| Google Chrome | headless 校验、浏览器渲染 | `winget install Google.Chrome` | 检查 `<Chrome目录>\chrome.exe` |
+| LibreOffice 26.x | 批量文档转 PDF/转换 | `winget install TheDocumentFoundation.LibreOffice` | `soffice.com --headless -env:UserInstallation=file:///<工具目录>Temp/LO --version` |
 
 ## B. Python 环境与核心包（pip 清华源：`-i https://pypi.tuna.tsinghua.edu.cn/simple`）
 
@@ -47,7 +47,7 @@
 | pyzbar | 条码/二维码解码 | `pip install pyzbar` | `python -c "import pyzbar"` |
 | opencv-python + imageio-ffmpeg | 视频抽帧、音视频 | `pip install opencv-python imageio-ffmpeg` | `python -c "import cv2, imageio_ffmpeg"` |
 | playwright | headless 浏览器渲染 HTML→PDF/截图 | `pip install playwright` + `python -m playwright install chromium`（下载慢设 `PLAYWRIGHT_DOWNLOAD_HOST=https://npmmirror.com/mirrors/playwright`） | `python -c "from playwright.sync_api import sync_playwright"`（本机实测 HTML→PDF ✓） |
-| weasyprint | HTML/CSS→矢量 PDF | `pip install weasyprint` + MSYS2：`winget install MSYS2.MSYS2` → `pacman -S mingw-w64-ucrt-x86_64-gtk3` + 永久环境变量 `WEASYPRINT_DLL_DIRECTORIES=C:\msys64\ucrt64\bin` | `python -c "import weasyprint; print(weasyprint.__version__)"`（本机 69.0 实测 ✓） |
+| weasyprint | HTML/CSS→矢量 PDF | `pip install weasyprint` + MSYS2：`winget install MSYS2.MSYS2` → `pacman -S mingw-w64-ucrt-x86_64-gtk3` + 永久环境变量 `WEASYPRINT_DLL_DIRECTORIES=<工具目录>msys64\ucrt64\bin` | `python -c "import weasyprint; print(weasyprint.__version__)"`（本机 69.0 实测 ✓） |
 | docxtpl | Word 模板填充 | `pip install docxtpl` | `python -c "from docxtpl import DocxTemplate"` |
 | Jinja2 | 模板渲染（文档/HTML/报告） | `pip install jinja2` | `python -c "from jinja2 import Template"` |
 | python-magic-bin | 文件类型 magic bytes 检测 | `pip install python-magic-bin`（Windows） | `python -c "import magic"` |
@@ -58,7 +58,7 @@
 | 工具 | 用途 | 安装命令 | 检查命令 |
 |---|---|---|---|
 | Pix2Text（同 B 类） | 公式/中文 OCR | — | — |
-| Tesseract（OCRmyPDF 依赖） | 通用 OCR 引擎（100+ 语言） | `winget install UB-Mannheim.TesseractOCR`（GitHub 源可能失败→改 gh-proxy 下安装包） | `& "C:\Program Files\Tesseract-OCR\tesseract.exe" --version`（本机 5.4.0 ✓） |
+| Tesseract（OCRmyPDF 依赖） | 通用 OCR 引擎（100+ 语言） | `winget install UB-Mannheim.TesseractOCR`（GitHub 源可能失败→改 gh-proxy 下安装包） | `& "<工具目录>Program Files\Tesseract-OCR\tesseract.exe" --version`（本机 5.4.0 ✓） |
 
 ## E. 网络与同步
 
@@ -73,9 +73,9 @@
 
 | 工具 | 用途 | 安装命令 | 检查命令 |
 |---|---|---|---|
-| WSL2 + Ubuntu 22.04 | Linux 编译运行环境 | 离线包 `E:\software\wls\`（MSI+rootfs），见 WSL 安装说明书 | `wsl -l -v` |
+| WSL2 + Ubuntu 22.04 | Linux 编译运行环境 | 离线包 `<离线安装包目录>\`（MSI+rootfs），见 WSL 安装说明书 | `wsl -l -v` |
 | Linux 工具链（gcc/g++/make/cmake/gdb/valgrind/python3/perl/jq 等） | C/C++/脚本开发 | `apt install build-essential gdb valgrind cmake ninja-build python3 python3-pip perl jq git openssh-client` | `wsl -d Ubuntu -e bash -c "gcc --version && gdb --version"` |
-| w64devkit（备选） | Windows 原生编译（winpthreads） | gh-proxy.com 下 `w64devkit-x64-2.9.1.7z.exe` 自解压 | `& "C:\w64devkit\w64devkit\bin\gcc.exe" --version` |
+| w64devkit（备选） | Windows 原生编译（winpthreads） | gh-proxy.com 下 `w64devkit-x64-2.9.1.7z.exe` 自解压 | `& "<工具目录>w64devkit\w64devkit\bin\gcc.exe" --version` |
 
 ## G. 校验与辅助
 
@@ -101,10 +101,18 @@
 | apt 清华源 | WSL 内 /etc/apt/sources.list | 加速 apt |
 | pip 清华源 | 命令行参数 | 见 B 类安装命令 |
 | WSL 开机自启任务 | 计划任务 WSL-AutoStart | 保持实例运行防 60s idle 停止 |
-| WEASYPRINT_DLL_DIRECTORIES | 用户环境变量 = `C:\msys64\ucrt64\bin` | WeasyPrint 加载 MSYS2 GTK DLL 必需（已永久设置） |
+| WEASYPRINT_DLL_DIRECTORIES | 用户环境变量 = `<工具目录>msys64\ucrt64\bin` | WeasyPrint 加载 MSYS2 GTK DLL 必需（已永久设置） |
+| PowerShell profile UTF-8 初始化 | `%USERPROFILE%\Documents\WindowsPowerShell\profile.ps1`（CurrentUserAllHosts） | 铁律第 9 条字符边界规范：chcp 65001 + OutputEncoding/Console 编码 UTF8 + PSDefaultParameterValues（2026-08-27 设置） |
 
 ## 待补充（本机已分析未安装，装时更新本表）
 
 - FFmpeg 完整版：`winget install Gyan.FFmpeg`
 - yt-dlp：`pip install yt-dlp`
 - ImageMagick：`winget install ImageMagick.ImageMagick`
+
+
+
+
+
+
+

@@ -31,7 +31,7 @@
 [2026-08-26] 用户质疑（机制验证） → 承认程序化机制仅纸面设计未实测；加固：① 插件加 plugin-evolution.log 日志（触发/成功/失败全记录，失败不再静默）；② 待实测方案：重启 opencode → 完成小对话 → 会话结束观察进化检查任务是否自动注入 + 查日志文件；③ 教训固化：程序化机制必须实测运行才算生效，写入机制后需标注"待实测"
 [2026-08-26] 插件自测（test_plugin.js） → 15/15 通过：session.created 主/子会话 toast 行为、session.idle 进化任务注入（六项强制清单）、缺 sessionID 容错、未知事件零副作用、轨迹与日志落盘；自测发现真 bug：edit 误删 export 闭合（已修复）；test_plugin.js 纳入行为自测清单
 [2026-08-26] 用户指出（commit message 摘要丢失） → 多个提交只剩 "sync:"（中文摘要经 PowerShell→wsl→bash 多层 shell 传递丢失）；修复：update_skill git 三步骤改为 printf 写 /tmp/cmsg.txt + git commit -F 文件方式传递；已存在裸 sync: 提交不改历史（共享仓库 amend 危险），向前修复
-[2026-08-26] 用户要求（修炼文件归档全局） → 自查发现 skill 修炼文件散落 E:\openCodeDefault\temp：建立全局 <opencode配置目录>\tools\ 目录（path_convert/inject_skills/fetch_skills/slim_skills/cross_move/generalize 六个核心修炼工具）+ tools\archive\（18 个一次性已执行脚本归档）；测试用例已在 tests\；更新全部路径引用（instructions/skills）；三套测试全绿（10+15+0 错误）；原则：一切 skill 修炼文件必须放全局目录随 update_skill 同步 GitHub，任务产物（图片/文档）才留在项目 temp
+[2026-08-26] 用户要求（修炼文件归档全局） → 自查发现 skill 修炼文件散落 <项目目录>\temp：建立全局 <opencode配置目录>\tools\ 目录（path_convert/inject_skills/fetch_skills/slim_skills/cross_move/generalize 六个核心修炼工具）+ tools\archive\（18 个一次性已执行脚本归档）；测试用例已在 tests\；更新全部路径引用（instructions/skills）；三套测试全绿（10+15+0 错误）；原则：一切 skill 修炼文件必须放全局目录随 update_skill 同步 GitHub，任务产物（图片/文档）才留在项目 temp
 [2026-08-26] 用户要求（修改复盘核查强制） → 用户判定本轮"规则只进 evolution.md 未进 SKILL.md"为低级错误（严重）；新环节固化：**每个文件修改完成后、自测前必须自我复盘核查**（「修改复盘核查」环节）——① 改了什么/为什么改/有无误删误改无关内容；② 规则类内容是否已进全部应改载体（不只 evolution.md）；③ 是否符合占位符/可移植性/归属二分铁律；④ 配套文档是否同步。核查通过才跑测试。固化位置：AGENTS.md 铁律第 8 条（改为"修改复盘核查 + 测试先行"）、evolution_skill 处理流程第 3 步、update_skill 第二步。低级错误根因深挖：进化流程只有"追加记录"检查，没有"修改动作完整性"检查——模型连续多个 edit 后容易漏掉应改载体，复盘核查正是补这个动作级的闭环
 [2026-08-26] 用户指正（弹窗确认三连） → ① 用户指出五步第四步应明确为「弹窗确认」——SKILL.md 第四步改标题「第四步：弹窗确认」并写明：必须用 question 工具弹窗（UI 交互选择+输入框），禁止回答正文文字提问代替，用户未确认前不得执行任何 commit/push；regedit.md 同步登记。② 用户指出"涉及弹窗确认却没有弹窗测试"——补 test_update_skill.py 用例 9（7 项：三态分支解析/未确认前无 commit/仅本地分支保留工作区/推送分支确认后 commit/规则完整性×3），40/40。③ 复查发现 tests/README.md 用例数停在 25（25→33→40 两轮漏更新）已修正。教训固化：每次新增机制必须同时新增测试用例并更新 tests/README.md 用例数与描述（铁律第 8 条执行缺口再次暴露——"进化：已固化"口头声明必须实际落盘 evolution.md，声明与 edit 动作必须成对）
 [2026-08-26] 用户指正（evolution.md 覆盖丢失） → 用户指出：evolution.md 应是历史流水，必须**追加新条目**，而我把新记录用 edit 替换了旧条目（"修改复盘核查强制"条被"弹窗确认三连"条覆盖丢失）——已恢复两条并存。根因：edit 工具以"oldString=旧条全文→newString=新条"的方式使用导致覆盖；正确做法=read 尾部→在最后一条后追加新条目，绝不替换既有条目。固化：evolution_skill 五步流程第 2 步明确"追加 evolution.md（只增不改，禁止替换既有条目）"；evolution.md 头部加本条规则声明
@@ -552,3 +552,182 @@
 - 坑3【子进程解码】：subprocess.run 读 wsl 输出 text=True 未指定 encoding，GBK 解码 UTF-8 字节流抛线程异常致错误信息丢失。修复：encoding=utf-8 + errors=replace
 - 附带修复：filemode 污染（drvfs 权限位 755 随 cp 进工作树，Windows add 记录为 644）——fe543a0 提交同时把历史 755 mode 全部归一 644；工作树 chmod 644 后 status 干净
 - 成果：collaborates_with 6 skill、注册事件注入、五步检查点、instructions 回滚、平台 API 保障等 24+ 项改动全部上 GitHub；推送前配套核查（docs-sync 逐项落实/本机路径残留扫描/可移植性用例 8）全过
+
+[2026-08-27] 其它电脑首次安装 log 实测修复（安装移植log.txt）：
+- 坑1：setup-windows.ps1 第 277 行 w64devkit 探测硬编码盘符候选（<工具目录>D:/E:）→ 无 E 盘机器 Join-Path 抛 DriveNotFoundException + Test-Path 空值二次报错。修复：Get-PSDrive -PSProvider FileSystem 动态枚举现有盘符探测
+- 坑2：第 7.5 节验证逻辑过时——要求 opencode.jsonc 含 instructions 注册，但框架已回滚该字段（1.18 不消费）。修复：改为注册事件注入体系验证（skill-banner.js 含 experimental.chat.system.transform + 4 规则文件存在）
+- 坑3：第 8 节汇总 ToolDir 为空时 Join-Path 报错。修复：IsNullOrEmpty 空值防护
+- 测试：test_setup_ps1 21→25/25（4 新用例防回归）；镜像 tests/repo_face/setup-windows.ps1 同步
+- 该机其余警告属环境问题非脚本缺陷：npm/pip 失败=Node/Python 刚装 PATH 未刷新（log 已提示重跑）；LibreOffice winget 失败=网络（可手动装）；数据目录配置正常（D:\opencode 默认）
+
+[2026-08-27] 用户要求（必备工具缺失提醒）：setup-windows.ps1 新增 8.5 节必备工具缺失醒目告警——缺失/安装失败红色醒目提示+影响说明+补救重跑命令+exit 1 退出码（可选工具单独蓝色提示）；test_setup_ps1 25→30/30
+
+[2026-08-27] sync_push 再修：rebase 后工作树无改动时 commit 步骤“nothing to commit”检测被 WSL 启动警告污染 stderr 导致误判失败→改为 stdout+stderr 合并检测（test_sync_push 11/11）；对端 pml 机 GitHub 网页编辑 3 提交（README/INSTALL 安装说明改进）评审合理已吸收（rebase 合入后推送 f31ff83）
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 3 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\plugins\skill-banner.js
+- <opencode配置目录>\skills\update_skill\SKILL.md
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-main-001） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-five-created2） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-five-created） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-five-created3） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-five-created3） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（dbg-sess） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 2 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\default\evolution_skill\evolution_log.txt
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-five-created3） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-five-created） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\default\evolution_skill\evolution_log.txt
+
+[2026-08-27] 会话自动门禁（sess-five-created2） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-main-001） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（created-14） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 2 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\plugins\skill-banner.js
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-main-001） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-main-001） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-five-created2） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-five-created3） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools-manifest.md
+
+[2026-08-27] 会话自动门禁（gate-test-1787835756） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+
+[2026-08-27] 字符边界规范实施（用户选全套，一劳永逸方案）：
+- AGENTS.md 新增铁律第 9 条：跨工具传数据一律文件化（禁 python -c/node -e 内联中文、禁 wsl bash -c 内联多行、commit -F 文件）+ 写文件规范（encoding=utf-8+newline=\n、读输出 errors=replace）+ cmd /c 包装 + test_charset 防线
+- instructions.md 新增细则 0.5（历史事故清单：GBK 乱码/引号崩溃/LF→CRLF/中文 commit 丢失）
+- test_charset.py 7/7：框架文件 CRLF/BOM/UTF-8 扫描 + 铁律第 9 条存在性；首跑抓出 14 个违规文件（4 SKILL.md BOM + 10 references CRLF）已全部归一修复；health_check 新增第⑧项必跑
+- PowerShell profile（CurrentUserAllHosts）追加 UTF-8 初始化（chcp 65001 + OutputEncoding/Console UTF8 + PSDefaultParameterValues）
+- 连带修复：test_plugin 测试 9 改为消毒式（按行过滤 marker，不依赖快照）防真实文件污染——此前 marker 已残留 7 个污染 tools-manifest 并混入系统提示注入；statSync().mtimeNs 需 {bigint:true}（undefined 致缓存永不刷新）
+- 测试：test_plugin 45/45 稳定（4 连跑）、test_instructions 0~9 十条适配 31/31、全量 9 项测试全绿

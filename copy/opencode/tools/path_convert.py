@@ -99,7 +99,13 @@ STATE_FILES = {"path_map.txt", "sync_target.txt", "path_convert.py"}
 def walk_convert(root, pairs, suffix):
     count = 0
     for dirpath, dirnames, filenames in os.walk(root):
-        if ".git" in dirpath.split(os.sep):
+        rel = os.path.relpath(dirpath, root)
+        parts = rel.split(os.sep)
+        if ".git" in parts:
+            continue
+        # 测试与历史脚本目录不参与路径转换：测试文件用动态路径推导 + 模拟路径字符串字面量，
+        # 转换会污染测试数据（2026-08-27 实测：r"C:\tmp\repo" 被误转 <工具目录>tmp\repo）
+        if "tests" in parts or "archive" in parts:
             continue
         for fn in filenames:
             if fn.lower() in STATE_FILES:

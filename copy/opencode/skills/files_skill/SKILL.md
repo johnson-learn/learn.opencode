@@ -1,4 +1,4 @@
-﻿---
+---
 name: files_skill
 description: 综合文件识别与文档处理统一接口技能（全局 skill，仅显式触发，不靠关键词自动调用）。Use ONLY when 用户消息显式包含 "files_skill：" 或 "files_skill:"，或以 "files_skill&"、"files_skill " 与其他技能名并列后跟冒号——冒号后为用户任务。加载后执行任务：识别、读取、提取或处理任何文件资料（PDF、Word/docx、PPT/pptx、Excel/xlsx、图片、Markdown、EPUB、HWP 等），包括图片识别（OCR）、公式识别（转 LaTeX）、文字提取、流程图识别（转 Mermaid）、表格提取、文档转换、翻译、公文写作等。普通消息仅提及 PDF/Word 等关键词但无 "files_skill：" 前缀时，不调用本技能。
 collaborates_with:

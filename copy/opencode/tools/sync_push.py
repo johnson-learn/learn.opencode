@@ -86,9 +86,9 @@ def main():
                 return 3
             return 1
         if name == "commit" and r.returncode != 0:
-            err = (r.stderr or "").strip()
+            err = ((r.stderr or "") + (r.stdout or "")).strip()
             if "nothing to commit" in err:
-                print("[sync_push] 无改动可提交")
+                print("[sync_push] 无改动可提交（改动已在前序步骤提交）")
                 os.remove(marker)
                 return 0
             print("[sync_push] commit 失败：" + err[-200:])

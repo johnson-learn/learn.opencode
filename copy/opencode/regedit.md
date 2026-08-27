@@ -27,7 +27,7 @@
 
 | 注册项 | 位置 | 生效 | 说明 |
 |---|---|---|---|
-| AGENTS.md（8 条铁律） | `<opencode配置目录>\AGENTS.md` | A | 每会话系统提示必达，最高优先级；0=读注册表、1=每次响应复盘进化、2=同步边界、3=语言、4=输出HTML、5=输出位置、6=注入、7=工具登记、8=测试先行 |
+| AGENTS.md（9 条铁律） | `<opencode配置目录>\AGENTS.md` | A | 每会话系统提示必达，最高优先级；0=读注册表、1=每次响应复盘进化、2=同步边界、3=语言、4=输出HTML、5=输出位置、6=注入、7=工具登记、8=测试先行、9=字符边界规范 |
 | regedit.md（本注册表） | `<opencode配置目录>\regedit.md` | E（原 B） | 插件 system.transform 直读注入系统提示；原铁律第 0 条强制 read + 插件提醒保留为双保险；全体系组件加载方式登记 |
 | instructions.md（详版协议） | `<opencode配置目录>\instructions.md` | E（原 F） | 插件 system.transform 直读注入系统提示；五步进化流程/五大进化能力/skill 编写规范/通用回答规则详版 |
 | docs-sync.md（配套同步映射表） | `<opencode配置目录>\docs-sync.md` | E（原 G） | 插件 system.transform 直读注入系统提示；变更类型→必须同步更新文件清单的权威映射 |
@@ -69,7 +69,7 @@
 | cross_move.py | `tools\cross_move.py` | F | 跨 skill 归位 |
 | generalize.py | `tools\generalize.py` | F | 经验通用化改写 |
 | evolution_gate.py | `tools\evolution_gate.py` | E | 进化门禁脚本：session.created 时插件调 --drain（**异步后台**自愈补跑残留快照，max_n=3 限流防阻塞会话启动）+ --snapshot；session.idle 时 --check——机制步骤（流水兜底追加/自动测试/一致性校验/**配套漏更检测（docs-sync 映射反向校验）**）确定性执行，不依赖模型自觉；**--check-5step：五步检查点检测（stdin 读会话消息，固化响应缺五步标记即检出，插件把缺步警告并入进化检查任务）** |
-| health_check.py | `tools\health_check.py` | F | 一键健康检查：①核心配置齐全 ②skill frontmatter+体积门限 ③插件最近执行 ④测试可解析 ⑤门禁 idle/drain 记录 ⑥evolution_log 待处理项 ⑦平台 API 依赖保障（实验性 hook 可用性）；--run 实跑全部测试 / --run-quick 实跑快子集（跑前提示预计耗时） |
+| health_check.py | `tools\health_check.py` | F | 一键健康检查：①核心配置齐全 ②skill frontmatter+体积门限 ③插件最近执行 ④测试可解析 ⑤门禁 idle/drain 记录 ⑥evolution_log 待处理项 ⑦平台 API 依赖保障（实验性 hook 可用性）⑧字符边界规范（CRLF/BOM/编码扫描）；--run 实跑全部测试 / --run-quick 实跑快子集（跑前提示预计耗时） |
 | sync_push.py | `tools\sync_push.py` | G | 推送门禁脚本化：强制校验用户弹窗确认标记（无标记/非 push 选择直接拒绝 commit/push）；推送成功后自动清除标记；**WSL 仓库（wsl.localhost 路径）自动走 WSL 内 git 推送（SSH 密钥与 commit author 与历史一致）** |
 | archive\（18 个） | `tools\archive\` | F | 历史一次性脚本存档，不执行 |
 
@@ -80,8 +80,9 @@
 | skill_validate.py | `tests\skill_validate.py` | G | 每次 skill 改动后强制（铁律第 8 条）；体积门限可配置（--set-limit/--ignore/--ignore-all） |
 | test_skill_validate_config.py | `tests\test_skill_validate_config.py` | G | skill_validate 配置机制改动后强制（7/7） |
 | test_plugin.js | `tests\test_plugin.js` | G | 插件改动后强制（42/42：事件分支 20 + 注册事件注入 13 + 五步检查点/API 告警闭环 9） |
+| test_charset.py | `tests\test_charset.py` | G | 字符边界规范防线：框架文件 CRLF/BOM/UTF-8 解码扫描 + 铁律第 9 条存在性（7/7）；health_check 第⑧项必跑；扫描失败立即归一修复再交付 |
 | test_platform_api.py | `tests\test_platform_api.py` | G | **平台 API 依赖保障**：opencode 二进制仍实现 experimental.chat.system.transform hook / jsonc 通道 / 插件注册 / 4 注入文件就绪（11/11）——opencode 升级或移除该实验性 API 时此测试失败告警；每次 health_check --run 必跑 |
-| test_path_convert.py | `tests\test_path_convert.py` | G | path_convert 改动后强制（9/9） |
+| test_path_convert.py | `tests\test_path_convert.py` | G | path_convert 改动后强制（13/13：往返转换/STATE_FILES/残留扫描/tests 与 archive 目录跳过转换） |
 | test_update_skill.py | `tests\test_update_skill.py` | G | 同步机制改动后强制（14/14，隔离临时仓库） |
 | test_regedit.py | `tests\test_regedit.py` | G | 注册表改动后强制（本表与实际文件系统一致性） |
 | test_tools_manifest.py | `tests\test_tools_manifest.py` | G | 工具总表改动后强制（分类计数吻合/待补充无重复/包可导入/表结构，21/21） |

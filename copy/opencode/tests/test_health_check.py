@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# health_check.py 测试（扩充版）：可运行 / 报告结构 / 七检查项 / 无失败项 / --run 实跑模式
+# health_check.py 测试（扩充版）：可运行 / 报告结构 / 八检查项 / 无失败项 / --run 实跑模式
 import os, sys, subprocess
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
@@ -16,7 +16,7 @@ r = subprocess.run([sys.executable, HC], capture_output=True, text=True,
                    encoding="utf-8", errors="replace", timeout=300)
 check("health_check 可运行（rc=0）", r.returncode == 0)
 check("报告含标题", "框架健康度报告" in r.stdout)
-check("报告含七检查项", all(x in r.stdout for x in ["核心配置", "skill frontmatter", "插件最近执行", "测试全部可解析", "门禁", "evolution_log", "平台 API"]))
+check("报告含八检查项", all(x in r.stdout for x in ["核心配置", "skill frontmatter", "插件最近执行", "测试全部可解析", "门禁", "evolution_log", "平台 API", "字符边界"]))
 check("报告含结论统计行", "结论：OK" in r.stdout and "失败" in r.stdout)
 check("无 [失败] 项（当前框架健康）", "[失败]" not in r.stdout)
 

@@ -44,3 +44,10 @@
 - 是否符合占位符/可移植性/归属二分铁律？配套文档是否同步？
 核查发现问题 → 立即修正；核查通过才跑测试。
 每次对 skill/插件/工具/流程的修改，必须跑 `<opencode配置目录>\tests\` 下对应测试（skill_validate.py / test_plugin.js / test_path_convert.py / test_update_skill.py）；新增机制必须同步新增测试用例。
+
+## 9. 字符边界规范（跨系统/跨工具执行脚本的强制约定，用户 2026-08-27 定）
+本机环境 = Windows PowerShell（GBK 默认）↔ Python/Node/WSL（UTF-8），任何跨界都可能发生编码/转义/换行转换。执行以下强制规范：
+- **跨工具传数据一律文件化**：① 禁 `python -c`/`node -e` 内联含中文的代码 → 写临时 `.py`/`.js`/`.mjs` 文件再执行；② 禁 `wsl -e bash -c` 内联多行/含引号脚本 → 写 `.sh` 文件 + `wsl -d Ubuntu -e bash /mnt/c/.../x.sh` 执行；③ git commit 消息一律 `-F` 文件传递；④ 临时文件统一放 `<临时目录>`（本机 = `%LOCALAPPDATA%\Temp\opencode`）。
+- **写文件规范**：Python 写文本文件显式 `encoding="utf-8"` + `newline="\n"`（防 Windows 默认换行转换把 LF 变 CRLF 破坏跨平台解析）；读子进程输出显式 `encoding="utf-8", errors="replace"`；框架文本文件统一 UTF-8 无 BOM + LF 行尾。
+- **命令行包装**：PowerShell 直调 opencode/npm 等 .ps1/.cmd 包装命令被执行策略拦截 → 用 `cmd /c` 包装。
+- **防线**：`<opencode配置目录>\tests\test_charset.py` 程序化扫描框架文件 CRLF/BOM/编码一致性，health_check 必跑；扫描失败立即修复再交付。
