@@ -73,9 +73,16 @@ function Get-DynamicVersions {
 $script:spawnedWindows = @()
 
 function Close-SpawnedWindows {
+  if ($script:spawnedWindows.Count -gt 0) {
+    Write-Host "    [窗口清理] 正在关闭 $($script:spawnedWindows.Count) 个历史弹窗..."
+  }
   foreach ($proc in $script:spawnedWindows) {
-    try { Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue } catch {
-      Write-Host "    [窗口清理] 关闭窗口进程 $($proc.Id) 失败：$($_.Exception.Message)"
+    if (-not $proc) { continue }
+    try {
+      # taskkill 进程树强杀（比 Stop-Process 更彻底：/T 含子进程 /F 强制）
+      & taskkill /PID $proc.Id /T /F 2>&1 | Out-Null
+    } catch {
+      Write-Host "    [窗口清理] 关闭进程 $($proc.Id) 失败：$($_.Exception.Message)"
     }
   }
   $script:spawnedWindows = @()

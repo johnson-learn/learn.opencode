@@ -138,14 +138,18 @@ if (-not $SkipWinget) {
       $installStarted = $false # 下载完成后的安装窗口是否已启动
       while (-not $done) {
         if (& $p.check) { Close-SpawnedWindows; Ok "$($p.name) 安装完成"; break }
-        Write-Host "  本窗口选项（可随时选择，无倒计时）："
-        Write-Host "    [回车] 继续等待安装完成（每 10 秒自动检测，装完自动继续）"
-        Write-Host "    [1] 换镜像直链渠道安装（多安装源自动逐个尝试，下载在独立窗口进行）"
-        $opt2Text = if ($p.required) { "[2] 放弃本次必选工具安装（后续手动安装后重跑本脚本；本次跳过依赖该工具的环节）" } else { "[2] 放弃本次可选工具安装，继续移植" }
-        Write-Host "    $opt2Text"
-        Write-Host "    [3] 放弃本次移植（退出脚本）"
-        Write-Host "    [4] 新开非静默 PowerShell 窗口安装（可看进度/错误，可手动确认）"
-        $ans = Read-Host "  请选择（回车=继续等待 / 1 / 2 / 3 / 4）"
+        Write-Host "  本窗口选项（单键立即响应，无需回车提交；无倒计时）："
+        $opt2Text = if ($p.required) { "[2]放弃必选安装" } else { "[2]放弃可选安装" }
+        Write-Host "    [回车]继续等待检测  [1]换镜像源下载  $opt2Text  [3]放弃移植  [4]非静默窗口"
+        $ans = ""
+        try {
+          $key = [Console]::ReadKey($true)
+          $ans = "$($key.KeyChar)"
+          if ($ans -eq [char]13 -or $ans -eq [char]10) { $ans = "" }
+        } catch {
+          # 非交互环境（重定向输入）回退 Read-Host
+          $ans = Read-Host "  请选择（回车=继续等待 / 1 / 2 / 3 / 4）"
+        }
         switch ($ans) {
           "2" {
             Close-SpawnedWindows
@@ -161,12 +165,20 @@ if (-not $SkipWinget) {
             Write-Host "    （本菜单保持可用：回车继续等待检测 / 可随时再选 1/2/3）"
           }
           "1" {
-            # 换源：递增源索引（无下载状态时从 0 开始；有下载状态时换下一个）
+            # 换源后立即启动下载窗口（2026-08-28 用户实测反馈：一步到位，不再两步式）
             if ($dlFile) { $mirrorIdx++ } else { $mirrorIdx = 0 }
             if ($mirrorIdx -ge $p.mirrors.Count) { $mirrorIdx = 0 }
-            $dlFile = $null
             $installStarted = $false
-            Write-Host "    已切换到镜像源 $($mirrorIdx + 1)/$($p.mirrors.Count)，回车将启动下载（独立窗口）"
+            $ext = [System.IO.Path]::GetExtension($p.mirrors[$mirrorIdx]).ToLower()
+            $dlFile = Join-Path $env:TEMP ("opencode_dl_" + ($p.id -replace "[^A-Za-z0-9]", "_") + "_$($mirrorIdx + 1)" + $ext)
+            Write-Host "    换镜像源 $($mirrorIdx + 1)/$($p.mirrors.Count) 并立即启动下载（独立窗口）: $($p.mirrors[$mirrorIdx])"
+            try {
+              Start-DownloadWindow $p.mirrors[$mirrorIdx] $dlFile
+            } catch {
+              Warn "下载窗口启动失败：$($_.Exception.Message)"
+              $dlFile = $null
+            }
+            Start-Sleep -Seconds 5
           }
           default {
             # 回车：驱动"下载 → 安装 → 检测"流水线推进一步
