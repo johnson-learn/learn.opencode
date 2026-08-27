@@ -50,6 +50,9 @@ check("辅助脚本部署检查指向实际部署位置 $ToolDir（Temp\\opencod
 check("w64devkit 探测用独立变量 $w64Dir（防覆盖 $ToolDir——PS 变量大小写不敏感）", "$w64Dir = \"\"" in c and "$toolDir = \"\"" not in c)
 check("工具类空值当场交互询问（安装时闭环，不写空值行）", "未自动探测到" in c and "回车跳过（不写入映射" in c and "装好工具后重跑本脚本自动补齐" in c)
 check("第 7 节残留提示改为重跑本脚本（非手动编辑 path_map）", "装好工具后重跑本脚本即可自动补齐（已装项自动跳过）" in c)
+check("<工具目录> 自动映射系统盘根（不绑 w64devkit，防映射缺失 to_local 转 0 文件）", '"<工具目录>=" + $env:SystemDrive' in c and '@("<工具目录>", $w64Dir)' not in c)
+check("自动类残留检查含 <工具目录>（防映射缺失时误报路径改写完成）", '"<用户目录>|<opencode配置目录>|<用户临时目录>|<工具目录>"' in c)
+check("<工具目录> 不归填写类残留检查（填写类模式不含工具分支）", '<(项目|源码|WSL安装|离线安装包|LibreOffice|Chrome|Node|3GPP文档库)目录>' in c)
 
 # 3.7 安装交互优化（用户 2026-08-27 要求：必选/可选分级、新窗口安装、等待/放弃/换源/退出选项）
 check("工具必选/可选分级（Git/Node/Python 必选）", "required = $true" in c and "required = $false" in c)

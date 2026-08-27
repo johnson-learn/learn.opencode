@@ -492,7 +492,7 @@ if (-not $SkipDeploy) {
 
   $mapLines = @("# 路径映射（本机特定，不进仓库）：占位符=本机真实路径", "# 工具类自动探测；数据类为默认目录或用户定制")
   # 工具类空值当场询问（2026-08-27 改进：安装时闭环，不留事后警告；跳过=不写空值行，装好工具重跑本脚本自动补齐）
-  foreach ($tk in @(@("<LibreOffice目录>", $loDir), @("<Chrome目录>", $chromeDir), @("<Node目录>", $nodeDir), @("<工具目录>", $w64Dir), @("<WSL安装目录>", $wslDir))) {
+  foreach ($tk in @(@("<LibreOffice目录>", $loDir), @("<Chrome目录>", $chromeDir), @("<Node目录>", $nodeDir), @("<WSL安装目录>", $wslDir))) {
     $tName = $tk[0]
     $tVal = $tk[1]
     if (-not $tVal) {
@@ -504,6 +504,10 @@ if (-not $SkipDeploy) {
     }
     if ($tVal) { $mapLines += "$tName=$tVal" }
   }
+  # <工具目录> 语义 = 系统盘根（w64devkit/MSYS2 等便携工具的约定安装盘），
+  # 任何机器安装后相同，自动写入无需询问（2026-08-28 修复：此前误绑 $w64Dir，
+  # 未装 w64devkit 时映射缺失 → to_local 转 0 个文件 + <工具目录> 残留）
+  $mapLines += "<工具目录>=" + $env:SystemDrive + "\"
   $mapLines += "<资料目录>=" + $docDir
   $mapLines += "<3GPP文档库目录>=" + $gppDir
   $mapLines += "<项目目录>=" + $projDir
@@ -523,14 +527,16 @@ if (-not $SkipDeploy) {
     if (Test-Path $conv) {
       python $conv to_local --home="$homeSlash" $ConfigDir
       python $conv to_local --home="$homeSlash" $ToolDir
-      # 填写类占位符检查：提醒用户补 path_map.txt（排除 tests 目录——repo_face 镜像文件保留占位符是设计）
-      $leftover = Get-ChildItem $ConfigDir -Recurse -File -Include "*.md","*.jsonc" -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "\\tests\\" } | Select-String -Pattern "<(项目|源码|WSL安装|离线安装包|工具|LibreOffice|Chrome|Node|3GPP文档库)目录>" -List -ErrorAction SilentlyContinue
+      # 填写类占位符检查：提醒用户补 path_map.txt（排除 tests 目录——repo_face 镜像文件保留占位符是设计；
+      # <工具目录> 归自动类（盘符根自动写入），不在此列）
+      $leftover = Get-ChildItem $ConfigDir -Recurse -File -Include "*.md","*.jsonc" -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "\\tests\\" } | Select-String -Pattern "<(项目|源码|WSL安装|离线安装包|LibreOffice|Chrome|Node|3GPP文档库)目录>" -List -ErrorAction SilentlyContinue
       if ($leftover) {
         Warn "存在未配置的填写类占位符（对应工具未安装或路径未探测到）。装好工具后重跑本脚本即可自动补齐（已装项自动跳过）："
         Warn "  powershell.exe -NoProfile -ExecutionPolicy Bypass -File setup-windows.ps1"
       }
-      # 自动类占位符残留检查（排除 tests 目录——repo_face 镜像文件保留占位符是设计）
-      $autoLeft = Get-ChildItem $ConfigDir -Recurse -File -Include "*.md","*.jsonc" -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "\\tests\\" } | Select-String -Pattern "<用户目录>|<opencode配置目录>|<用户临时目录>" -List -ErrorAction SilentlyContinue
+      # 自动类占位符残留检查（排除 tests 目录——repo_face 镜像文件保留占位符是设计；
+      # 含 <工具目录>：2026-08-28 Johnson 机器实测——映射缺失时 to_local 转 0 文件却误报 OK）
+      $autoLeft = Get-ChildItem $ConfigDir -Recurse -File -Include "*.md","*.jsonc" -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "\\tests\\" } | Select-String -Pattern "<用户目录>|<opencode配置目录>|<用户临时目录>|<工具目录>" -List -ErrorAction SilentlyContinue
       if ($autoLeft) { Warn "仍有自动类占位符未转换，请检查 python 是否可用" } else { Ok "路径改写完成（占位符已转换为新机路径）" }
     } else { Warn "path_convert.py 不存在（scripts 目录缺失），跳过路径改写" }
   } else { Warn "已跳过路径改写（-NoPathRewrite）" }
