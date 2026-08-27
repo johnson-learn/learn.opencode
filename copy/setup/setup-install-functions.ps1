@@ -16,7 +16,9 @@ while ($true) {
   if (Test-Path $f) {
     $c = Get-Content $f -Raw -ErrorAction SilentlyContinue
     Remove-Item $f -Force -ErrorAction SilentlyContinue
-    if ($c -and $c.Trim()) { iex $c }
+    if ($c -and $c.Trim()) {
+      try { iex $c } catch { Write-Host ("[工作窗口] 命令执行失败：" + $_.Exception.Message) }
+    }
   }
   Start-Sleep -Milliseconds 400
 }
@@ -26,8 +28,10 @@ while ($true) {
     $script:workerProc = Start-Process powershell -ArgumentList @("-NoProfile", "-ExecutionPolicy", "Bypass", "-NoExit", "-File", $script:workerScript) -PassThru
     Write-Host "    [工作窗口] 已弹出（后续所有工具的下载安装都在此窗口进行）"
   }
-  # 写命令文件 → 工作窗口循环检测到即执行
-  Set-Content -LiteralPath $script:workerCmdFile -Value $cmd -Encoding UTF8
+  # 原子写命令文件（临时文件 + Move 替换，防 worker 读到半截文件）
+  $tmpFile = $script:workerCmdFile + ".tmp"
+  Set-Content -LiteralPath $tmpFile -Value $cmd -Encoding UTF8
+  Move-Item -LiteralPath $tmpFile -Destination $script:workerCmdFile -Force
 }
 
 function Stop-WorkerWindow {

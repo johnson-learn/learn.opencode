@@ -83,6 +83,7 @@ function Add-ToUserPath([string]$dir) {
 
 # ---------- 0. 前置检查 ----------
 Step "0. 前置检查"
+  Write-Host "  建议：以管理员身份运行本脚本（安装机器级软件需要管理员权限，否则安装会失败并提示）" -ForegroundColor Yellow
 $psVer = $PSVersionTable.PSVersion
 Write-Host "  PowerShell $psVer；脚本要求 5.1+（Windows 10/11 内置即满足）"
 if ($psVer.Major -lt 5) { Write-Host "  [失败] PowerShell 版本过低" -ForegroundColor Red; exit 1 }
@@ -155,7 +156,8 @@ if (-not $SkipWinget) {
           }
           "3" { Stop-WorkerWindow; Warn "用户选择放弃本次移植，退出脚本"; exit 2 }
           "1" {
-            # 换镜像源：下一镜像源下载命令发送到工作窗口
+            # 换镜像源：重启工作窗口（中断旧 winget/curl 任务），下一镜像源下载命令发送到新工作窗口
+            Stop-WorkerWindow
             $mirrorIdx++
             if ($mirrorIdx -ge $p.mirrors.Count) { $mirrorIdx = 0 }
             $ext = [System.IO.Path]::GetExtension($p.mirrors[$mirrorIdx]).ToLower()
