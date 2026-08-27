@@ -1103,3 +1103,5 @@
 - test_setup_ps1 57/57、sim 17/17 全绿
 
 [2026-08-28] 下载完无反应修复（用户实测）：根因=worker 窗口普通权限，msiexec 装 Program Files 静默失败无输出，主窗口永远检测不到。修复：①worker 窗口管理员化（-Verb RunAs，UAC 弹一次，此后 winget/curl/msiexec 全部有权限）②worker 命令退出码非 0 窗口显示（可能失败提示）③主窗口安装等待加长时间无反应指引。test_setup_ps1 57/57、sim 17/17
+
+[2026-08-28] worker 空值刷屏修复（用户实测）：根因=-Verb RunAs 提权进程不继承主进程运行时环境变量，$env:WORKER_CMD 为空致 Test-Path 空值错误循环。修复：命令文件路径直接内嵌进 worker 脚本（生成时插值，无环境变量依赖）。test_setup_ps1 57/57、sim 17/17

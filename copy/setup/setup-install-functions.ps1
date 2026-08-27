@@ -10,25 +10,26 @@ $script:workerScript = Join-Path $env:TEMP "opencode_worker.ps1"
 function Start-WorkerCommand([string]$cmd) {
   # 首次调用：生成 worker 循环脚本 + 弹出工作窗口（全程只弹这一次）
   if (-not $script:workerProc -or $script:workerProc.HasExited) {
-    $loop = @'
-while ($true) {
-  $f = $env:WORKER_CMD
-  if (Test-Path $f) {
-    $c = Get-Content $f -Raw -ErrorAction SilentlyContinue
-    Remove-Item $f -Force -ErrorAction SilentlyContinue
-    if ($c -and $c.Trim()) {
-      try { iex $c } catch { Write-Host ("[工作窗口] 命令执行失败：" + $_.Exception.Message) }
-      if ($LASTEXITCODE -ne $null -and $LASTEXITCODE -ne 0) {
-        Write-Host ("[工作窗口] 命令退出码 " + $LASTEXITCODE + "（可能失败：权限不足/安装包异常，见 REQUIREMENTS.md）")
+    # 命令文件路径直接内嵌进 worker 脚本（2026-08-28 实测：-Verb RunAs 提权进程不继承主进程
+    # 运行时设置的环境变量，$env:WORKER_CMD 为空导致 Test-Path 空值刷屏——内嵌后无环境依赖）
+    $loop = @"
+`$f = '$($script:workerCmdFile)'
+while (`$true) {
+  if (Test-Path `$f) {
+    `$c = Get-Content `$f -Raw -ErrorAction SilentlyContinue
+    Remove-Item `$f -Force -ErrorAction SilentlyContinue
+    if (`$c -and `$c.Trim()) {
+      try { iex `$c } catch { Write-Host ("[工作窗口] 命令执行失败：" + `$_.Exception.Message) }
+      if (`$LASTEXITCODE -ne `$null -and `$LASTEXITCODE -ne 0) {
+        Write-Host ("[工作窗口] 命令退出码 " + `$LASTEXITCODE + "（可能失败：权限不足/安装包异常，见 REQUIREMENTS.md）")
       }
-      $global:LASTEXITCODE = $null
+      `$global:LASTEXITCODE = `$null
     }
   }
   Start-Sleep -Milliseconds 400
 }
-'@
+"@
     Set-Content -LiteralPath $script:workerScript -Value $loop -Encoding UTF8
-    $env:WORKER_CMD = $script:workerCmdFile
     # 管理员化工作窗口（2026-08-28 实测：普通权限 msiexec 装 Program Files 静默失败致"一直没反应"）：
     # -Verb RunAs 弹 UAC 一次（请点『是』），此后 winget/curl/msiexec 全部有权限
     $script:workerProc = Start-Process powershell -Verb RunAs -ArgumentList @("-NoProfile", "-ExecutionPolicy", "Bypass", "-NoExit", "-File", $script:workerScript) -PassThru
