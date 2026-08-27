@@ -42,7 +42,8 @@ check("旧机路径改写已由占位符体系取代（无旧路径硬编码改�
 check("w64devkit 探测不硬编码盘符（动态枚举现有盘符）", "Get-PSDrive -PSProvider FileSystem" in c and "E:\\w64devkit" not in c)
 check("7.5 验证改为注册事件注入体系（system.transform）", "experimental.chat.system.transform" in c)
 check("7.5 不再要求 opencode.jsonc 含 instructions 注册", "含 instructions 注册" not in c)
-check("辅助脚本部署检查有 ToolDir 空值防护", "IsNullOrEmpty($ToolDir)" in c)
+check("辅助脚本部署检查指向实际部署位置 $ToolDir（Temp\\opencode）", 'Test-Path (Join-Path $ToolDir "extract-docx.ps1")' in c)
+check("w64devkit 探测用独立变量 $w64Dir（防覆盖 $ToolDir——PS 变量大小写不敏感）", "$w64Dir = \"\"" in c and "$toolDir = \"\"" not in c and "<工具目录>=\" + $w64Dir" in c)
 
 # 3.6 必备工具缺失醒目告警（用户 2026-08-27 要求：缺失/安装失败必须醒目提醒）
 check("必备工具缺失告警块存在（8.5）", "必备工具缺失" in c)
