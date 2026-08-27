@@ -92,7 +92,7 @@
 | test_docs_sync.py | `tests\test_docs_sync.py` | G | docs-sync.md 改动后强制（变更类型/校验测试存在/被 regedit+AGENTS 引用，19/19） |
 | test_audit_references.py | `tests\test_audit_references.py` | G | 框架引用审计（引用存在性/旧术语残留/README 双向一致，3/3） |
 | test_repo_face.py | `tests\test_repo_face.py` | G | 仓库门面一致性（门面文件与框架现状对照 + STATE_FILES 工作树残留 + 本机用户名路径动态扫描，17/17；WSL 不可达回退 tests\repo_face\ 镜像） |
-| test_setup_ps1.py | `tests\test_setup_ps1.py` | G | setup-windows.ps1 自动化测试（开关/部署范围/path_convert 体系/AST 语法，21/21；首跑即抓出 SkipDeploy 块缺 } 语法错误与 tests/tools 漏部署） |
+| test_setup_ps1.py | `tests\test_setup_ps1.py` | G | setup-windows.ps1 自动化测试（开关/部署范围/path_convert 体系/AST 语法/盘符动态探测/注册事件注入验证/ToolDir 空值防护/**必备工具缺失告警与退出码**，30/30；首跑即抓出 SkipDeploy 块缺 } 语法错误与 tests/tools 漏部署） |
 | README.md（测试清单） | `tests\README.md` | F | 查测试入口与运行命令 |
 
 ## 数据层
