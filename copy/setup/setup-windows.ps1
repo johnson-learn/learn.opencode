@@ -54,32 +54,37 @@ function Test-Pkg([string]$id) {
   }
 }
 
-# 镜像直链第二渠道安装（2026-08-27 用户方案：winget 源国内经常不可达，镜像直链成功率更高）
-# 下载安装包 → 按扩展名区分静默安装方式（msi 走 msiexec，exe 直跑）→ 检测结果
+# 镜像直链第二渠道安装（2026-08-27 用户方案：winget 源国内经常不可达，镜像直链成功率更高；
+# 2026-08-28 多源化：每工具多个安装源按序尝试，任一成功即完成）
+# 逐个源：下载安装包 → 按扩展名区分静默安装方式（msi 走 msiexec，exe 直跑）→ 检测结果
 function Install-FromMirror($p) {
-  try {
-    $ext = [System.IO.Path]::GetExtension($p.mirror).ToLower()
-    $dl = Join-Path $env:TEMP ("opencode_dl_" + ($p.id -replace "[^A-Za-z0-9]", "_") + $ext)
-    Write-Host "    镜像直链下载中：$($p.mirror)"
-    curl.exe -L --connect-timeout 20 -o $dl $p.mirror
-    if (-not (Test-Path $dl) -or (Get-Item $dl).Length -lt 1MB) {
-      Write-Host "    下载失败或文件异常（大小 <1MB），清理后返回"
-      Remove-Item $dl -ErrorAction SilentlyContinue
-      return $false
+  $idx = 0
+  foreach ($url in $p.mirrors) {
+    $idx++
+    try {
+      $ext = [System.IO.Path]::GetExtension($url).ToLower()
+      $dl = Join-Path $env:TEMP ("opencode_dl_" + ($p.id -replace "[^A-Za-z0-9]", "_") + "_$idx" + $ext)
+      Write-Host "    镜像源 $idx/$($p.mirrors.Count) 下载中：$url"
+      curl.exe -L --connect-timeout 20 -o $dl $url
+      if (-not (Test-Path $dl) -or (Get-Item $dl).Length -lt 1MB) {
+        Write-Host "    该源下载失败或文件异常（大小 <1MB），换下一个源..."
+        Remove-Item $dl -ErrorAction SilentlyContinue
+        continue
+      }
+      Write-Host "    下载完成，静默安装中（$($p.name)）..."
+      if ($ext -eq ".msi") {
+        Start-Process msiexec -ArgumentList @("/i", "`"$dl`"", "/qn", "/norestart") -Wait
+      } else {
+        Start-Process $dl -ArgumentList $p.silent -Wait
+      }
+      Start-Sleep -Seconds 5
+      if (& $p.check) { return $true }
+      Write-Host "    该源安装完成但未检测到，换下一个源..."
+    } catch {
+      Write-Host "    该源安装异常，换下一个源..."
     }
-    Write-Host "    下载完成，静默安装中（$($p.name)）..."
-    if ($ext -eq ".msi") {
-      Start-Process msiexec -ArgumentList @("/i", "`"$dl`"", "/qn", "/norestart") -Wait
-    } else {
-      Start-Process $dl -ArgumentList $p.silent -Wait
-    }
-    Start-Sleep -Seconds 5
-    if (& $p.check) { return $true }
-    Write-Host "    静默安装完成但未检测到（可能需重启 PATH/重启电脑），返回失败供后续渠道兜底"
-    return $false
-  } catch {
-    return $false
   }
+  return $false
 }
 
 # 获取当前 python 的 pip Scripts 目录（--user 安装后 p2t 等命令所在位置）
@@ -134,15 +139,15 @@ if (-not $SkipWinget) {
   } else {
     $pkgs = @(
       @{ id = "Git.Git";                         name = "Git for Windows"; required = $true;  check = { (Test-Cmd "git") -or (Test-Path "C:\Program Files\Git\cmd\git.exe") };
-         mirror = "https://registry.npmmirror.com/-/binary/git-for-windows/v2.45.2.windows.1/Git-2.45.2-64-bit.exe"; silent = @("/VERYSILENT", "/NORESTART") },
+         mirrors = @("https://registry.npmmirror.com/-/binary/git-for-windows/v2.45.2.windows.1/Git-2.45.2-64-bit.exe", "https://github.com/git-for-windows/git/releases/download/v2.45.2.windows.1/Git-2.45.2-64-bit.exe"); silent = @("/VERYSILENT", "/NORESTART") },
       @{ id = "OpenJS.NodeJS.LTS";               name = "Node.js LTS";     required = $true;  check = { (Test-Cmd "node") -or (Test-Path "C:\Program Files\nodejs\node.exe") };
-         mirror = "https://registry.npmmirror.com/-/binary/node/v20.15.1/node-v20.15.1-x64.msi"; silent = @("/qn", "/norestart") },
+         mirrors = @("https://registry.npmmirror.com/-/binary/node/v20.15.1/node-v20.15.1-x64.msi", "https://nodejs.org/dist/v20.15.1/node-v20.15.1-x64.msi"); silent = @("/qn", "/norestart") },
       @{ id = "Python.Python.3.12";              name = "Python 3.12";     required = $true;  check = { (Test-Cmd "python") -or (Test-Path "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe") -or (Test-Path "C:\Program Files\Python312\python.exe") };
-         mirror = "https://registry.npmmirror.com/-/binary/python/3.12.4/python-3.12.4-amd64.exe"; silent = @("/quiet", "InstallAllUsers=1", "PrependPath=1") },
+         mirrors = @("https://registry.npmmirror.com/-/binary/python/3.12.4/python-3.12.4-amd64.exe", "https://www.python.org/ftp/python/3.12.4/python-3.12.4-amd64.exe"); silent = @("/quiet", "InstallAllUsers=1", "PrependPath=1") },
       @{ id = "Google.Chrome";                   name = "Google Chrome";   required = $false; check = { (Test-Path "C:\Program Files\Google\Chrome\Application\chrome.exe") -or (Test-Path "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe") };
-         mirror = "https://dl.google.com/chrome/install/latest/chrome_installer.exe"; silent = @("/silent", "/install") },
+         mirrors = @("https://dl.google.com/chrome/install/latest/chrome_installer.exe", "https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi"); silent = @("/silent", "/install") },
       @{ id = "TheDocumentFoundation.LibreOffice"; name = "LibreOffice";    required = $false; check = { Test-Soffice };
-         mirror = "https://gh-proxy.com/https://download.documentfoundation.org/libreoffice/stable/24.8.0/win/x86_64/LibreOffice_24.8.0_Win_x86-64.msi"; silent = @("/qn", "/norestart") }
+         mirrors = @("https://gh-proxy.com/https://download.documentfoundation.org/libreoffice/stable/24.8.0/win/x86_64/LibreOffice_24.8.0_Win_x86-64.msi", "https://download.documentfoundation.org/libreoffice/stable/24.8.0/win/x86_64/LibreOffice_24.8.0_Win_x86-64.msi", "https://mirrors.tuna.tsinghua.edu.cn/libreoffice/libreoffice/stable/24.8.0/win/x86_64/LibreOffice_24.8.0_Win_x86-64.msi"); silent = @("/qn", "/norestart") }
     )
     foreach ($p in $pkgs) {
       $tier = if ($p.required) { "必选" } else { "可选" }
@@ -158,18 +163,26 @@ if (-not $SkipWinget) {
         Write-Host "  本窗口选项（可随时选择，无倒计时）："
         Write-Host "    [回车] 继续等待安装完成（每 10 秒自动检测，装完自动继续）"
         if ($p.required) {
-          Write-Host "    [1] 换镜像直链渠道安装（国内高速源自动下载静默安装；仍失败则转非静默窗口+手动指引）"
+          Write-Host "    [1] 换镜像直链渠道安装（多安装源自动逐个尝试）"
           Write-Host "    [2] 放弃本次必选工具安装（后续手动安装后重跑本脚本；本次跳过依赖该工具的环节）"
           Write-Host "    [3] 放弃本次移植（退出脚本）"
-          $ans = Read-Host "  请选择（回车=继续等待 / 1 / 2 / 3）"
+          Write-Host "    [4] 新开非静默 PowerShell 窗口安装（可看进度/错误，可手动确认）"
+          $ans = Read-Host "  请选择（回车=继续等待 / 1 / 2 / 3 / 4）"
           if ($ans -eq "2") { Warn "已放弃必选工具 $($p.name) 安装（手动安装后重跑本脚本自动补齐）"; $done = $true }
           elseif ($ans -eq "3") { Warn "用户选择放弃本次移植，退出脚本"; exit 2 }
+          elseif ($ans -eq "4") {
+            Write-Host "    已新开 PowerShell 窗口非静默安装（可看安装进度/错误，可手动确认）..."
+            Start-Process powershell -ArgumentList @("-NoProfile", "-NoExit", "-Command", "winget install --id $($p.id) -e --accept-source-agreements --accept-package-agreements") | Out-Null
+            Write-Host "    若窗口内安装仍失败：请从官方下载或用其它镜像源手动安装（详见 REQUIREMENTS.md §1）"
+            Read-Host "    安装完成后按回车继续检测..." | Out-Null
+            if (& $p.check) { Ok "$($p.name) 已由用户手动安装"; $done = $true }
+            else { Warn "仍未检测到 $($p.name)，回到选项菜单" }
+          }
           elseif ($ans -eq "1") {
             if (Install-FromMirror $p) { Ok "$($p.name) 镜像直链渠道安装完成"; $done = $true }
             else {
-              Write-Host "    镜像直链渠道也失败：已新开 PowerShell 窗口非静默安装（可看安装进度/错误，可手动确认）..."
-              Start-Process powershell -ArgumentList @("-NoProfile", "-NoExit", "-Command", "winget install --id $($p.id) -e --accept-source-agreements --accept-package-agreements") | Out-Null
-              Write-Host "    若窗口内安装仍失败：请从官方下载或用其它镜像源手动安装（详见 REQUIREMENTS.md §1）"
+              Write-Host "    全部镜像源均失败。可手动安装后回车检测（直接回车=回到选项菜单）："
+              Write-Host "    手动安装指引：从官方下载或用其它镜像源安装（详见 REQUIREMENTS.md §1）"
               Read-Host "    安装完成后按回车继续检测..." | Out-Null
               if (& $p.check) { Ok "$($p.name) 已由用户手动安装"; $done = $true }
               else { Warn "仍未检测到 $($p.name)，回到选项菜单" }
@@ -177,16 +190,24 @@ if (-not $SkipWinget) {
           }
           else { Start-Sleep -Seconds 10 }
         } else {
-          Write-Host "    [1] 换镜像直链渠道安装（国内高速源自动下载静默安装；仍失败则转非静默窗口+手动指引）"
+          Write-Host "    [1] 换镜像直链渠道安装（多安装源自动逐个尝试）"
           Write-Host "    [2] 放弃本次可选工具安装，继续移植"
-          $ans = Read-Host "  请选择（回车=继续等待 / 1 / 2）"
+          Write-Host "    [3] 新开非静默 PowerShell 窗口安装（可看进度/错误，可手动确认）"
+          $ans = Read-Host "  请选择（回车=继续等待 / 1 / 2 / 3）"
           if ($ans -eq "2") { Warn "已放弃可选工具 $($p.name) 安装，继续移植"; $done = $true }
+          elseif ($ans -eq "3") {
+            Write-Host "    已新开 PowerShell 窗口非静默安装（可看安装进度/错误，可手动确认）..."
+            Start-Process powershell -ArgumentList @("-NoProfile", "-NoExit", "-Command", "winget install --id $($p.id) -e --accept-source-agreements --accept-package-agreements") | Out-Null
+            Write-Host "    若窗口内安装仍失败：请从官方下载或用其它镜像源手动安装（详见 REQUIREMENTS.md §1）"
+            Read-Host "    安装完成后按回车继续检测..." | Out-Null
+            if (& $p.check) { Ok "$($p.name) 已由用户手动安装"; $done = $true }
+            else { Warn "仍未检测到 $($p.name)，回到选项菜单" }
+          }
           elseif ($ans -eq "1") {
             if (Install-FromMirror $p) { Ok "$($p.name) 镜像直链渠道安装完成"; $done = $true }
             else {
-              Write-Host "    镜像直链渠道也失败：已新开 PowerShell 窗口非静默安装（可看安装进度/错误，可手动确认）..."
-              Start-Process powershell -ArgumentList @("-NoProfile", "-NoExit", "-Command", "winget install --id $($p.id) -e --accept-source-agreements --accept-package-agreements") | Out-Null
-              Write-Host "    若窗口内安装仍失败：请从官方下载或用其它镜像源手动安装（详见 REQUIREMENTS.md §1）"
+              Write-Host "    全部镜像源均失败。可手动安装后回车检测（直接回车=回到选项菜单）："
+              Write-Host "    手动安装指引：从官方下载或用其它镜像源安装（详见 REQUIREMENTS.md §1）"
               Read-Host "    安装完成后按回车继续检测..." | Out-Null
               if (& $p.check) { Ok "$($p.name) 已由用户手动安装"; $done = $true }
               else { Warn "仍未检测到 $($p.name)，回到选项菜单" }
