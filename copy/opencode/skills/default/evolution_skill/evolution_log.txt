@@ -1122,3 +1122,11 @@
 - 自动兜底：winget 失败/10 分钟无进展自动切镜像源；源尽自动回 winget 循环重试；用户随时按键提前干预
 - 工作窗口显示下载/安装详细进度（管理员权限）
 - test_setup_ps1 57/57、sim 17/17、regedit 48/48
+
+[2026-08-28] setup-windows.ps1 提权 worker 窗口残留修复（用户实测反馈：安装成功后屏幕出现第三个空白 PowerShell 窗口）
+- 根因：worker 为 Start-Process powershell -Verb RunAs 提权进程，主窗口非管理员时 Stop-Process 静默失败（-ErrorAction SilentlyContinue 吞掉权限错误）→ worker 空转循环窗口残留（只显示版权横幅）
+- 修复：worker 循环脚本加 stop 信号文件轮询自毁（Test-Path stopF → exit）+ Stop-Process 仅兜底 + 去 -NoExit（exit 后窗口自动关闭）+ 新 worker 启动前清理残留信号
+- 测试：test_setup_sim.ps1 新增场景7（worker 停止信号自毁，3 用例，17→20）；test_setup_ps1.py 断言 17/17→20/20，57/57 通过；test_repo_face 18/18、test_regedit 48/48 通过
+- 经验固化：program_skill 环境注意「Windows 提权子进程窗口管理」；regedit/tests README 同步（sim 描述加停止信号、repo_face 17→18 数字修正）
+- 附带修正：test_repo_face 实际 18 项但 regedit/README 登记 17/17 的数字偏差
+- update_skill 同步踩坑（本次执行）：① 本机全局文件为 to_local 形态（真实路径），cp 直接覆盖会破坏仓库占位符体系——必须 cp 后 to_portable 且残留扫描，或逐文件比对后以占位符形态重做；② git 路径双轨：git show HEAD:<path> 相对仓库根（路径带 copy/ 前缀），git checkout -- <path>/status 相对当前目录——混用路径前缀会导致 checkout 静默失效或 diff 误判；③ 3gpp_skill 为精炼入口 + references/official-info.md 详版结构，FTP 结构类更新在 references 而非 SKILL.md
