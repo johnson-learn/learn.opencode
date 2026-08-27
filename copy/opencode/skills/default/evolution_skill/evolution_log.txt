@@ -1074,3 +1074,9 @@
 [2026-08-28] 用户实测：按回车窗口弹出但瞬间关闭、历史窗口未关→ 下载窗口改 -File 执行临时脚本（消除引号转义）+ -NoExit（失败时窗口保留显示错误，不再一闪而过）；Close-SpawnedWindows 的 Stop 错误打印不再静默；待 Johnson 重跑获取窗口内错误信息
 
 [2026-08-28] 单键菜单 + 确定性关窗：① 菜单改 [Console]::ReadKey 单键即时响应（无需回车提交，非交互回退 Read-Host）；② [1] 一步换源+即启下载窗口；③ Close-SpawnedWindows 改 taskkill /PID /T /F 进程树强杀 + 关闭计数打印（每次关闭可见关了几个，未关掉时次日志可定位根因）；模拟测试 20/20、test_setup_ps1 57/57
+
+[2026-08-28] 主窗口模式重构（用户定：别搞弹出新窗口，全部在主窗口进行，选项用冒号式呈现）：
+- winget 主窗口同步执行（输出/进度可见）；镜像渠道主窗口同步下载（curl 进度）+ msiexec 直跑安装（权限不足提示以管理员运行）
+- 菜单冒号式：『请选择：回车=继续等待检测；1=换镜像源下载安装；2=放弃本次安装；3=放弃本次移植』+ 单键 ReadKey 非交互回退
+- 删除全部窗口机制（Start-ChildWindow/Close-SpawnedWindows/taskkill/Start-DownloadWindow/Start-InstallWindow）；函数文件精简为 Install-FromMirror + Get-DynamicVersions
+- 模拟测试抓出真 bug：主窗口版 Start-Process 未加 Out-Null 致进程对象泄漏污染返回值（场景5 误判 true）→ 修复；sim 17/17、test_setup_ps1 57/57

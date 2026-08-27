@@ -53,19 +53,19 @@ check("第 7 节残留提示改为重跑本脚本（非手动编辑 path_map）"
 
 # 3.7 安装交互优化（用户 2026-08-27 要求：必选/可选分级、新窗口安装、等待/放弃/换源/退出选项）
 check("工具必选/可选分级（Git/Node/Python 必选）", "required = $true" in c and "required = $false" in c)
-check("新开 PowerShell 窗口安装（可看进度/结果，UAC 自动弹窗确认）", "Start-Process powershell" in c)
-check("原窗口选项直接显示（无倒计时，回车继续等待每 10 秒检测）", "可随时选择，无倒计时" in c and "每 10 秒自动检测" in c)
-check("必选工具失败三选项（镜像直链重试/放弃必选/放弃移植）", "换镜像直链渠道安装" in c and "放弃本次必选工具安装" in c and "放弃本次移植（退出脚本）" in c)
-check("可选工具失败两选项（换源重试/放弃可选继续）", "放弃本次可选工具安装，继续移植" in c)
+check("主窗口模式（除 WSL 安装提权环节外不弹新窗口）", "Start-ChildWindow" not in c and ("Start-Process powershell" not in c or "install-wsl" in c))
+check("菜单冒号式呈现（请选择：回车/1/2/3），单键 ReadKey 非交互回退", "请选择：" in c and "[Console]::ReadKey" in c and "无倒计时" in c)
+check("必选工具失败三选项（换镜像源/放弃必选/放弃移植）", "换镜像源下载安装" in c and "已放弃必选工具" in c and "放弃本次移植" in c)
+check("可选工具失败两选项（换源重试/放弃可选继续）", "已放弃可选工具" in c)
 check("放弃移植退出码（exit 2）", "exit 2" in c)
-check("所有出口关闭历史窗口（安装成功/放弃/退出/循环结束均 Close-SpawnedWindows）", c.count("Close-SpawnedWindows") >= 4)
-check("静默失败兜底：非静默 PowerShell 安装窗口（可看进度可手动确认）", "已新开 PowerShell 窗口非静默安装" in c)
+check("主窗口模式无窗口清理逻辑残留", "Close-SpawnedWindows" not in c and "taskkill" not in c and "Start-DownloadWindow" not in c)
+check("主窗口安装（msiexec 直跑 + 权限不足提示）", "Start-Process msiexec" in c and "权限不足请以管理员身份运行本脚本" in c)
 check("镜像直链第二渠道（npmmirror 国内高速源 + 各包静默参数）", "registry.npmmirror.com" in c and "gh-proxy.com" in c and "dl.google.com" in c and "mirrors.tuna.tsinghua.edu.cn" in c)
 check("多安装源逐个尝试（mirrors 数组 + 换下一个源）", "mirrors = @" in c and "换下一个源" in c2)
 check("镜像渠道安装函数（msi 走 msiexec / exe 直跑 / 下载校验 <1MB 判失败）", "Install-FromMirror" in c2 and "msiexec" in c2 and "Length -lt 1MB" in c2)
-check("镜像渠道安装走管理员提权窗口（-Verb RunAs + UAC 提示 + 窗口可见；轮询防挂起）", "Start-Process powershell -Verb RunAs" in c2 and "弹出 UAC 请点『是』" in c2)
-check("镜像源全部失败后回到选项菜单（状态机菜单始终可选）", "全部镜像源已尝试" in c and "本窗口选项（可随时选择" in c)
-check("非静默窗口为独立选项（[4]/[3] 可选）", "新开非静默 PowerShell 窗口安装" in c)
+check("镜像渠道主窗口同步安装（下载+msiexec 直跑）", "curl.exe -L --connect-timeout 20 -o" in c and "Start-Process msiexec" in c)
+check("镜像源全部失败后回到选项菜单", "全部镜像源均失败" in c and "可回车继续等待检测" in c)
+check("主窗口模式无 [4] 非静默窗口选项", "非静默" not in c)
 check("LibreOffice 版本动态解析（防固定版本号被镜像站清理致全源 404）", "动态版本解析：Git" in c and "libreoffice/stable/" in c2 and "$loVer" in c2)
 check("Git/Node/Python 全动态化（npmmirror 目录页 JSON 解析 + 兜底固定版）", "binary/git-for-windows/" in c2 and "binary/node/" in c2 and "binary/python/" in c2 and "gitVer" in c2 and "nodeVer" in c2 and "pyVer" in c2)
 check("Node 动态解析限 LTS 偶数大版本", "% 2 -eq 0" in c2)
@@ -77,12 +77,12 @@ if mode == "仓库直读":
     try:
         r = subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", sim, "-FuncFile", funcs],
                            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300)
-        check("模拟测试 test_setup_sim.ps1 执行通过（mock 分支流转 20/20）", r.returncode == 0 and "SIM_RESULT: pass=20 fail=0" in r.stdout)
+        check("模拟测试 test_setup_sim.ps1 执行通过（mock 分支流转 17/17）", r.returncode == 0 and "SIM_RESULT: pass=17 fail=0" in r.stdout)
     except Exception:
-        check("模拟测试 test_setup_sim.ps1 执行通过（mock 分支流转 20/20）", False)
+        check("模拟测试 test_setup_sim.ps1 执行通过（mock 分支流转 17/17）", False)
 else:
     print("  （镜像回退模式：跳过模拟测试，函数文件不可得）")
-check("新窗口为 PowerShell 窗口（-NoExit 保留结果，UAC 提示）", "Start-Process powershell" in c and "-NoExit" in c and "弹出 UAC 请点" in c)
+check("winget 主窗口同步执行（无新窗口）", "winget install --id $p.id -e --silent" in c)
 check("检测双通道（命令 OR 安装位置文件，防新装 PATH 未刷新误判）", "C:\\Program Files\\nodejs\\node.exe" in c and "C:\\Program Files\\Git\\cmd\\git.exe" in c)
 
 # 3.8 安装后自动配置（用户 2026-08-28 要求"完成全套工作"：环境变量/镜像源持久化）

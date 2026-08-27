@@ -126,93 +126,71 @@ if (-not $SkipWinget) {
     foreach ($p in $pkgs) {
       $tier = if ($p.required) { "必选" } else { "可选" }
       if (& $p.check) { Ok "$($p.name) 已安装"; continue }
-      # 新开 PowerShell 窗口安装（可看进度/结果；UAC 提权自动弹出请确认），原窗口直接给选项（无倒计时）
-      Write-Host "  [$tier] $($p.name) 未安装，已新开 PowerShell 窗口安装中（如弹出 UAC 请点『是』）"
+      # 主窗口模式（2026-08-28 用户定：全部在主窗口进行，不弹新窗口）：
+      # winget 直接主窗口同步执行，输出与进度可见；装完检测，菜单冒号式呈现
+      Write-Host "  [$tier] $($p.name) 未安装，主窗口执行 winget 安装中..."
       $wingetLog = Join-Path $env:TEMP ("opencode_winget_" + ($p.id -replace "[^A-Za-z0-9]", "_") + ".log")
-      $wingetCmd = "winget install --id $($p.id) -e --silent --accept-source-agreements --accept-package-agreements --log `"$wingetLog`""
-      Start-Process powershell -ArgumentList @("-NoProfile", "-NoExit", "-Command", $wingetCmd) | Out-Null
+      winget install --id $p.id -e --silent --accept-source-agreements --accept-package-agreements --log "$wingetLog"
       $done = $false
-      # 状态机（2026-08-28 用户要求：直到检测到安装成功前，菜单始终可见、任何时刻可随时选择）
-      $mirrorIdx = -1          # 当前镜像源索引（-1=未开始）
-      $dlFile = $null          # 当前下载文件
-      $installStarted = $false # 下载完成后的安装窗口是否已启动
       while (-not $done) {
-        if (& $p.check) { Close-SpawnedWindows; Ok "$($p.name) 安装完成"; break }
+        if (& $p.check) { Ok "$($p.name) 安装完成"; break }
         Write-Host "  本窗口选项（可随时选择，无倒计时）："
-        Write-Host "    [回车] 继续等待安装完成（每 10 秒自动检测，装完自动继续）"
-        Write-Host "    [1] 换镜像直链渠道安装（多安装源自动逐个尝试，下载在独立窗口进行）"
-        $opt2Text = if ($p.required) { "[2] 放弃本次必选工具安装（后续手动安装后重跑本脚本；本次跳过依赖该工具的环节）" } else { "[2] 放弃本次可选工具安装，继续移植" }
-        Write-Host "    $opt2Text"
-        Write-Host "    [3] 放弃本次移植（退出脚本）"
-        Write-Host "    [4] 新开非静默 PowerShell 窗口安装（可看进度/错误，可手动确认）"
-        $ans = Read-Host "  请选择（回车=继续等待 / 1 / 2 / 3 / 4）"
+        Write-Host "  请选择：回车=继续等待检测；1=换镜像源下载安装；2=放弃本次$($(if ($p.required) { '必选' } else { '可选' }))工具安装；3=放弃本次移植"
+        $ans = ""
+        try {
+          $key = [Console]::ReadKey($true)
+          $ans = "$($key.KeyChar)"
+          if ($ans -eq [char]13 -or $ans -eq [char]10) { $ans = "" }
+        } catch {
+          $ans = Read-Host "  请选择：回车=继续等待检测；1=换镜像源下载安装；2=放弃；3=放弃移植"
+        }
         switch ($ans) {
           "2" {
-            Close-SpawnedWindows
             if ($p.required) { Warn "已放弃必选工具 $($p.name) 安装（手动安装后重跑本脚本自动补齐）" }
             else { Warn "已放弃可选工具 $($p.name) 安装，继续移植" }
             $done = $true
           }
-          "3" { Close-SpawnedWindows; Warn "用户选择放弃本次移植，退出脚本"; exit 2 }
-          "4" {
-            Write-Host "    已新开 PowerShell 窗口非静默安装（可看安装进度/错误，可手动确认）..."
-            Start-Process powershell -ArgumentList @("-NoProfile", "-NoExit", "-Command", "winget install --id $($p.id) -e --accept-source-agreements --accept-package-agreements") | Out-Null
-            Write-Host "    若窗口内安装仍失败：请从官方下载或用其它镜像源手动安装（详见 REQUIREMENTS.md §1）"
-            Write-Host "    （本菜单保持可用：回车继续等待检测 / 可随时再选 1/2/3）"
-          }
+          "3" { Warn "用户选择放弃本次移植，退出脚本"; exit 2 }
           "1" {
-            # 换源：递增源索引（无下载状态时从 0 开始；有下载状态时换下一个）
-            if ($dlFile) { $mirrorIdx++ } else { $mirrorIdx = 0 }
-            if ($mirrorIdx -ge $p.mirrors.Count) { $mirrorIdx = 0 }
-            $dlFile = $null
-            $installStarted = $false
-            Write-Host "    已切换到镜像源 $($mirrorIdx + 1)/$($p.mirrors.Count)，回车将启动下载（独立窗口）"
+            # 换源后主窗口同步下载安装（多源逐个尝试）
+            $mirrorOk = $false
+            $idx = 0
+            foreach ($url in $p.mirrors) {
+              $idx++
+              Write-Host "    镜像源 $idx/$($p.mirrors.Count) 主窗口下载安装中：$url"
+              $ext = [System.IO.Path]::GetExtension($url).ToLower()
+              $dl = Join-Path $env:TEMP ("opencode_dl_" + ($p.id -replace "[^A-Za-z0-9]", "_") + "_$idx" + $ext)
+              try {
+                curl.exe -L --connect-timeout 20 -o $dl $url
+                if ((Test-Path $dl) -and (Get-Item $dl).Length -ge 1MB) {
+                  Write-Host "    下载完成，静默安装中（$($p.name)；若提示权限不足请以管理员身份运行本脚本）..."
+                  if ($ext -eq ".msi") {
+                    Start-Process msiexec -ArgumentList @("/i", "`"$dl`"", "/qn", "/norestart") -Wait
+                  } else {
+                    Start-Process $dl -ArgumentList $p.silent -Wait
+                  }
+                  Start-Sleep -Seconds 5
+                  if (& $p.check) { $mirrorOk = $true; break }
+                  Write-Host "    该源安装完成但未检测到，换下一个源..."
+                } else {
+                  Write-Host "    该源下载失败或文件异常，换下一个源..."
+                  Remove-Item $dl -ErrorAction SilentlyContinue
+                }
+              } catch {
+                Write-Host "    该源异常：$($_.Exception.Message)，换下一个源..."
+              }
+            }
+            if ($mirrorOk) { Ok "$($p.name) 镜像源安装完成"; $done = $true }
+            else { Write-Host "    全部镜像源均失败：可回车继续等待检测 / 选 2 放弃 / 选 3 退出移植" }
           }
           default {
-            # 回车：驱动"下载 → 安装 → 检测"流水线推进一步
-            if ($mirrorIdx -lt 0) {
-              $mirrorIdx = 0
-            }
-            if ($mirrorIdx -ge $p.mirrors.Count) {
-              Write-Host "    全部镜像源已尝试。可继续回车重试源 1 / 选 2 放弃 / 选 3 退出 / 选 4 非静默窗口"
-              Start-Sleep -Seconds 10
-              continue
-            }
-            if (-not $dlFile) {
-              # 启动下载窗口（独立窗口可见进度）
-              $ext = [System.IO.Path]::GetExtension($p.mirrors[$mirrorIdx]).ToLower()
-              $dlFile = Join-Path $env:TEMP ("opencode_dl_" + ($p.id -replace "[^A-Za-z0-9]", "_") + "_$($mirrorIdx + 1)" + $ext)
-              Write-Host "    镜像源 $($mirrorIdx + 1)/$($p.mirrors.Count) 下载已启动（独立窗口，原窗口菜单随时可选）: $($p.mirrors[$mirrorIdx])"
-              Start-DownloadWindow $p.mirrors[$mirrorIdx] $dlFile
-              Start-Sleep -Seconds 10
-            } elseif (-not $installStarted) {
-              if ((Test-Path $dlFile) -and (Get-Item $dlFile).Length -ge 1MB) {
-                # 下载完成 → 启动提权安装窗口
-                Write-Host "    下载完成，已新开管理员 PowerShell 窗口执行静默安装（如弹出 UAC 请点『是』；安装期间窗口可见）..."
-                try {
-                  Start-InstallWindow $p $dlFile
-                  $installStarted = $true
-                } catch {
-                  Warn "无法弹出管理员窗口（可能 UAC 被禁用、用户拒绝提权或未以管理员运行）。请以管理员身份运行本脚本，或选 4 非静默窗口手动安装"
-                  $dlFile = $null
-                  $installStarted = $false
-                }
-                Start-Sleep -Seconds 10
-              } else {
-                $sz = if (Test-Path $dlFile) { [math]::Round((Get-Item $dlFile).Length / 1MB, 1) } else { 0 }
-                Write-Host "    下载中...（当前 $sz MB；本菜单保持可用：可随时选 1 换源 / 2 放弃 / 3 退出）"
-                Start-Sleep -Seconds 10
-              }
-            } else {
-              Write-Host "    安装窗口运行中，等待检测...（UAC 未确认或安装失败时可随时选 1 换源 / 2 放弃 / 3 退出）"
-              Start-Sleep -Seconds 10
-            }
+            Write-Host "    等待安装完成中...（每 10 秒自动检测，装完自动继续）"
+            Start-Sleep -Seconds 10
           }
         }
       }
     }
   }
-  Close-SpawnedWindows
 } else { Warn "已跳过基础软件安装（-SkipWinget）" }
 
   # 安装后自动配置（2026-08-28 用户要求"完成全套工作"）：刷新当前会话 PATH，新装工具立即可用无需重开终端
