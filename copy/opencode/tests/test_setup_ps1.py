@@ -60,6 +60,9 @@ check("多安装源逐个尝试（mirrors 数组 + 换下一个源）", "mirrors
 check("镜像渠道安装函数（msi 走 msiexec / exe 直跑 / 下载校验 <1MB 判失败）", "Install-FromMirror" in c and "msiexec" in c and "Length -lt 1MB" in c)
 check("镜像源全部失败后回到选项菜单（不再自动跳级）", "全部镜像源均失败" in c and "回到选项菜单" in c)
 check("非静默窗口为独立选项（[4]/[3] 可选）", "新开非静默 PowerShell 窗口安装" in c)
+check("LibreOffice 版本动态解析（防固定版本号被镜像站清理致全源 404）", "动态版本解析：Git" in c and "libreoffice/stable/" in c and "$loVer" in c)
+check("Git/Node/Python 全动态化（npmmirror 目录页 JSON 解析 + 兜底固定版）", "binary/git-for-windows/" in c and "binary/node/" in c and "binary/python/" in c and "gitVer" in c and "nodeVer" in c and "pyVer" in c)
+check("Node 动态解析限 LTS 偶数大版本", "% 2 -eq 0" in c)
 check("新窗口为 PowerShell 窗口（-NoExit 保留结果，UAC 提示）", "Start-Process powershell" in c and "-NoExit" in c and "弹出 UAC 请点" in c)
 check("检测双通道（命令 OR 安装位置文件，防新装 PATH 未刷新误判）", "C:\\Program Files\\nodejs\\node.exe" in c and "C:\\Program Files\\Git\\cmd\\git.exe" in c)
 

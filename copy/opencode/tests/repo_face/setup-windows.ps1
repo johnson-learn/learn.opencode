@@ -137,17 +137,42 @@ if (-not $SkipWinget) {
   if (-not (Test-Cmd "winget")) {
     Warn "winget 不存在，跳过软件安装。请手动安装 Git/Node/Python/Chrome/LibreOffice（见 REQUIREMENTS.md §1）"
   } else {
+    # 动态版本解析（2026-08-28 用户要求全部动态化：从 npmmirror 目录页 JSON 解析最新可用版本，
+    # 防镜像站清理历史版本致固定版本 404；解析失败回退固定版本兜底）
+    $gitVer = $null; $nodeVer = $null; $pyVer = $null
+    try {
+      $gitList = curl.exe -s --connect-timeout 15 "https://registry.npmmirror.com/-/binary/git-for-windows/" | ConvertFrom-Json
+      $gitVer = $gitList | Where-Object { $_ -match '^v\d+\.\d+\.\d+\.windows\.1/$' } | ForEach-Object { $_.Trim('/').TrimStart('v') } | Sort-Object { [version]($_ -replace '\.windows\.1$', '') } -Descending | Select-Object -First 1
+    } catch {}
+    try {
+      $nodeList = curl.exe -s --connect-timeout 15 "https://registry.npmmirror.com/-/binary/node/" | ConvertFrom-Json
+      $nodeVer = $nodeList | Where-Object { $_ -match '^v\d+\.\d+\.\d+/$' } | ForEach-Object { $_.Trim('/').TrimStart('v') } | Where-Object { ([int](($_ -split '\.')[0])) % 2 -eq 0 } | Sort-Object { [version]$_ } -Descending | Select-Object -First 1
+    } catch {}
+    try {
+      $pyList = curl.exe -s --connect-timeout 15 "https://registry.npmmirror.com/-/binary/python/" | ConvertFrom-Json
+      $pyVer = $pyList | Where-Object { $_ -match '^3\.12\.\d+/$' } | ForEach-Object { $_.Trim('/') } | Sort-Object { [version]$_ } -Descending | Select-Object -First 1
+    } catch {}
+    $loVer = $null
+    try {
+      $loIdx = curl.exe -s --connect-timeout 15 "https://mirrors.tuna.tsinghua.edu.cn/libreoffice/libreoffice/stable/"
+      $loVer = [regex]::Matches($loIdx, 'href="(\d+\.\d+\.\d+)/"') | ForEach-Object { $_.Groups[1].Value } | Sort-Object { [version]$_ } -Descending | Select-Object -First 1
+    } catch {}
+    if (-not $gitVer) { $gitVer = "2.45.2.windows.1" }
+    if (-not $nodeVer) { $nodeVer = "20.15.1" }
+    if (-not $pyVer) { $pyVer = "3.12.4" }
+    if (-not $loVer) { $loVer = "24.8.0" }
+    Ok "动态版本解析：Git $gitVer / Node $nodeVer / Python $pyVer / LibreOffice $loVer"
     $pkgs = @(
       @{ id = "Git.Git";                         name = "Git for Windows"; required = $true;  check = { (Test-Cmd "git") -or (Test-Path "C:\Program Files\Git\cmd\git.exe") };
-         mirrors = @("https://registry.npmmirror.com/-/binary/git-for-windows/v2.45.2.windows.1/Git-2.45.2-64-bit.exe", "https://github.com/git-for-windows/git/releases/download/v2.45.2.windows.1/Git-2.45.2-64-bit.exe"); silent = @("/VERYSILENT", "/NORESTART") },
+         mirrors = @("https://registry.npmmirror.com/-/binary/git-for-windows/v$gitVer/Git-$($gitVer -replace '\.windows\.1$', '')-64-bit.exe", "https://github.com/git-for-windows/git/releases/download/v$gitVer/Git-$($gitVer -replace '\.windows\.1$', '')-64-bit.exe"); silent = @("/VERYSILENT", "/NORESTART") },
       @{ id = "OpenJS.NodeJS.LTS";               name = "Node.js LTS";     required = $true;  check = { (Test-Cmd "node") -or (Test-Path "C:\Program Files\nodejs\node.exe") };
-         mirrors = @("https://registry.npmmirror.com/-/binary/node/v20.15.1/node-v20.15.1-x64.msi", "https://nodejs.org/dist/v20.15.1/node-v20.15.1-x64.msi"); silent = @("/qn", "/norestart") },
+         mirrors = @("https://registry.npmmirror.com/-/binary/node/v$nodeVer/node-v$nodeVer-x64.msi", "https://nodejs.org/dist/v$nodeVer/node-v$nodeVer-x64.msi"); silent = @("/qn", "/norestart") },
       @{ id = "Python.Python.3.12";              name = "Python 3.12";     required = $true;  check = { (Test-Cmd "python") -or (Test-Path "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe") -or (Test-Path "C:\Program Files\Python312\python.exe") };
-         mirrors = @("https://registry.npmmirror.com/-/binary/python/3.12.4/python-3.12.4-amd64.exe", "https://www.python.org/ftp/python/3.12.4/python-3.12.4-amd64.exe"); silent = @("/quiet", "InstallAllUsers=1", "PrependPath=1") },
+         mirrors = @("https://registry.npmmirror.com/-/binary/python/$pyVer/python-$pyVer-amd64.exe", "https://www.python.org/ftp/python/$pyVer/python-$pyVer-amd64.exe"); silent = @("/quiet", "InstallAllUsers=1", "PrependPath=1") },
       @{ id = "Google.Chrome";                   name = "Google Chrome";   required = $false; check = { (Test-Path "C:\Program Files\Google\Chrome\Application\chrome.exe") -or (Test-Path "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe") };
          mirrors = @("https://dl.google.com/chrome/install/latest/chrome_installer.exe", "https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi"); silent = @("/silent", "/install") },
       @{ id = "TheDocumentFoundation.LibreOffice"; name = "LibreOffice";    required = $false; check = { Test-Soffice };
-         mirrors = @("https://gh-proxy.com/https://download.documentfoundation.org/libreoffice/stable/24.8.0/win/x86_64/LibreOffice_24.8.0_Win_x86-64.msi", "https://download.documentfoundation.org/libreoffice/stable/24.8.0/win/x86_64/LibreOffice_24.8.0_Win_x86-64.msi", "https://mirrors.tuna.tsinghua.edu.cn/libreoffice/libreoffice/stable/24.8.0/win/x86_64/LibreOffice_24.8.0_Win_x86-64.msi"); silent = @("/qn", "/norestart") }
+         mirrors = @("https://mirrors.tuna.tsinghua.edu.cn/libreoffice/libreoffice/stable/$loVer/win/x86_64/LibreOffice_${loVer}_Win_x86-64.msi", "https://download.documentfoundation.org/libreoffice/stable/$loVer/win/x86_64/LibreOffice_${loVer}_Win_x86-64.msi", "https://gh-proxy.com/https://download.documentfoundation.org/libreoffice/stable/$loVer/win/x86_64/LibreOffice_${loVer}_Win_x86-64.msi"); silent = @("/qn", "/norestart") }
     )
     foreach ($p in $pkgs) {
       $tier = if ($p.required) { "必选" } else { "可选" }
