@@ -1044,3 +1044,9 @@
 - test_setup_sim.ps1 17/17：mock curl.exe（目录页 JSON/HTML + 下载写文件）与 Start-Process（安装窗口）实际执行 6 场景分支流转（版本解析/兜底/成功/小文件换源/装完检测不到/网络异常换源）
 - test_setup_ps1.py 集成模拟测试执行（仓库直读模式跑 test_setup_sim 断言 rc=0 + SIM_RESULT ASCII 标记防 GBK 乱码匹配失败），55→56/56
 - 踩坑 4 连：①PowerShell 5.1 读无 BOM 的 .ps1 按 GBK 解码乱码→.ps1 文件须 UTF-8 BOM（test_charset 扫描范围不含 ps1，md/py 仍无 BOM）②函数参数逗号是数组构造非分隔（Check "x", ($y) 全进 name）→参数用空格分隔 ③--connect-timeout 的值被位置绑定到 $o 参数→[CmdletBinding(PositionalBinding=$false)]+显式 $o 声明 ④-ArgumentList 声明 [string] 收数组报错→[object]
+
+[2026-08-28] 状态机菜单实施（用户要求：直到检测安装成功前菜单始终可见、任何时刻可选、无倒计时）：
+- setup 安装循环重构为状态机：菜单每轮立即显示（回车=等待 10 秒自动检测并驱动下载→安装流水线；1=换源；2=放弃；3=退出；4=非静默窗口），下载/安装期间均可随时选择
+- 下载改独立窗口（Start-DownloadWindow 可见进度），原窗口菜单保持可用；安装窗口 -Wait 改轮询防挂起（UAC 未确认不再无限等待，5 分钟超时换下一源）
+- 函数文件新增 Start-DownloadWindow/Start-InstallWindow（主循环与模拟测试共用）；[2] 放弃文案按必选/可选动态
+- 模拟测试加 mock Start-Sleep 加速（轮询场景秒级完成）；test_setup_ps1 56/56、test_setup_sim 17/17
