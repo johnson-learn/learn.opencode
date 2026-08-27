@@ -51,9 +51,13 @@ check("第 7 节残留提示改为重跑本脚本（非手动编辑 path_map）"
 check("工具必选/可选分级（Git/Node/Python 必选）", "required = $true" in c and "required = $false" in c)
 check("新开窗口安装（Start-Process winget）", "Start-Process -FilePath \"winget\"" in c)
 check("原窗口等待提示（等待 X 安装中）", "等待 $($p.name) 安装中" in c)
-check("必选工具失败三选项（换源重试/放弃必选/放弃移植）", "换其它安装源重试" in c and "放弃本次必选工具安装" in c and "放弃本次移植（退出脚本）" in c)
+check("必选工具失败三选项（镜像直链重试/放弃必选/放弃移植）", "换镜像直链渠道安装" in c and "放弃本次必选工具安装" in c and "放弃本次移植（退出脚本）" in c)
 check("可选工具失败两选项（换源重试/放弃可选继续）", "放弃本次可选工具安装，继续移植" in c)
 check("放弃移植退出码（exit 2）", "exit 2" in c)
+check("静默失败兜底：非静默安装窗口（不带 --silent，可看进度可手动确认）", "已新开非静默安装窗口" in c and "不静默：可看安装进度/错误" in c)
+check("镜像直链第二渠道（npmmirror 国内高速源 + 各包静默参数）", "registry.npmmirror.com" in c and "gh-proxy.com" in c and "dl.google.com" in c)
+check("镜像渠道安装函数（msi 走 msiexec / exe 直跑 / 下载校验 <1MB 判失败）", "Install-FromMirror" in c and "msiexec" in c and "Length -lt 1MB" in c)
+check("失败选项改为镜像直链渠道文案", "换镜像直链渠道安装（国内高速源自动下载静默安装" in c)
 check("填写类与自动类残留检测均排除 tests 目录（repo_face 镜像保留占位符是设计）", c.count("FullName -notmatch \"\\\\tests\\\\\"") >= 2)
 
 # 3.6 必备工具缺失醒目告警（用户 2026-08-27 要求：缺失/安装失败必须醒目提醒）

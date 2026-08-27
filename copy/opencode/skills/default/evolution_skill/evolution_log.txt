@@ -1020,3 +1020,7 @@
 - 可选失败两选项：①换源重试 ②放弃可选继续移植
 - 手动安装路径：装完按回车，脚本重检测通过即继续（不重装）
 - test_setup_ps1 34→40/40（安装交互分级/新窗口/三选项/退出码用例）
+
+[2026-08-27] 用户指正：--silent 静默安装对部分安装包会失败→失败后选重试时自动新开非静默窗口（不带 --silent，用户可看进度/错误、可手动确认）+ 指引兑底；test_setup_ps1 40→41/41
+
+[2026-08-27] 镜像直链第二渠道实施（用户方案）：setup 第 1 节工具定义增加 mirror+静默参数（Git/Node/Python 走 npmmirror，Chrome 官方直链，LibreOffice gh-proxy 加速）；Install-FromMirror 函数（curl 下载→<1MB 判失败→msi 走 msiexec/exe 直跑→检测）；失败选项变为三级渠道链：winget→镜像直链→非静默窗口+手动指引；test_setup_ps1 41→44/44
