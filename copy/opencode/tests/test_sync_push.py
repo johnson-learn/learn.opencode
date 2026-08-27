@@ -60,6 +60,31 @@ check("远端可拉到改动", True)
 r = run(marker, repo, msgfile)
 check("标记清除后再次推送被拒（需重新弹窗）", r.returncode == 2)
 
+# 4b. 可移植性阻断 + 自动转换：变更文件含本机用户名特征 → 自动 to_portable 转换后正常推送
+open(marker, "w", encoding="utf-8").write(json.dumps({"choice": "push", "user": "user", "time": str(datetime.datetime.now())}))
+os.makedirs(os.path.join(repo, "copy", "opencode"), exist_ok=True)
+leak_file = os.path.join(repo, "copy", "opencode", "leak.md")
+open(leak_file, "w", encoding="utf-8").write("本机路径示例 C:\\Users\\" + os.path.basename(os.path.expanduser("~")) + r"\x.md")
+r = run(marker, repo, msgfile)
+check("含本机特征文件经自动 to_portable 转换后推送成功", r.returncode == 0 and ("推送成功" in r.stdout or "无改动" in r.stdout))
+leaked = open(leak_file, encoding="utf-8", errors="replace").read()
+check("仓库内文件已自动占位符化（无本机用户名路径）", ("Users\\" + os.path.basename(os.path.expanduser("~"))) not in leaked)
+check("自动转换日志输出", "自动 to_portable" in r.stdout)
+
+# 4c. 转换盲区阻断：特征在排除清单外文件（如 msg 路径）→ 仍应被特征扫描拒绝
+open(marker, "w", encoding="utf-8").write(json.dumps({"choice": "push", "user": "user", "time": str(datetime.datetime.now())}))
+leak2 = os.path.join(repo, "copy", "opencode", "leak2.md")
+open(leak2, "w", encoding="utf-8").write("盲区特征 Users\\" + os.path.basename(os.path.expanduser("~")) + " 但无转换映射的写法")
+# 把该文件从转换范围外制造：内容用正斜杠变体（path_convert 也转正斜杠…改用特殊写法直接测阻断分支）
+# 直接测试：把文件内容改为 to_portable 无法转换的形态（如 Users/X 中间无盘符），预期触发特征扫描拒绝
+open(leak2, "w", encoding="utf-8").write("盲区 Users/" + os.path.basename(os.path.expanduser("~")) + "/x")
+r = run(marker, repo, msgfile)
+check("转换盲区文件被特征扫描拒绝（rc=2）", r.returncode == 2 and "拒绝推送" in r.stdout)
+os.remove(leak2)
+open(os.path.join(repo, "f.md"), "w", encoding="utf-8").write("v4 修复后")
+r = run(marker, repo, msgfile)
+check("清除盲区后重新推送成功", r.returncode == 0 and ("推送成功" in r.stdout or "无改动" in r.stdout))
+
 # 5. WSL 仓库路径判定与转换（纯函数，不真跑 WSL git；WSL 不可用机器同样可测）
 import importlib.util as _ilu
 _sp = _ilu.spec_from_file_location("sp", SP)
