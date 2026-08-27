@@ -132,62 +132,75 @@ if (-not $SkipWinget) {
       $wingetCmd = "winget install --id $($p.id) -e --silent --accept-source-agreements --accept-package-agreements --log `"$wingetLog`""
       Start-Process powershell -ArgumentList @("-NoProfile", "-NoExit", "-Command", $wingetCmd) | Out-Null
       $done = $false
+      # 状态机（2026-08-28 用户要求：直到检测到安装成功前，菜单始终可见、任何时刻可随时选择）
+      $mirrorIdx = -1          # 当前镜像源索引（-1=未开始）
+      $dlFile = $null          # 当前下载文件
+      $installStarted = $false # 下载完成后的安装窗口是否已启动
       while (-not $done) {
         if (& $p.check) { Ok "$($p.name) 安装完成"; break }
         Write-Host "  本窗口选项（可随时选择，无倒计时）："
         Write-Host "    [回车] 继续等待安装完成（每 10 秒自动检测，装完自动继续）"
-        if ($p.required) {
-          Write-Host "    [1] 换镜像直链渠道安装（多安装源自动逐个尝试）"
-          Write-Host "    [2] 放弃本次必选工具安装（后续手动安装后重跑本脚本；本次跳过依赖该工具的环节）"
-          Write-Host "    [3] 放弃本次移植（退出脚本）"
-          Write-Host "    [4] 新开非静默 PowerShell 窗口安装（可看进度/错误，可手动确认）"
-          $ans = Read-Host "  请选择（回车=继续等待 / 1 / 2 / 3 / 4）"
-          if ($ans -eq "2") { Warn "已放弃必选工具 $($p.name) 安装（手动安装后重跑本脚本自动补齐）"; $done = $true }
-          elseif ($ans -eq "3") { Warn "用户选择放弃本次移植，退出脚本"; exit 2 }
-          elseif ($ans -eq "4") {
+        Write-Host "    [1] 换镜像直链渠道安装（多安装源自动逐个尝试，下载在独立窗口进行）"
+        $opt2Text = if ($p.required) { "[2] 放弃本次必选工具安装（后续手动安装后重跑本脚本；本次跳过依赖该工具的环节）" } else { "[2] 放弃本次可选工具安装，继续移植" }
+        Write-Host "    $opt2Text"
+        Write-Host "    [3] 放弃本次移植（退出脚本）"
+        Write-Host "    [4] 新开非静默 PowerShell 窗口安装（可看进度/错误，可手动确认）"
+        $ans = Read-Host "  请选择（回车=继续等待 / 1 / 2 / 3 / 4）"
+        switch ($ans) {
+          "2" {
+            if ($p.required) { Warn "已放弃必选工具 $($p.name) 安装（手动安装后重跑本脚本自动补齐）" }
+            else { Warn "已放弃可选工具 $($p.name) 安装，继续移植" }
+            $done = $true
+          }
+          "3" { Warn "用户选择放弃本次移植，退出脚本"; exit 2 }
+          "4" {
             Write-Host "    已新开 PowerShell 窗口非静默安装（可看安装进度/错误，可手动确认）..."
             Start-Process powershell -ArgumentList @("-NoProfile", "-NoExit", "-Command", "winget install --id $($p.id) -e --accept-source-agreements --accept-package-agreements") | Out-Null
             Write-Host "    若窗口内安装仍失败：请从官方下载或用其它镜像源手动安装（详见 REQUIREMENTS.md §1）"
-            Read-Host "    安装完成后按回车继续检测..." | Out-Null
-            if (& $p.check) { Ok "$($p.name) 已由用户手动安装"; $done = $true }
-            else { Warn "仍未检测到 $($p.name)，回到选项菜单" }
+            Write-Host "    （本菜单保持可用：回车继续等待检测 / 可随时再选 1/2/3）"
           }
-          elseif ($ans -eq "1") {
-            if (Install-FromMirror $p) { Ok "$($p.name) 镜像直链渠道安装完成"; $done = $true }
-            else {
-              Write-Host "    全部镜像源均失败。可手动安装后回车检测（直接回车=回到选项菜单）："
-              Write-Host "    手动安装指引：从官方下载或用其它镜像源安装（详见 REQUIREMENTS.md §1）"
-              Read-Host "    安装完成后按回车继续检测..." | Out-Null
-              if (& $p.check) { Ok "$($p.name) 已由用户手动安装"; $done = $true }
-              else { Warn "仍未检测到 $($p.name)，回到选项菜单" }
+          "1" {
+            # 换源：递增源索引（无下载状态时从 0 开始；有下载状态时换下一个）
+            if ($dlFile) { $mirrorIdx++ } else { $mirrorIdx = 0 }
+            if ($mirrorIdx -ge $p.mirrors.Count) { $mirrorIdx = 0 }
+            $dlFile = $null
+            $installStarted = $false
+            Write-Host "    已切换到镜像源 $($mirrorIdx + 1)/$($p.mirrors.Count)，回车将启动下载（独立窗口）"
+          }
+          default {
+            # 回车：驱动"下载 → 安装 → 检测"流水线推进一步
+            if ($mirrorIdx -lt 0) {
+              $mirrorIdx = 0
+            }
+            if ($mirrorIdx -ge $p.mirrors.Count) {
+              Write-Host "    全部镜像源已尝试。可继续回车重试源 1 / 选 2 放弃 / 选 3 退出 / 选 4 非静默窗口"
+              Start-Sleep -Seconds 10
+              continue
+            }
+            if (-not $dlFile) {
+              # 启动下载窗口（独立窗口可见进度）
+              $ext = [System.IO.Path]::GetExtension($p.mirrors[$mirrorIdx]).ToLower()
+              $dlFile = Join-Path $env:TEMP ("opencode_dl_" + ($p.id -replace "[^A-Za-z0-9]", "_") + "_$($mirrorIdx + 1)" + $ext)
+              Write-Host "    镜像源 $($mirrorIdx + 1)/$($p.mirrors.Count) 下载已启动（独立窗口，原窗口菜单随时可选）: $($p.mirrors[$mirrorIdx])"
+              Start-DownloadWindow $p.mirrors[$mirrorIdx] $dlFile
+              Start-Sleep -Seconds 10
+            } elseif (-not $installStarted) {
+              if ((Test-Path $dlFile) -and (Get-Item $dlFile).Length -ge 1MB) {
+                # 下载完成 → 启动提权安装窗口
+                Write-Host "    下载完成，已新开管理员 PowerShell 窗口执行静默安装（如弹出 UAC 请点『是』；安装期间窗口可见）..."
+                Start-InstallWindow $p $dlFile
+                $installStarted = $true
+                Start-Sleep -Seconds 10
+              } else {
+                $sz = if (Test-Path $dlFile) { [math]::Round((Get-Item $dlFile).Length / 1MB, 1) } else { 0 }
+                Write-Host "    下载中...（当前 $sz MB；本菜单保持可用：可随时选 1 换源 / 2 放弃 / 3 退出）"
+                Start-Sleep -Seconds 10
+              }
+            } else {
+              Write-Host "    安装窗口运行中，等待检测...（UAC 未确认或安装失败时可随时选 1 换源 / 2 放弃 / 3 退出）"
+              Start-Sleep -Seconds 10
             }
           }
-          else { Start-Sleep -Seconds 10 }
-        } else {
-          Write-Host "    [1] 换镜像直链渠道安装（多安装源自动逐个尝试）"
-          Write-Host "    [2] 放弃本次可选工具安装，继续移植"
-          Write-Host "    [3] 新开非静默 PowerShell 窗口安装（可看进度/错误，可手动确认）"
-          $ans = Read-Host "  请选择（回车=继续等待 / 1 / 2 / 3）"
-          if ($ans -eq "2") { Warn "已放弃可选工具 $($p.name) 安装，继续移植"; $done = $true }
-          elseif ($ans -eq "3") {
-            Write-Host "    已新开 PowerShell 窗口非静默安装（可看安装进度/错误，可手动确认）..."
-            Start-Process powershell -ArgumentList @("-NoProfile", "-NoExit", "-Command", "winget install --id $($p.id) -e --accept-source-agreements --accept-package-agreements") | Out-Null
-            Write-Host "    若窗口内安装仍失败：请从官方下载或用其它镜像源手动安装（详见 REQUIREMENTS.md §1）"
-            Read-Host "    安装完成后按回车继续检测..." | Out-Null
-            if (& $p.check) { Ok "$($p.name) 已由用户手动安装"; $done = $true }
-            else { Warn "仍未检测到 $($p.name)，回到选项菜单" }
-          }
-          elseif ($ans -eq "1") {
-            if (Install-FromMirror $p) { Ok "$($p.name) 镜像直链渠道安装完成"; $done = $true }
-            else {
-              Write-Host "    全部镜像源均失败。可手动安装后回车检测（直接回车=回到选项菜单）："
-              Write-Host "    手动安装指引：从官方下载或用其它镜像源安装（详见 REQUIREMENTS.md §1）"
-              Read-Host "    安装完成后按回车继续检测..." | Out-Null
-              if (& $p.check) { Ok "$($p.name) 已由用户手动安装"; $done = $true }
-              else { Warn "仍未检测到 $($p.name)，回到选项菜单" }
-            }
-          }
-          else { Start-Sleep -Seconds 10 }
         }
       }
     }

@@ -21,14 +21,18 @@ function Install-FromMirror($p) {
       }
       Write-Host "    下载完成，已新开管理员 PowerShell 窗口执行静默安装（如弹出 UAC 请点『是』；安装期间窗口可见）..."
       if ($ext -eq ".msi") {
-        Start-Process powershell -Verb RunAs -Wait -ArgumentList @("-NoProfile", "-Command", "msiexec /i `"$dl`" /qn /norestart") | Out-Null
+        Start-Process powershell -Verb RunAs -ArgumentList @("-NoProfile", "-Command", "msiexec /i `"$dl`" /qn /norestart") | Out-Null
       } else {
         $silentArgs = ($p.silent -join " ")
-        Start-Process powershell -Verb RunAs -Wait -ArgumentList @("-NoProfile", "-Command", "& `"$dl`" $silentArgs") | Out-Null
+        Start-Process powershell -Verb RunAs -ArgumentList @("-NoProfile", "-Command", "& `"$dl`" $silentArgs") | Out-Null
       }
-      Start-Sleep -Seconds 5
-      if (& $p.check) { return $true }
-      Write-Host "    该源安装完成但未检测到，换下一个源..."
+      # 轮询检测安装完成（2026-08-28 防挂起：UAC 未确认时 -Wait 会无限等待；
+      # 改为最长 5 分钟轮询，超时未检测到自动换下一源）
+      for ($wi = 0; $wi -lt 60; $wi++) {
+        if (& $p.check) { return $true }
+        Start-Sleep -Seconds 5
+      }
+      Write-Host "    该源安装窗口超时未检测到（可能 UAC 未确认或安装失败），换下一个源..."
     } catch {
       Write-Host "    该源安装异常，换下一个源..."
     }
@@ -61,4 +65,21 @@ function Get-DynamicVersions {
   if (-not $pyVer) { $pyVer = "3.12.4" }
   if (-not $loVer) { $loVer = "24.8.0" }
   return @{ git = $gitVer; node = $nodeVer; py = $pyVer; lo = $loVer }
+}
+
+
+# 下载窗口（2026-08-28 状态机化：下载放新窗口可见进度，原窗口菜单始终可选）
+function Start-DownloadWindow([string]$url, [string]$dl) {
+  Start-Process powershell -ArgumentList @("-NoProfile", "-Command", "curl.exe -L --connect-timeout 20 -o `"$dl`" $url") | Out-Null
+}
+
+# 提权安装窗口（msi 走 msiexec /qn；exe 走 silent 参数；UAC 弹窗确认）
+function Start-InstallWindow($p, [string]$dl) {
+  $ext = [System.IO.Path]::GetExtension($dl).ToLower()
+  if ($ext -eq ".msi") {
+    Start-Process powershell -Verb RunAs -ArgumentList @("-NoProfile", "-Command", "msiexec /i `"$dl`" /qn /norestart") | Out-Null
+  } else {
+    $silentArgs = ($p.silent -join " ")
+    Start-Process powershell -Verb RunAs -ArgumentList @("-NoProfile", "-Command", "& `"$dl`" $silentArgs") | Out-Null
+  }
 }

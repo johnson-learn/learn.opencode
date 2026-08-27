@@ -47,6 +47,7 @@ function curl.exe {
   else { Write-Output "[]" }
 }
 
+function Start-Sleep { param([int]$Seconds) }
 function Start-Process {
   [CmdletBinding()]
   param(
