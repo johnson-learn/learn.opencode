@@ -93,8 +93,8 @@
 | test_docs_sync.py | `tests\test_docs_sync.py` | G | docs-sync.md 改动后强制（变更类型/校验测试存在/被 regedit+AGENTS 引用，19/19） |
 | test_audit_references.py | `tests\test_audit_references.py` | G | 框架引用审计（引用存在性/旧术语残留/README 双向一致，3/3） |
 | test_repo_face.py | `tests\test_repo_face.py` | G | 仓库门面一致性（门面文件与框架现状对照 + STATE_FILES 工作树残留 + 本机用户名路径动态扫描，18/18；WSL 不可达回退 tests\repo_face\ 镜像） |
-| test_setup_ps1.py | `tests\test_setup_ps1.py` | G | setup-windows.ps1 自动化测试（开关/部署范围/path_convert 体系/AST 语法/盘符动态探测/注册事件注入验证/必备工具缺失告警与退出码/w64Dir 独立变量/填写类检测排除 tests/工具类空值交互闭环/安装交互分级与 PowerShell 窗口安装/多源镜像直链/全工具版本动态解析/管理员提权安装窗口/失败回菜单/检测双通道/安装后自动配置/模拟测试执行/**窗口统一管理与出口清理**，57/57） |
-| test_setup_sim.ps1 | `tests\test_setup_sim.ps1` | G | setup 安装核心逻辑**模拟测试**（用户 2026-08-28 要求真模拟：mock curl.exe/Start-Process/Stop-Process 实际执行动态版本解析与安装分支流转+窗口管理+**worker 停止信号自毁（提权窗口残留修复）** 20/20；被 test_setup_ps1 仓库直读模式调用） |
+| test_setup_ps1.py | `tests\test_setup_ps1.py` | G | setup-windows.ps1 自动化测试（开关/部署范围/path_convert 体系/AST 语法/盘符动态探测/注册事件注入验证/必备工具缺失告警与退出码/w64Dir 独立变量/填写类检测排除 tests/工具类空值交互闭环/安装交互分级与 PowerShell 窗口安装/多源镜像直链/全工具版本动态解析/管理员提权安装窗口/失败回菜单/检测双通道/安装后自动配置/模拟测试执行/**窗口统一管理与出口清理/单窗口复用（方案一）**，59/59） |
+| test_setup_sim.ps1 | `tests\test_setup_sim.ps1` | G | setup 安装核心逻辑**模拟测试**（用户 2026-08-28 要求真模拟：mock curl.exe/Start-Process/Stop-Process 实际执行动态版本解析与安装分支流转+窗口管理+**worker 停止信号自毁（提权窗口残留修复）+单窗口复用（方案一）** 21/21；被 test_setup_ps1 仓库直读模式调用） |
 | README.md（测试清单） | `tests\README.md` | F | 查测试入口与运行命令 |
 
 ## 数据层

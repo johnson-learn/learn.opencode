@@ -55,14 +55,19 @@ while (`$true) {
 
 function Stop-WorkerWindow {
   if (-not $script:workerProc) { return }
-  # 先写 stop 信号：worker 每 400ms 轮询，读到即自行 exit 关窗
-  # （提权进程不依赖主窗口权限；Stop-Process 仅作兜底）
+  # 写 stop 信号并等待 worker 自行退出。worker 可能正在执行长命令（winget/下载），
+  # 要等命令结束后才轮询到信号——故 stop 文件不能过早删除，需等 HasExited
+  # 或兜底 Stop-Process 杀掉后才清理（2026-08-28 方案一修复竞态）
   Set-Content -LiteralPath $script:workerStopFile -Value "stop" -Encoding UTF8 -ErrorAction SilentlyContinue
-  if ($script:workerProc -and -not $script:workerProc.HasExited) {
-    Start-Sleep -Milliseconds 1500
-    try {
-      if (-not $script:workerProc.HasExited) { Stop-Process -Id $script:workerProc.Id -Force -ErrorAction SilentlyContinue }
-    } catch {}
+  $waitedMs = 0
+  while ($waitedMs -lt 12000) {
+    $script:workerProc.Refresh()
+    if ($script:workerProc.HasExited) { break }
+    Start-Sleep -Milliseconds 500
+    $waitedMs += 500
+  }
+  if (-not $script:workerProc.HasExited) {
+    try { Stop-Process -Id $script:workerProc.Id -Force -ErrorAction SilentlyContinue } catch {}
   }
   Remove-Item $script:workerStopFile -Force -ErrorAction SilentlyContinue
   $script:workerProc = $null

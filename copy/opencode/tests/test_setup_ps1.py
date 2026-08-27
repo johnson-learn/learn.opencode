@@ -77,12 +77,14 @@ if mode == "仓库直读":
     try:
         r = subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", sim, "-FuncFile", funcs],
                            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300)
-        check("模拟测试 test_setup_sim.ps1 执行通过（mock 分支流转 + 窗口停止信号 20/20）", r.returncode == 0 and "SIM_RESULT: pass=20 fail=0" in r.stdout)
+        check("模拟测试 test_setup_sim.ps1 执行通过（mock 分支流转 + 窗口停止信号 + 单窗口复用 21/21）", r.returncode == 0 and "SIM_RESULT: pass=21 fail=0" in r.stdout)
     except Exception:
-        check("模拟测试 test_setup_sim.ps1 执行通过（mock 分支流转 + 窗口停止信号 20/20）", False)
+        check("模拟测试 test_setup_sim.ps1 执行通过（mock 分支流转 + 窗口停止信号 + 单窗口复用 21/21）", False)
 else:
     print("  （镜像回退模式：跳过模拟测试，函数文件不可得）")
 check("winget 命令发送到单一工作窗口 + 自动状态机", "Start-WorkerCommand \"winget" in c and "开始自动安装" in c)
+check("worker 全程只弹一次（方案一：非退出场景不杀 worker，Stop-WorkerWindow 仅 2 处=按键3退出+阶段收尾）", c.count("Stop-WorkerWindow") == 2)
+check("新包开始清理上包 done 残留（防 winget 阶段误判换源）", "Remove-Item $workerDoneFile -Force" in c)
 check("检测双通道（命令 OR 安装位置文件，防新装 PATH 未刷新误判）", "C:\\Program Files\\nodejs\\node.exe" in c and "C:\\Program Files\\Git\\cmd\\git.exe" in c)
 
 # 3.8 安装后自动配置（用户 2026-08-28 要求"完成全套工作"：环境变量/镜像源持久化）
