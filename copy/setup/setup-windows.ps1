@@ -375,8 +375,8 @@ if (-not $SkipDeploy) {
         Warn "存在未配置的填写类占位符，请编辑 $ConfigDir\skills\update_skill\path_map.txt（每行：占位符=本机真实路径）后重跑："
         Warn "  python $conv to_local --home=`"$homeSlash`" $ConfigDir"
       }
-      # 自动类占位符残留检查
-      $autoLeft = Get-ChildItem $ConfigDir -Recurse -File -Include "*.md","*.jsonc" -ErrorAction SilentlyContinue | Select-String -Pattern "<用户目录>|<opencode配置目录>|<用户临时目录>" -List -ErrorAction SilentlyContinue
+      # 自动类占位符残留检查（排除 tests 目录——repo_face 镜像文件保留占位符是设计）
+      $autoLeft = Get-ChildItem $ConfigDir -Recurse -File -Include "*.md","*.jsonc" -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "\\tests\\" } | Select-String -Pattern "<用户目录>|<opencode配置目录>|<用户临时目录>" -List -ErrorAction SilentlyContinue
       if ($autoLeft) { Warn "仍有自动类占位符未转换，请检查 python 是否可用" } else { Ok "路径改写完成（占位符已转换为新机路径）" }
     } else { Warn "path_convert.py 不存在（scripts 目录缺失），跳过路径改写" }
   } else { Warn "已跳过路径改写（-NoPathRewrite）" }

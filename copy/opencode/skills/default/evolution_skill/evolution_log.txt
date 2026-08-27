@@ -748,3 +748,8 @@
 - 已修复项生效确认：第 8 节全 OK（w64Dir 修复）、7.5 注册事件注入验证通过、8.5 告警正确消失
 - 残留问题【path_convert 双副本漂移】：setup-windows.ps1 的 $conv 指向 copy/scripts/path_convert.py（旧版），白名单化/tests 跳过修复只进了 copy/opencode/tools 与 tests 两份 → Johnson 机器 to_local 仍刷屏 900+ 误报。修复：scripts 版同步 + test_repo_face 新增多份副本 md5 一致性用例（18/18）
 - 环境项（非缺陷）：Store 版 Python 3.13 警告（pip 实际全部成功）；数据目录交互正常
+
+[2026-08-27] V2 部署 log 分析 + 语言跟随未生效处理：
+- V2 确认生效：900+ 误报归零（path_convert scripts 版同步生效）、tests 目录不再被转换、第 8 节全 OK、7.5 验证通过
+- V2 剩余问题【自动类残留误报】：setup 第 377 行 $autoLeft 检测未排除 tests 目录（第 371 行已排除但 377 遗漏），repo_face 镜像的 <用户目录> 占位符被当残留 → 修复：377 行同样排除 tests（test_setup_ps1 32/32 防回归）
+- 语言跟随未生效处理：AGENTS.md 铁律第 3 条强化为『回答语言硬约束』（中文提问必须中文回答，任何情况下不得改用）+ instructions.md 规则 1 同步强化；多载体冗余（AGENTS.md A 类原生 + instructions.md E 类注入）；Johnson 机器需重启 opencode 后验证

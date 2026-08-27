@@ -44,6 +44,7 @@ check("7.5 验证改为注册事件注入体系（system.transform）", "experim
 check("7.5 不再要求 opencode.jsonc 含 instructions 注册", "含 instructions 注册" not in c)
 check("辅助脚本部署检查指向实际部署位置 $ToolDir（Temp\\opencode）", 'Test-Path (Join-Path $ToolDir "extract-docx.ps1")' in c)
 check("w64devkit 探测用独立变量 $w64Dir（防覆盖 $ToolDir——PS 变量大小写不敏感）", "$w64Dir = \"\"" in c and "$toolDir = \"\"" not in c and "<工具目录>=\" + $w64Dir" in c)
+check("填写类与自动类残留检测均排除 tests 目录（repo_face 镜像保留占位符是设计）", c.count("FullName -notmatch \"\\\\tests\\\\\"") >= 2)
 
 # 3.6 必备工具缺失醒目告警（用户 2026-08-27 要求：缺失/安装失败必须醒目提醒）
 check("必备工具缺失告警块存在（8.5）", "必备工具缺失" in c)
