@@ -51,6 +51,7 @@ function Start-Sleep { param([int]$Seconds, [int]$Milliseconds) }
 $script:mockProcId = 1000
 $script:mockStopCalls = 0
 $script:mockTaskKillCalls = 0
+$script:mockWindowCalls = 0
 function taskkill {
   param([Parameter(ValueFromRemainingArguments = $true)] $rest)
   $script:mockTaskKillCalls++
@@ -68,8 +69,11 @@ function Start-Process {
   )
   $script:mockInstallCalls += ,@($rest)
   $script:mockProcId++
+  if ($FilePath -eq "powershell") { $script:mockWindowCalls++ }
   if ($script:mockInstalledOnInstall) { $script:mockInstalled = $true }
-  return [pscustomobject]@{ Id = $script:mockProcId; HasExited = $false }
+  $obj = [pscustomobject]@{ Id = $script:mockProcId; HasExited = $false }
+  $obj | Add-Member -MemberType ScriptMethod -Name Refresh -Value { }
+  return $obj
 }
 function Stop-Process {
   param([int]$Id, [switch]$Force, [Parameter(ValueFromRemainingArguments = $true)] $rest)
@@ -85,6 +89,7 @@ function Reset-Mock {
   $script:mockInstalledOnInstall = $true
   $script:mockStopCalls = 0
   $script:mockTaskKillCalls = 0
+  $script:mockWindowCalls = 0
 }
 
 . $FuncFile
@@ -150,9 +155,11 @@ $script:mockDlFail = $false
 # ---------- 场景 7：worker 窗口停止信号（2026-08-28 实测修复：提权窗口残留） ----------
 Write-Host "[场景7] worker 停止信号自毁"
 Reset-Mock
-Start-WorkerCommand "echo test"
+Start-WorkerCommand "echo A"
+Start-WorkerCommand "echo B"
 Check "首次命令生成 worker 循环脚本" (Test-Path (Join-Path $env:TEMP "opencode_worker.ps1"))
 Check "worker 循环含 stop 信号自毁检查（提权窗口自行退出关窗）" ((Get-Content (Join-Path $env:TEMP "opencode_worker.ps1") -Raw) -match "stopF")
+Check "worker 存续期间重复发命令只弹一次窗口（方案一：非退出场景不杀 worker）" ($script:mockWindowCalls -eq 1)
 Stop-WorkerWindow
 Check "停止时先写 stop 信号文件再兜底 Stop-Process" ($script:mockStopCalls -ge 1)
 

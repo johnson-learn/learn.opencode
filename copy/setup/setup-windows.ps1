@@ -129,6 +129,8 @@ if (-not $SkipWinget) {
       if (& $p.check) { Ok "$($p.name) 已安装"; continue }
       # 双窗口终版（2026-08-28 用户定稿）：工作窗口显示下载/安装进度；
       # 主窗口每轮显示状态+选项（1=换源/2=放弃/3=退出），按键随时响应，不按键自动继续
+      # worker 全程只弹一次（2026-08-28 用户方案一）：非退出场景不杀 worker，
+      # 仅"按键 3 退出"与"基础软件安装阶段收尾"两处关闭窗口
       Write-Host "  [$tier] $($p.name) 未安装，开始自动安装（工作窗口显示进度；本窗口选项随时可选）..."
       $done = $false
       $phase = "winget"
@@ -138,8 +140,9 @@ if (-not $SkipWinget) {
       $noProgress = 0
       $wingetCmdSent = $false
       $workerDoneFile = Join-Path $env:TEMP ("opencode_worker_cmd.txt" + ".done")
+      Remove-Item $workerDoneFile -Force -ErrorAction SilentlyContinue
       while (-not $done) {
-        if (& $p.check) { Stop-WorkerWindow; Ok "$($p.name) 安装完成"; break }
+        if (& $p.check) { Ok "$($p.name) 安装完成"; break }
         $statusLine = ""
         # ---- 自动推进状态机（5 秒/轮） ----
         if ($phase -eq "winget") {
@@ -157,7 +160,6 @@ if (-not $SkipWinget) {
             $statusLine = "winget 安装进行中（已等待 $($noProgress * 5) 秒）"
             if ($noProgress -ge 120) {
               Write-Host "    winget 渠道长时间无进展，自动切换镜像源渠道（可随时按键提前干预）..."
-              Stop-WorkerWindow
               $phase = "mirror-dl"; $mirrorIdx = 0; $dlFile = $null; $noProgress = 0
               $statusLine = "切换镜像源渠道..."
             }
@@ -205,7 +207,6 @@ if (-not $SkipWinget) {
               $statusLine = "镜像源 $($mirrorIdx + 1)/$($p.mirrors.Count) 下载中：已下载 $szMB MB"
               if ($noProgress -ge 60 -and $szMB -lt 1) {
                 Write-Host "    该源长时间无有效下载，自动换下一个源..."
-                Stop-WorkerWindow
                 $mirrorIdx++; $dlFile = $null; $noProgress = 0
               }
             }
@@ -220,7 +221,6 @@ if (-not $SkipWinget) {
           $statusLine = "静默安装中（已等待 $($noProgress * 5) 秒，工作窗口可见）"
           if ($noProgress -ge 120) {
             Write-Host "    该源安装长时间未完成，自动换下一个源..."
-            Stop-WorkerWindow
             $mirrorIdx++; $dlFile = $null; $phase = "mirror-dl"; $noProgress = 0
           }
         }
@@ -235,12 +235,10 @@ if (-not $SkipWinget) {
             $k = [Console]::ReadKey($true)
             $a = "$($k.KeyChar)"
             if ($a -eq "1") {
-              Stop-WorkerWindow
               $phase = "mirror-dl"; $mirrorIdx = 0; $dlFile = $null; $noProgress = 0
               Write-Host "    [已选择 1] 换镜像源渠道（下轮自动启动下载）"
             }
             elseif ($a -eq "2") {
-              Stop-WorkerWindow
               if ($p.required) { Warn "已放弃必选工具 $($p.name) 安装（手动安装后重跑本脚本自动补齐）" }
               else { Warn "已放弃可选工具 $($p.name) 安装，继续移植" }
               $done = $true
@@ -252,6 +250,8 @@ if (-not $SkipWinget) {
       }
     }
   }
+  # 基础软件安装阶段收尾：关闭工作窗口（worker 全程只弹一次，此处为正常关闭点）
+  Stop-WorkerWindow
 } else { Warn "已跳过基础软件安装（-SkipWinget）" }
 
   # 安装后自动配置（2026-08-28 用户要求"完成全套工作"）：刷新当前会话 PATH，新装工具立即可用无需重开终端
