@@ -1136,3 +1136,8 @@
 - 设计矛盾：注释声称"单一工作窗口"，但 7 处调用 Stop-WorkerWindow 每次重置状态导致重复弹窗
 - 修复：非退出场景 6 处 Stop-WorkerWindow 全部移除（worker 全程只弹一次，换源换包靠命令文件原子覆盖）；仅保留按键 3 退出 + 阶段收尾 2 处；Stop-WorkerWindow 改轮询 HasExited（Refresh 防属性缓存，最长 12s）+ stop 文件延后到确认退出后删除；每包开始清理 done 残留（防 winget 阶段误判换源）
 - 测试：sim 新增单窗口复用 Check（21/21）；test_setup_ps1 新增 2 断言（Stop-WorkerWindow 仅 2 处、done 清理，59/59）；test_repo_face 18/18、test_regedit 48/48
+
+[2026-08-28] setup 路径改写故障修复（Johnson 新机器实测：<工具目录> 映射缺失致 to_local 转 0 文件却误报 OK）
+- 根因：<工具目录> 语义=系统盘根（w64devkit/MSYS2 约定安装盘），setup 误将其绑定 $w64Dir 探测值——未装 w64devkit 时映射缺失 → path_map.txt 无 <工具目录> 行 → to_local 转 0 个文件 + 残留警告；自动类残留检查模式漏 <工具目录> → 误报"路径改写完成"
+- 修复：<工具目录> 移出工具类询问清单，自动写入 $env:SystemDrive+"\"（任何机器一致）；自动类残留模式加 <工具目录>；填写类模式去掉"工具"分支
+- 测试：test_setup_ps1 +3 断言（59→62/62）；test_repo_face 18/18、test_regedit 48/48
