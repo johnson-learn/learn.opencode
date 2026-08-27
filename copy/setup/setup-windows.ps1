@@ -129,7 +129,7 @@ if (-not $SkipWinget) {
       if (& $p.check) { Ok "$($p.name) 已安装"; continue }
       # 单一工作窗口模式（2026-08-28 用户定：只弹一个工作窗口，后续所有下载安装都在该窗口进行）
       Write-Host "  [$tier] $($p.name) 未安装，winget 安装命令已发送到工作窗口（本窗口菜单随时可选）..."
-      Start-WorkerCommand "winget install --id $($p.id) -e --silent --accept-source-agreements --accept-package-agreements"
+      Start-WorkerCommand "winget install --id $($p.id) -e --silent --disable-interactivity --accept-source-agreements --accept-package-agreements"
       $done = $false
       $mode = "winget"
       $mirrorIdx = 0
@@ -175,7 +175,13 @@ if (-not $SkipWinget) {
             }
           }
           default {
-            # 回车：推进状态机
+            # 回车：推进状态机；先查工作窗口完成信号（新窗口装完提醒主窗口）
+            $workerDoneFile = (Join-Path $env:TEMP ("opencode_worker_cmd.txt" + ".done"))
+            if (Test-Path $workerDoneFile) {
+              $doneMsg = Get-Content $workerDoneFile -Raw -ErrorAction SilentlyContinue
+              Remove-Item $workerDoneFile -Force -ErrorAction SilentlyContinue
+              Write-Host "    [工作窗口报告] 上一命令已完成（$($doneMsg.Trim())）"
+            }
             if ($mode -eq "mirror-dl") {
               if (Test-Path $dlFile) {
                 $sz = (Get-Item $dlFile).Length

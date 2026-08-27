@@ -12,8 +12,10 @@ function Start-WorkerCommand([string]$cmd) {
   if (-not $script:workerProc -or $script:workerProc.HasExited) {
     # 命令文件路径直接内嵌进 worker 脚本（2026-08-28 实测：-Verb RunAs 提权进程不继承主进程
     # 运行时设置的环境变量，$env:WORKER_CMD 为空导致 Test-Path 空值刷屏——内嵌后无环境依赖）
+    $doneFile = $script:workerCmdFile + ".done"
     $loop = @"
 `$f = '$($script:workerCmdFile)'
+`$doneF = '$doneFile'
 while (`$true) {
   if (Test-Path `$f) {
     `$c = Get-Content `$f -Raw -ErrorAction SilentlyContinue
@@ -23,6 +25,8 @@ while (`$true) {
       if (`$LASTEXITCODE -ne `$null -and `$LASTEXITCODE -ne 0) {
         Write-Host ("[工作窗口] 命令退出码 " + `$LASTEXITCODE + "（可能失败：权限不足/安装包异常，见 REQUIREMENTS.md）")
       }
+      # 完成信号（2026-08-28 用户要求：新窗口安装完提醒主窗口）——写信号文件由主窗口轮询读取
+      Set-Content -LiteralPath `$doneF -Value ("done exit=" + `$LASTEXITCODE) -Encoding UTF8
       `$global:LASTEXITCODE = `$null
     }
   }
