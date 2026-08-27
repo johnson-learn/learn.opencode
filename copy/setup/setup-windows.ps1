@@ -127,97 +127,128 @@ if (-not $SkipWinget) {
     foreach ($p in $pkgs) {
       $tier = if ($p.required) { "必选" } else { "可选" }
       if (& $p.check) { Ok "$($p.name) 已安装"; continue }
-      # 单一工作窗口模式（2026-08-28 用户定：只弹一个工作窗口，后续所有下载安装都在该窗口进行）
-      Write-Host "  [$tier] $($p.name) 未安装，winget 安装命令已发送到工作窗口（本窗口菜单随时可选）..."
-      Start-WorkerCommand "winget install --id $($p.id) -e --silent --disable-interactivity --accept-source-agreements --accept-package-agreements"
+      # 双窗口终版（2026-08-28 用户定稿）：工作窗口显示下载/安装进度；
+      # 主窗口每轮显示状态+选项（1=换源/2=放弃/3=退出），按键随时响应，不按键自动继续
+      Write-Host "  [$tier] $($p.name) 未安装，开始自动安装（工作窗口显示进度；本窗口选项随时可选）..."
       $done = $false
-      $mode = "winget"
+      $phase = "winget"
       $mirrorIdx = 0
       $dlFile = $null
       $lastSize = 0
+      $noProgress = 0
+      $wingetCmdSent = $false
+      $workerDoneFile = Join-Path $env:TEMP ("opencode_worker_cmd.txt" + ".done")
       while (-not $done) {
         if (& $p.check) { Stop-WorkerWindow; Ok "$($p.name) 安装完成"; break }
-        Write-Host "    [主窗口] 尚未检测到 $($p.name)（命令可用或安装位置文件存在即视为安装完成）"
-        Write-Host "  本窗口选项（可随时选择，无倒计时）："
-        Write-Host "  请选择：回车=继续等待检测；1=换镜像源下载安装；2=放弃本次$($(if ($p.required) { '必选' } else { '可选' }))工具安装；3=放弃本次移植"
-        $ans = ""
-        try {
-          $key = [Console]::ReadKey($true)
-          $ans = "$($key.KeyChar)"
-          if ($ans -eq [char]13 -or $ans -eq [char]10) { $ans = "" }
-        } catch {
-          $ans = Read-Host "  请选择：回车=继续等待检测；1=换镜像源下载安装；2=放弃；3=放弃移植"
+        $statusLine = ""
+        # ---- 自动推进状态机（5 秒/轮） ----
+        if ($phase -eq "winget") {
+          if (-not $wingetCmdSent) {
+            Start-WorkerCommand "winget install --id $($p.id) -e --silent --disable-interactivity --accept-source-agreements --accept-package-agreements"
+            $wingetCmdSent = $true
+            $statusLine = "winget 渠道下载/安装中（工作窗口可见进度）"
+          } elseif (Test-Path $workerDoneFile) {
+            Remove-Item $workerDoneFile -Force -ErrorAction SilentlyContinue
+            Write-Host "    winget 渠道未安装成功，自动切换镜像源渠道..."
+            $phase = "mirror-dl"; $mirrorIdx = 0; $dlFile = $null; $noProgress = 0
+            $statusLine = "切换镜像源渠道..."
+          } else {
+            $noProgress++
+            $statusLine = "winget 安装进行中（已等待 $($noProgress * 5) 秒）"
+            if ($noProgress -ge 120) {
+              Write-Host "    winget 渠道长时间无进展，自动切换镜像源渠道（可随时按键提前干预）..."
+              Stop-WorkerWindow
+              $phase = "mirror-dl"; $mirrorIdx = 0; $dlFile = $null; $noProgress = 0
+              $statusLine = "切换镜像源渠道..."
+            }
+          }
         }
-        switch ($ans) {
-          "2" {
-            Stop-WorkerWindow
-            if ($p.required) { Warn "已放弃必选工具 $($p.name) 安装（手动安装后重跑本脚本自动补齐）" }
-            else { Warn "已放弃可选工具 $($p.name) 安装，继续移植" }
-            $done = $true
-          }
-          "3" { Stop-WorkerWindow; Warn "用户选择放弃本次移植，退出脚本"; exit 2 }
-          "1" {
-            # 换镜像源：重启工作窗口（中断旧 winget/curl 任务），下一镜像源下载命令发送到新工作窗口
-            Stop-WorkerWindow
-            $mirrorIdx++
-            if ($mirrorIdx -ge $p.mirrors.Count) { $mirrorIdx = 0 }
-            $ext = [System.IO.Path]::GetExtension($p.mirrors[$mirrorIdx]).ToLower()
-            $dlFile = Join-Path $env:TEMP ("opencode_dl_" + ($p.id -replace "[^A-Za-z0-9]", "_") + "_$($mirrorIdx + 1)" + $ext)
-            Remove-Item $dlFile -ErrorAction SilentlyContinue
-            Write-Host "    镜像源 $($mirrorIdx + 1)/$($p.mirrors.Count) 下载命令已发送到工作窗口（菜单随时可选）：$($p.mirrors[$mirrorIdx])"
-            $mode = "mirror-dl"
-            $lastSize = 0
-            try {
-              Start-WorkerCommand "curl.exe -L --connect-timeout 20 -o `"$dlFile`" $($p.mirrors[$mirrorIdx])"
-            } catch {
-              Warn "发送下载命令失败：$($_.Exception.Message)"
-              $mode = "winget"
-              $dlFile = $null
-            }
-          }
-          default {
-            # 回车：推进状态机；先查工作窗口完成信号（新窗口装完提醒主窗口）
-            Write-Host "    [主窗口] 收到输入，检测安装状态中..."
-            $workerDoneFile = (Join-Path $env:TEMP ("opencode_worker_cmd.txt" + ".done"))
-            if (Test-Path $workerDoneFile) {
-              $doneMsg = Get-Content $workerDoneFile -Raw -ErrorAction SilentlyContinue
-              Remove-Item $workerDoneFile -Force -ErrorAction SilentlyContinue
-              Write-Host "    [工作窗口报告] 上一命令已完成（$($doneMsg.Trim())）"
-            }
-            if ($mode -eq "mirror-dl") {
-              if (Test-Path $dlFile) {
-                $sz = (Get-Item $dlFile).Length
-                if ($sz -ge 1MB -and $sz -eq $lastSize) {
-                  # 下载完成（大小两次检测稳定）→ 发送安装命令到工作窗口
-                  Write-Host "    下载完成，安装命令已发送到工作窗口（$($p.name)；若权限不足请以管理员身份运行本脚本）..."
-                  $mode = "mirror-install"
-                  $ext = [System.IO.Path]::GetExtension($dlFile).ToLower()
-                  try {
-                    if ($ext -eq ".msi") {
-                      Start-WorkerCommand "msiexec /i `"$dlFile`" /qn /norestart"
-                    } else {
-                      Start-WorkerCommand "& `"$dlFile`" $($p.silent -join ' ')"
-                    }
-                  } catch {
-                    Warn "发送安装命令失败：$($_.Exception.Message)"
-                    $mode = "winget"
-                  }
-                } else {
-                  $lastSize = $sz
-                  $szMB = [math]::Round($sz / 1MB, 2)
-                  Write-Host "    下载中...（已下载 $szMB MB；工作窗口可见进度，菜单随时可选）"
-                }
-              } else {
-                Write-Host "    等待下载开始...（工作窗口可见进度，菜单随时可选）"
-              }
-            } elseif ($mode -eq "mirror-install") {
-              Write-Host "    安装中，等待检测...（工作窗口可见进度；若长时间无反应，请查看工作窗口错误信息或确认已以管理员身份运行）"
+        elseif ($phase -eq "mirror-dl") {
+          if (-not $dlFile) {
+            if ($mirrorIdx -ge $p.mirrors.Count) {
+              # 源尽 → 回到 winget 重试（不退出，自动循环）
+              $phase = "winget"; $wingetCmdSent = $false; $mirrorIdx = 0; $noProgress = 0
+              $statusLine = "全部镜像源已尝试，回到 winget 渠道重试..."
             } else {
-              Write-Host "    winget 安装中，等待检测...（工作窗口可见进度，菜单随时可选）"
+              $ext = [System.IO.Path]::GetExtension($p.mirrors[$mirrorIdx]).ToLower()
+              $dlFile = Join-Path $env:TEMP ("opencode_dl_" + ($p.id -replace "[^A-Za-z0-9]", "_") + "_$($mirrorIdx + 1)" + $ext)
+              Remove-Item $dlFile -ErrorAction SilentlyContinue
+              $lastSize = 0; $noProgress = 0
+              Write-Host "    镜像源 $($mirrorIdx + 1)/$($p.mirrors.Count) 下载中（工作窗口可见进度）: $($p.mirrors[$mirrorIdx])"
+              try {
+                Start-WorkerCommand "curl.exe -L --connect-timeout 20 -o `"$dlFile`" $($p.mirrors[$mirrorIdx])"
+              } catch {
+                Warn "下载命令发送失败：$($_.Exception.Message)"
+                $mirrorIdx++; $dlFile = $null
+              }
             }
-            Start-Sleep -Seconds 10
+          } elseif (Test-Path $dlFile) {
+            $sz = (Get-Item $dlFile).Length
+            if ($sz -ge 1MB -and $sz -eq $lastSize) {
+              Write-Host "    下载完成，自动开始静默安装（$($p.name)）..."
+              $phase = "mirror-install"; $noProgress = 0
+              $ext = [System.IO.Path]::GetExtension($dlFile).ToLower()
+              try {
+                if ($ext -eq ".msi") {
+                  Start-WorkerCommand "msiexec /i `"$dlFile`" /qn /norestart"
+                } else {
+                  Start-WorkerCommand "& `"$dlFile`" $($p.silent -join ' ')"
+                }
+              } catch {
+                Warn "安装命令发送失败：$($_.Exception.Message)"
+                $mirrorIdx++; $dlFile = $null; $phase = "mirror-dl"
+              }
+            } else {
+              $lastSize = $sz
+              $szMB = [math]::Round($sz / 1MB, 2)
+              $noProgress++
+              $statusLine = "镜像源 $($mirrorIdx + 1)/$($p.mirrors.Count) 下载中：已下载 $szMB MB"
+              if ($noProgress -ge 60 -and $szMB -lt 1) {
+                Write-Host "    该源长时间无有效下载，自动换下一个源..."
+                Stop-WorkerWindow
+                $mirrorIdx++; $dlFile = $null; $noProgress = 0
+              }
+            }
+          } else {
+            $noProgress++
+            $statusLine = "等待下载开始..."
+            if ($noProgress -ge 30) { $mirrorIdx++; $dlFile = $null; $noProgress = 0 }
           }
         }
+        elseif ($phase -eq "mirror-install") {
+          $noProgress++
+          $statusLine = "静默安装中（已等待 $($noProgress * 5) 秒，工作窗口可见）"
+          if ($noProgress -ge 120) {
+            Write-Host "    该源安装长时间未完成，自动换下一个源..."
+            Stop-WorkerWindow
+            $mirrorIdx++; $dlFile = $null; $phase = "mirror-dl"; $noProgress = 0
+          }
+        }
+        # ---- 每轮显示状态 + 选项（按键随时响应，不按键自动继续） ----
+        Write-Host "  【当前工具】$($p.name)：$statusLine"
+        Write-Host "  【选项】随时可选（不输入=继续自动安装，无需等待）："
+        Write-Host "    1 = 换镜像源渠道：停止当前渠道，改用国内镜像源重新下载安装（当前渠道下载慢/失败时推荐）"
+        Write-Host "    2 = 放弃本工具安装：跳过 $($p.name) 继续后续流程（可稍后手动安装或重跑本脚本自动补齐）"
+        Write-Host "    3 = 放弃本次移植：停止一切并退出脚本（下次重跑从头开始，已装工具自动跳过）"
+        try {
+          if ([Console]::KeyAvailable) {
+            $k = [Console]::ReadKey($true)
+            $a = "$($k.KeyChar)"
+            if ($a -eq "1") {
+              Stop-WorkerWindow
+              $phase = "mirror-dl"; $mirrorIdx = 0; $dlFile = $null; $noProgress = 0
+              Write-Host "    [已选择 1] 换镜像源渠道（下轮自动启动下载）"
+            }
+            elseif ($a -eq "2") {
+              Stop-WorkerWindow
+              if ($p.required) { Warn "已放弃必选工具 $($p.name) 安装（手动安装后重跑本脚本自动补齐）" }
+              else { Warn "已放弃可选工具 $($p.name) 安装，继续移植" }
+              $done = $true
+            }
+            elseif ($a -eq "3") { Stop-WorkerWindow; Warn "用户选择放弃本次移植，退出脚本"; exit 2 }
+          }
+        } catch {}
+        Start-Sleep -Seconds 5
       }
     }
   }
