@@ -68,8 +68,8 @@
 | fetch_skills.py | `tools\fetch_skills.py` | F | 从技能目录网站获取 skill |
 | cross_move.py | `tools\cross_move.py` | F | 跨 skill 归位 |
 | generalize.py | `tools\generalize.py` | F | 经验通用化改写 |
-| evolution_gate.py | `tools\evolution_gate.py` | E | 进化门禁脚本：session.created 时插件调 --drain（**异步后台**自愈补跑残留快照，max_n=3 限流防阻塞会话启动）+ --snapshot；session.idle 时 --check——机制步骤（流水兜底追加/自动测试/一致性校验/**配套漏更检测（docs-sync 映射反向校验）**/**新增与删除文件检测（A+C 方案 2026-08-28：全目录清单快照对比，输出【新增文件】待适配决策清单与分类提示，供进化检查任务弹窗决策）**）确定性执行，不依赖模型自觉；**--check-5step：五步检查点检测（stdin 读会话消息，固化响应缺五步标记即检出，插件把缺步警告并入进化检查任务）** |
-| health_check.py | `tools\health_check.py` | F | 一键健康检查：①核心配置齐全 ②skill frontmatter+体积门限 ③插件最近执行 ④测试可解析 ⑤门禁 idle/drain 记录 ⑥evolution_log 待处理项 ⑦平台 API 依赖保障（实验性 hook 可用性）⑧字符边界规范（CRLF/BOM/编码扫描）⑨注入量管控（四注入文件合计 ≤30KB，2026-08-28 报告评审后新增）；--run 实跑全部测试 / --run-quick 实跑快子集（跑前提示预计耗时） |
+| evolution_gate.py | `tools\evolution_gate.py` | E | 进化门禁脚本：session.created 时插件调 --drain（**异步后台**自愈补跑残留快照，max_n=3 限流防阻塞会话启动）+ --snapshot；session.idle 时 --check——机制步骤（流水兜底追加/自动测试/一致性校验/**配套漏更检测（docs-sync 映射反向校验）**/**新增与删除文件检测（A+C 方案 2026-08-28：全目录清单快照对比，输出【新增文件】待适配决策清单与分类提示，供进化检查任务弹窗决策）**/**二次验证未闭环计数提示**）确定性执行，不依赖模型自觉；**--check-5step：五步检查点检测（stdin 读会话消息，固化响应缺五步标记即检出，插件把缺步警告并入进化检查任务）+ 判定四条件显式声明检测（2026-08-28 V2 报告采纳）** |
+| health_check.py | `tools\health_check.py` | F | 一键健康检查：①核心配置齐全 ②skill frontmatter+体积门限 ③插件最近执行 ④测试可解析 ⑤门禁 idle/drain 记录 ⑥evolution_log 待处理项 ⑦平台 API 依赖保障（实验性 hook 可用性）⑧字符边界规范（CRLF/BOM/编码扫描）⑨注入量管控（四注入文件合计 ≤50KB，2026-08-28 报告评审后新增、V2 修正上限）；--run 实跑全部测试 / --run-quick 实跑快子集（跑前提示预计耗时） |
 | sync_push.py | `tools\sync_push.py` | G | 推送门禁脚本化：强制校验用户弹窗确认标记（无标记/非 push 选择直接拒绝 commit/push）；**推送前自动 to_portable（流程漏步不再可能）+ 可移植性强制阻断（残留本机用户名特征即拒绝）**；推送成功后自动清除标记；**WSL 仓库（wsl.localhost 路径）自动走 WSL 内 git 推送（SSH 密钥与 commit author 与历史一致）** |
 | archive\（18 个） | `tools\archive\` | F | 历史一次性脚本存档，不执行 |
 
@@ -87,7 +87,7 @@
 | test_regedit.py | `tests\test_regedit.py` | G | 注册表改动后强制（本表与实际文件系统一致性） |
 | test_tools_manifest.py | `tests\test_tools_manifest.py` | G | 工具总表改动后强制（分类计数吻合/待补充无重复/包可导入/表结构，19/19） |
 | test_instructions.py | `tests\test_instructions.py` | G | instructions.md 改动后强制（章节/铁律互查/引用存在/技能清单与目录一致/编写规范，31/31） |
-| test_evolution_gate.py | `tests\test_evolution_gate.py` | G | evolution_gate 改动后强制（快照/改动检测/流水兜底/自动测试触发/待补充清单/--drain 自愈补跑/max_n 限流/配套漏更检测/五步检查点/新增与删除文件检测，31/31） |
+| test_evolution_gate.py | `tests\test_evolution_gate.py` | G | evolution_gate 改动后强制（快照/改动检测/流水兜底/自动测试触发/待补充清单/--drain 自愈补跑/max_n 限流/配套漏更检测/五步检查点/判定四条件声明检测/二次验证计数/新增与删除文件检测，32/32） |
 | test_health_check.py | `tests\test_health_check.py` | G | health_check 改动后强制（可运行/报告结构/九检查项/无失败项/regedit 登记/--run-quick 实跑/注入量管控，9/9） |
 | test_sync_push.py | `tests\test_sync_push.py` | G | sync_push 改动后强制（无标记拒绝/非push拒绝/有效推送/标记清除/重推需重确认/WSL 路径判定与转换/自动 to_portable/可移植性阻断，16/16） |
 | test_docs_sync.py | `tests\test_docs_sync.py` | G | docs-sync.md 改动后强制（变更类型/校验测试存在/被 regedit+AGENTS 引用，19/19） |

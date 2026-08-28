@@ -25,6 +25,9 @@ STATE_FILES = ("path_map.txt", "sync_target.txt")
 # 五步检查点标记（与 evolution_skill SKILL.md 五步输出格式一致；改格式需同步 SKILL.md）
 FIVE_STEPS = ["第一步·归纳", "第二步·归属", "第三步·edit", "第四步·流水", "第五步·校验"]
 
+# 固化判定四条件显式声明（2026-08-28 V2 报告采纳：把四条件从 LLM 内心判断变成必须显式输出可检测）
+FOUR_COND = ["场景数", "可移植", "无重复", "边界"]
+
 WATCH_ROOTS = [os.path.join(CFG, "skills"), os.path.join(CFG, "plugins"), os.path.join(CFG, "tools"), os.path.join(CFG, "tests")]
 WATCH_FILES = [os.path.join(CFG, f) for f in ("AGENTS.md", "instructions.md", "regedit.md", "docs-sync.md", "tools-manifest.md")]
 
@@ -238,6 +241,13 @@ def do_check(sid):
     # 3. 待模型补充清单
     print("[gate] 待模型补充（智能部分）：五步流程第 1-3 步（归纳经验/归属判定/edit 固化到可执行载体）")
     print("[gate] 机器完成：流水兜底追加=%s、对应测试已自动执行" % ("是" if appended else "否(模型已记录)"))
+    # 4. 二次验证状态计数（2026-08-28 V2 报告采纳：程序化统计"待二次验证"未闭环条目，主动提示）
+    if os.path.exists(LOG):
+        _lc = open(LOG, encoding="utf-8", errors="replace").read()
+        _p = _lc.count("待二次验证")
+        _v = _lc.count("二次验证通过")
+        if _p > _v:
+            print("[gate] 二次验证未闭环：待二次验证 %d 条 / 已验证通过 %d 条——请在相关任务中主动套用验证并追加结果" % (_p, _v))
     os.remove(sp)
     return 0
 
@@ -279,10 +289,14 @@ def do_check_5step():
         print("[gate] 本会话无固化动作（无『已固化』声明），五步检查点不适用")
         return 0
     missing = [s for s in FIVE_STEPS if ("【" + s + "】") not in text]
-    if not missing:
-        print("[gate] 五步检查点齐全（第一步·归纳~第五步·校验标记全部出现）")
+    cond_missing = [k for k in FOUR_COND if ("判定四条件" not in text) or (k + "：" not in text and k + ":" not in text)]
+    if not missing and not cond_missing:
+        print("[gate] 五步检查点齐全（第一步·归纳~第五步·校验标记全部出现）且判定四条件已显式声明")
         return 0
-    print("[gate] 五步检查点缺失：%s" % "、".join(missing))
+    if missing:
+        print("[gate] 五步检查点缺失：%s" % "、".join(missing))
+    if cond_missing:
+        print("[gate] 判定四条件声明缺失：%s（固化响应第一步必须显式输出【判定四条件】场景数：X / 可移植：是 / 无重复：是 / 边界：明确——四条件是把判定从 LLM 内心判断变为可检测输出的程序化要求）" % "、".join(cond_missing))
     print("[gate] 五步检查点强制要求：执行固化必须按五步流程逐步输出【第一步·归纳】~【第五步·校验】"
           "结构化中间结果（格式见 evolution_skill SKILL.md），缺失步骤请在补做任务中补齐并重新声明")
     return 1

@@ -139,9 +139,9 @@ try:
 except Exception as e:
     add_fail("字符边界扫描无法执行：" + str(e)[:80])
 
-# ⑨ 注入量管控（四注入文件合计 ≤30KB，超限告警触发精简；2026-08-28 报告评审后新增）
+# ⑨ 注入量管控（四注入文件合计 ≤50KB，超限告警触发精简；2026-08-28 报告评审后新增，V2 报告修正上限 30→50KB）
 INJECT_FILES = ["instructions.md", "regedit.md", "tools-manifest.md", "docs-sync.md"]
-INJECT_LIMIT_KB = 30
+INJECT_LIMIT_KB = 50
 total_bytes = 0
 missing_inj = []
 for f in INJECT_FILES:
