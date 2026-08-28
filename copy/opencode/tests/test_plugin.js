@@ -92,7 +92,7 @@ check("五步齐全时任务不含缺步警告", !okTask.includes("五步检查�
 console.log("[测试3f] 使用率追踪")
 const src = readFileSync(join(HOME, ".config", "opencode", "plugins", "skill-banner.js"), "utf8")
 check("源码含使用率追踪函数与调用点", src.includes("trackExperienceUsage") && src.includes("collectExperienceKeywords"))
-check("关键词解析含泛词过滤（防误报）", src.includes("generic") && src.includes("length >= 3"))
+check("关键词解析含泛词过滤（防误报）", src.includes("generic") && src.includes("length >= 4"))
 check("会话级匹配写 evolution_trace.jsonl", src.includes("TRACE_FILE") && src.includes("JSON.stringify({ t:"))
 
 // === 测试 3g：messages 拉取异常 → 五步检查静默跳过，待办与注入不受影响 ===
@@ -111,6 +111,26 @@ const promptCountBefore3f = calls.prompt.length
 await handler({ event: { type: "session.created", properties: { sessionID: "sess-clean-004" } } })
 check("无待办时 prompt 只增 1 次（注册表提醒）", calls.prompt.length === promptCountBefore3f + 1)
 check("新增 prompt 为注册表提醒而非进化任务", calls.prompt[calls.prompt.length - 1].body.parts[0].text.includes("注册表必读"))
+
+// === 测试 3i：使用率追踪端到端行为测试（V6 修复 ELOG bug 后补的测试缺口——报告点名测试体系应捕获此 bug） ===
+console.log("[测试3i] 使用率追踪端到端")
+const ELOG_TEST = join(HOME, ".config", "opencode", "skills", "default", "evolution_skill", "evolution_log.txt")
+const realElog = existsSync(ELOG_TEST) ? readFileSync(ELOG_TEST, "utf8") : ""
+try {
+  writeFileSync(ELOG_TEST, "[2026-08-28] 测试经验A\n- 状态：active\n- 核心关键词：网关鉴权、链路预算\n\n[2026-08-28] 测试经验B\n- 状态：deprecated\n- 核心关键词：废弃机制\n")
+  const mod2 = await import("file://" + join(HOME, ".config", "opencode", "plugins", "skill-banner.js").replace(/\\/g, "/") + "?v=usage")
+  const plugin2 = await mod2.SkillBanner({ client })
+  const h2 = plugin2.event
+  mockMessages = [{ info: { role: "assistant" }, parts: [{ type: "text", text: "今天讨论网关鉴权方案与链路预算" }] }]
+  await h2({ event: { type: "session.idle", properties: { sessionID: "sess-usage-001" } } })
+  await new Promise(r => setTimeout(r, 400))
+  const traceTxt = existsSync(TRACE) ? readFileSync(TRACE, "utf8") : ""
+  check("使用率追踪端到端写入 trace（active 经验命中）", traceTxt.includes("测试经验A"))
+  check("deprecated 条目不参与使用率匹配", !traceTxt.includes("测试经验B"))
+  check("ELOG 常量已定义（V6 P0 bug 修复防回归）", readFileSync(join(HOME, ".config", "opencode", "plugins", "skill-banner.js"), "utf8").includes("const ELOG = join"))
+} finally {
+  writeFileSync(ELOG_TEST, realElog)
+}
 
 // === 测试 4：session.idle 无 sessionID → 不崩且记日志 ===
 console.log("[测试4] session.idle 缺 sessionID")
