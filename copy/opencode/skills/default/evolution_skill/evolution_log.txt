@@ -1160,3 +1160,6 @@
 
 
 [2026-08-28] 框架进化 V5 报告评审（先评方案再选）：选定方案甲'——使用率追踪闭环 E 类化（最后 1/8 H 类机制落地）：① 插件 session.idle 会话级关键词匹配（collectExperienceKeywords 解析结构化条目核心关键词+泛词过滤 → 命中写 evolution_trace.jsonl）② 经验健康引擎低活性扫描（trace 最后引用 >60 天 → 提示下沉/deprecated）③ 四条件依据软提示扩展到边界（4/4 内容检测齐）④ deprecated 条目定位（核心关键词 vs 规则文件 [DEPRECATED] 段落）⑤ instructions 使用率自审条款改程序化。测试：test_plugin 46→49/49、test_evolution_gate 37→38/38、regedit 48、instructions 31、health_check 9、consistency 15、charset 7 全绿。不采纳：自动 slim（维持人工精简+告警）、软提示升硬告警（弱信号场景误伤风险高，保持提示级）
+
+
+[2026-08-28] 框架进化 V6 报告评审（先评方案再选）：选定方案甲——运行态修复+测试方法论升级。修复 V6 点名的 P0 bug 链：① ELOG 常量未定义（collectExperienceKeywords 内 readFileSync(ELOG) 抛 ReferenceError 被 catch 吞掉→返回空→使用率追踪全链路失效）——补常量定义；② slice 索引错位（'- 状态：' 应为 5 字符 slice(5)、核心关键词 slice(7) 少算全角冒号）——状态过滤失效、关键词带冒号永不命中，两 bug 叠加致链路完全失效且 test_plugin 文本断言未捕获（V6 指出测试缺口）；③ 测试方法论升级：test_plugin 新增 3i 端到端行为测试（临时 ELOG 构造→真实 idle 事件→断言 trace 写入与 deprecated 排除），46→52/52；④ 关键词长度下限 3→4（降误报）；⑤ deprecated 定位检测扩展删除线格式（~~）。踩坑：行为测试覆盖真实 evolution_log 引发历史流水丢失（404 字节残留）——已从仓库占位符版恢复 1162 行+to_local；教训：测试临时文件恢复必须防并发进程竞态，破坏性测试先备份到独立文件而非内存。测试：plugin 52/52、gate 38/38、regedit 48、instructions 31、health_check 9、consistency 15、charset 7 全绿

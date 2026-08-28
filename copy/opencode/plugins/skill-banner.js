@@ -7,6 +7,7 @@ const HOME = homedir()
 const SKILLS_DIR = join(HOME, ".config", "opencode", "skills")
 const TRACE_FILE = join(HOME, ".config", "opencode", "skills", "default", "evolution_skill", "evolution_trace.jsonl")
 const LOG_FILE = join(HOME, ".config", "opencode", "plugins", "plugin-evolution.log")
+const ELOG = join(HOME, ".config", "opencode", "skills", "default", "evolution_skill", "evolution_log.txt")
 const GATE = join(HOME, ".config", "opencode", "tools", "evolution_gate.py")
 const API_TEST = join(HOME, ".config", "opencode", "tests", "test_platform_api.py")
 
@@ -162,10 +163,10 @@ function collectExperienceKeywords() {
     for (const ln of lines) {
       const t = ln.match(/^\[(\d{4}-\d{2}-\d{2})\]\s*(.*)/)
       if (t) { lastTitle = t[2].trim().slice(0, 80); lastStatus = "active" }
-      if (ln.startsWith("- 状态：")) lastStatus = ln.slice(4).trim()
+      if (ln.startsWith("- 状态：")) lastStatus = ln.slice(5).trim()
       const kw = ln.match(/^- 核心关键词：(.+)/)
       if (kw && lastStatus === "active") {
-        kw[1].split(/[、,，;；]/).map(s => s.trim()).filter(s => s.length >= 3 && !generic.has(s))
+        kw[1].split(/[、,，;；]/).map(s => s.trim()).filter(s => s.length >= 4 && !generic.has(s))
           .forEach(k => out.push({ t: lastTitle, k }))
       }
     }

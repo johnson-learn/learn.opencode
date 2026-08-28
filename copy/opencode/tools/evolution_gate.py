@@ -243,7 +243,7 @@ def experience_health():
                 try:
                     c = open(rf, encoding="utf-8", errors="replace").read()
                     for para in c.split("\n\n"):
-                        if "[DEPRECATED]" in para and any(k in para for k in kws):
+                        if ("[DEPRECATED]" in para or "~~" in para) and any(k in para for k in kws):
                             found = True
                             break
                     if found:
