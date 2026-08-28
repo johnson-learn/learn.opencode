@@ -82,7 +82,7 @@ check("注入后待办已消费（再次创建不再注入进化任务）", call
 
 // === 测试 3d：五步齐全 → 新会话任务不含缺步警告 ===
 console.log("[测试3d] 五步齐全")
-mockMessages = [{ info: { role: "assistant" }, parts: [{ type: "text", text: "进化：已固化 xxx\n【第一步·归纳】a\n【第二步·归属】b\n【第三步·edit】c\n【第四步·流水】d\n【第五步·校验】e" }] }]
+mockMessages = [{ info: { role: "assistant" }, parts: [{ type: "text", text: "进化：已固化 xxx\n【第一步·归纳】a\n【判定四条件】场景数：2 / 可移植：是（不含本机路径）/ 无重复：是（已比对）/ 边界：明确\n【第二步·归属】b\n【第三步·edit】c\n【第四步·流水】d\n【第五步·校验】e" }] }]
 await handler({ event: { type: "session.idle", properties: { sessionID: "sess-five-002" } } })
 await handler({ event: { type: "session.created", properties: { sessionID: "sess-five-created2" } } })
 const okTask = calls.prompt[calls.prompt.length - 1].body.parts[0].text || ""

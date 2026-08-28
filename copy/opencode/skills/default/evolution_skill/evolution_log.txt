@@ -1154,3 +1154,6 @@
 
 
 [2026-08-28] 框架进化 V3 报告评审（用户要求：先评方案再选，不打补丁）：评估 4 方案后选定方案丁（甲+微精简）——经验健康引擎一体化（gate --check 内 experience_health：①待二次验证条目清单含标题摘要 ②deprecated 记录 vs 规则文件 [DEPRECATED] 标记弱校验 ③90 天老化扫描）+ 四条件可追溯检测（--check-5step：场景数=1 须带高代价/点名依据）+ instructions 字符边界细则压缩（去与 AGENTS 铁律重复，-约 400B）。顺带修复两个隐藏 bug：①evolution_gate 缺 import re 致 parse_docs_sync 静默走 FALLBACK（配套漏更检测失真）②docs-sync 映射文件名提取正则（无反引号列提取为空），修复后真实解析与 FALLBACK 一致。测试：test_evolution_gate 32→35/35、instructions 31、regedit 48、health_check 9、consistency 15、charset 7 全绿。不采纳：自动 slim（自动改核心规则文件风险高，维持告警+人工精简）
+
+
+[2026-08-28] 框架进化 V4 报告评审（用户要求：先评方案再选，不打补丁）：评估 4 方案后选定方案甲'——经验条目结构化升级（数据模型根因解）：① evolution_log 新条目结构化格式（状态/场景数/最后验证/核心关键词/载体/内容六字段，evolution_skill 第四步约定）② 经验健康引擎升级为按字段精确扫描（待验证全量 top5+总数、deprecated 记录清单+定位提示、条目级 180 天老化+全库 90 天活性）③ 四条件依据软提示（可移植/无重复裸『是』声明提示附括号依据）④ 注入量达标 51.7→50.0KB（regedit 同步层/插件行/instructions 注入规则三处压缩，成功压入上限内）。修复：软提示早退 bug（return 0 位置）+ test_plugin 3d mock 缺四条件声明过时用例。测试：gate 35→37/37、plugin 46/46、regedit 48、instructions 31、health_check 9、consistency 15、charset 7 全绿。不采纳：使用率关键词插件（弱信号+每轮开销，新格式预留核心关键词字段，未来可低成本启用）
