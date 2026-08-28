@@ -152,11 +152,11 @@ async function runGate5step(client, sid) {
 
 function collectExperienceKeywords() {
   // 使用率追踪（V5 方案甲' 2026-08-28）：从 evolution_log 结构化条目解析活跃经验的"核心关键词"表
-  // 泛词过滤防误报（>=3 字符且排除常见通用词）
+  // 泛词过滤防误报（>=4 字符且排除常见通用词）；V6 剩余问题采纳：按标题分组为 {t, ks}
   try {
     const txt = readFileSync(ELOG, "utf8")
     const lines = txt.split(/\r?\n/)
-    const out = []
+    const byTitle = new Map()
     const generic = new Set(["信号", "文件", "规则", "脚本", "测试", "工具", "流程", "机制", "路径"])
     let lastTitle = ""
     let lastStatus = "active"
@@ -166,30 +166,32 @@ function collectExperienceKeywords() {
       if (ln.startsWith("- 状态：")) lastStatus = ln.slice(5).trim()
       const kw = ln.match(/^- 核心关键词：(.+)/)
       if (kw && lastStatus === "active") {
-        kw[1].split(/[、,，;；]/).map(s => s.trim()).filter(s => s.length >= 4 && !generic.has(s))
-          .forEach(k => out.push({ t: lastTitle, k }))
+        const ks = kw[1].split(/[、,，;；]/).map(s => s.trim()).filter(s => s.length >= 4 && !generic.has(s))
+        if (ks.length && !byTitle.has(lastTitle)) byTitle.set(lastTitle, [])
+        ks.forEach(k => byTitle.get(lastTitle).push(k))
       }
     }
-    return out
+    return Array.from(byTitle.entries()).map(([t, ks]) => ({ t, ks }))
   } catch (e) {
     return []
   }
 }
 
 function trackExperienceUsage(client, sid) {
-  // 会话级关键词匹配（弱信号但可靠：整会话 assistant 文本一次匹配，命中写 evolution_trace.jsonl）
-  const kws = collectExperienceKeywords()
-  if (!kws.length) return
+  // 会话级关键词匹配（弱信号但可靠：整会话 assistant 文本一次匹配，命中写 evolution_trace.jsonl；
+  // V6 剩余问题采纳：经验有 >=2 个关键词时需 >=2 个同时命中才记引用，防短词误报）
+  const groups = collectExperienceKeywords()
+  if (!groups.length) return
   fetchAssistantText(client, sid).then(text => {
     if (!text) return
-    const seen = new Set()
     const hits = []
-    for (const x of kws) {
-      if (!seen.has(x.t) && text.includes(x.k)) { seen.add(x.t); hits.push(x) }
+    for (const g of groups) {
+      const n = g.ks.filter(k => text.includes(k)).length
+      if (n >= Math.min(2, g.ks.length)) hits.push(g)
     }
     if (!hits.length) return
     try {
-      appendFileSync(TRACE_FILE, hits.map(x => JSON.stringify({ t: new Date().toISOString(), sid: String(sid).slice(0, 40), entry: x.t, kw: x.k })).join("\n") + "\n")
+      appendFileSync(TRACE_FILE, hits.map(x => JSON.stringify({ t: new Date().toISOString(), sid: String(sid).slice(0, 40), entry: x.t, kw: x.ks.join("|") })).join("\n") + "\n")
       log("使用率追踪：会话命中 " + hits.length + " 条经验关键词（" + hits.map(x => x.t.slice(0, 30)).join("、") + "）")
     } catch (e) {
       log("使用率追踪写 trace 失败：" + (e && e.message ? String(e.message).slice(0, 120) : ""))

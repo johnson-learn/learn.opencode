@@ -28,6 +28,12 @@ FIVE_STEPS = ["第一步·归纳", "第二步·归属", "第三步·edit", "第�
 # 固化判定四条件显式声明（2026-08-28 V2 报告采纳：把四条件从 LLM 内心判断变成必须显式输出可检测）
 FOUR_COND = ["场景数", "可移植", "无重复", "边界"]
 
+# 经验健康阈值（2026-08-28 V6 剩余问题采纳：阈值配置化，按需调整）
+LOW_USE_DAYS = 60      # 使用率追踪：活跃经验最后引用超过 N 天未引用 → 低活性提示
+AGED_DAYS = 180        # 条目级老化：最后验证/固化日期超过 N 天未再验证 → 老化提示
+INACTIVE_DAYS = 90     # 全库活性：最近一条经验记录超过 N 天 → 框架老化提示
+BARE_DECLARE_LIMIT = 3  # 四条件裸声明渐进硬告警：连续 N 次裸『是/明确』声明后升级 rc=1
+
 WATCH_ROOTS = [os.path.join(CFG, "skills"), os.path.join(CFG, "plugins"), os.path.join(CFG, "tools"), os.path.join(CFG, "tests")]
 WATCH_FILES = [os.path.join(CFG, f) for f in ("AGENTS.md", "instructions.md", "regedit.md", "docs-sync.md", "tools-manifest.md")]
 
@@ -259,7 +265,7 @@ def experience_health():
         dstr = e["verified"][:10] if e["verified"] and e["verified"][:10][:4].isdigit() else e["date"]
         try:
             d = datetime.date(*map(int, dstr.split("-")))
-            if (today - d).days > 180 and e["status"] == "active":
+            if (today - d).days > AGED_DAYS and e["status"] == "active":
                 aged.append((e["date"], e["title"][:80]))
         except Exception:
             pass
@@ -289,7 +295,7 @@ def experience_health():
             dstr = (lu or e["verified"][:10]) if (lu or e["verified"][:10][:4].isdigit()) else e["date"]
             try:
                 d = datetime.date(*map(int, dstr.split("-")))
-                if (today - d).days > 60:
+                if (today - d).days > LOW_USE_DAYS:
                     low.append((e["date"], e["title"][:80]))
             except Exception:
                 pass
@@ -307,7 +313,7 @@ def experience_health():
             except Exception:
                 pass
             break
-    if last_date and (today - last_date).days > 90:
+    if last_date and (today - last_date).days > INACTIVE_DAYS:
         out.append("[经验健康] 老化提示：最近一条经验记录于 %s（%d 天前）——框架超过 90 天未产生新经验，建议抽查重验" % (last_date.isoformat(), (today - last_date).days))
     for o in out:
         print(o)
@@ -450,7 +456,8 @@ def do_check_5step():
         trace_warn = "[gate] 四条件可追溯告警：场景数=1 但未标注『踩坑代价高/用户点名』依据——按判定四条件规则，单场景固化必须有高代价或用户点名理由，请补充依据或降级为流水事实类"
     if not missing and not cond_missing and not trace_warn:
         # 三条件依据软提示（齐全通过时也检查——2026-08-28 V4 方案甲'：防裸『可移植：是』『无重复：是』声明；
-        # V5 方案甲' 扩展：『边界：明确』无依据同样软提示——4/4 条件内容检测齐）
+        # V5 方案甲' 扩展：『边界：明确』无依据同样软提示——4/4 条件内容检测齐；
+        # V6 剩余问题采纳：连续 BARE_DECLARE_LIMIT 次裸声明 → 渐进升级硬告警 rc=1）
         soft = []
         for kw in ("可移植", "无重复", "边界"):
             m = re.search(kw + r"：(是|明确)", text)
@@ -459,7 +466,29 @@ def do_check_5step():
                 if "（" not in tail and "(" not in tail:
                     soft.append(kw)
         if soft:
-            print("[gate] 四条件依据软提示：%s 声明为『是/明确』但未附括号依据（建议格式：可移植：是（不含本机路径）/ 无重复：是（已比对 XX）/ 边界：明确（触发条件与适用边界））" % "、".join(soft))
+            bare_file = os.path.join(SNAP_DIR, "gate_bare_declare.json")
+            today_s = datetime.date.today().isoformat()
+            count = 1
+            try:
+                if os.path.exists(bare_file):
+                    d = json.load(open(bare_file, encoding="utf-8"))
+                    if d.get("date") == today_s:
+                        count = d.get("count", 0) + 1
+            except Exception:
+                pass
+            try:
+                os.makedirs(SNAP_DIR, exist_ok=True)
+                json.dump({"date": today_s, "count": count}, open(bare_file, "w", encoding="utf-8"))
+            except Exception:
+                pass
+            if count >= BARE_DECLARE_LIMIT:
+                try:
+                    json.dump({"date": today_s, "count": 0}, open(bare_file, "w", encoding="utf-8"))
+                except Exception:
+                    pass
+                print("[gate] 四条件硬告警：连续 %d 次裸声明『%s』（软提示已升级为硬告警 rc=1，计数已清零）——请为每个『是/明确』条件附括号依据（可移植：是（不含本机路径）/ 无重复：是（已比对 XX）/ 边界：明确（触发条件与适用边界））" % (count, "、".join(soft)))
+                return 1
+            print("[gate] 四条件依据软提示（第 %d/%d 次）：%s 声明为『是/明确』但未附括号依据；连续 %d 次将升级硬告警" % (count, BARE_DECLARE_LIMIT, "、".join(soft), BARE_DECLARE_LIMIT))
         print("[gate] 五步检查点齐全（第一步·归纳~第五步·校验标记全部出现）且判定四条件已显式声明")
         return 0
     if missing:

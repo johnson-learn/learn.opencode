@@ -154,7 +154,8 @@ if missing_inj:
     add_warn("注入文件缺失：%s" % "、".join(missing_inj))
 total_kb = total_bytes / 1024.0
 if total_kb > INJECT_LIMIT_KB:
-    add_warn("注入总量 %.1fKB 超过 %dKB 上限（触发精简：优先压缩示例段落/重复摘要，大表保留速览头行）" % (total_kb, INJECT_LIMIT_KB))
+    detail = "、".join("%s %.1fKB" % (f, os.path.getsize(os.path.join(CFG, f)) / 1024.0) for f in INJECT_FILES if os.path.exists(os.path.join(CFG, f)))
+    add_warn("注入总量 %.1fKB 超过 %dKB 上限（精简行动指引：%s）——优先压缩与 AGENTS.md 重复的细则（instructions 通用回答规则）、regedit 各层冗长描述、示例段落；大表保留速览头行；逐项精简后重跑本检查" % (total_kb, INJECT_LIMIT_KB, detail))
 else:
     add_ok("注入总量 %.1fKB 在上限 %dKB 内（instructions/regedit/tools-manifest/docs-sync）" % (total_kb, INJECT_LIMIT_KB))
 
