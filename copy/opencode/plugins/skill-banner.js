@@ -112,8 +112,8 @@ function runApiCheckAsync(client) {
   }
 }
 
-async function runGate5step(client, sid) {
-  // 五步检查点程序化强制：拉取会话消息 → gate --check-5step 检测五步标记 → 返回缺步警告文本
+async function fetchAssistantText(client, sid) {
+  // 拉取会话 assistant 文本（五步检查与使用率追踪共用；最近 40 条消息）
   let text = ""
   try {
     const resp = await client.session.messages({ path: { id: sid } })
@@ -125,9 +125,15 @@ async function runGate5step(client, sid) {
       }
     }
   } catch (e) {
-    log("session.idle 拉取会话消息失败（五步检查跳过）：" + (e && e.message ? String(e.message).slice(0, 150) : ""))
+    log("session.idle 拉取会话消息失败（跳过）：" + (e && e.message ? String(e.message).slice(0, 150) : ""))
     return ""
   }
+  return text
+}
+
+async function runGate5step(client, sid) {
+  // 五步检查点程序化强制：拉取会话消息 → gate --check-5step 检测五步标记 → 返回缺步警告文本
+  const text = await fetchAssistantText(client, sid)
   if (!text) return ""
   try {
     execSync(`python "${GATE}" --check-5step`, {
@@ -141,6 +147,53 @@ async function runGate5step(client, sid) {
     log("gate --check-5step 执行失败：" + (e && e.message ? String(e.message).slice(0, 150) : ""))
     return ""
   }
+}
+
+function collectExperienceKeywords() {
+  // 使用率追踪（V5 方案甲' 2026-08-28）：从 evolution_log 结构化条目解析活跃经验的"核心关键词"表
+  // 泛词过滤防误报（>=3 字符且排除常见通用词）
+  try {
+    const txt = readFileSync(ELOG, "utf8")
+    const lines = txt.split(/\r?\n/)
+    const out = []
+    const generic = new Set(["信号", "文件", "规则", "脚本", "测试", "工具", "流程", "机制", "路径"])
+    let lastTitle = ""
+    let lastStatus = "active"
+    for (const ln of lines) {
+      const t = ln.match(/^\[(\d{4}-\d{2}-\d{2})\]\s*(.*)/)
+      if (t) { lastTitle = t[2].trim().slice(0, 80); lastStatus = "active" }
+      if (ln.startsWith("- 状态：")) lastStatus = ln.slice(4).trim()
+      const kw = ln.match(/^- 核心关键词：(.+)/)
+      if (kw && lastStatus === "active") {
+        kw[1].split(/[、,，;；]/).map(s => s.trim()).filter(s => s.length >= 3 && !generic.has(s))
+          .forEach(k => out.push({ t: lastTitle, k }))
+      }
+    }
+    return out
+  } catch (e) {
+    return []
+  }
+}
+
+function trackExperienceUsage(client, sid) {
+  // 会话级关键词匹配（弱信号但可靠：整会话 assistant 文本一次匹配，命中写 evolution_trace.jsonl）
+  const kws = collectExperienceKeywords()
+  if (!kws.length) return
+  fetchAssistantText(client, sid).then(text => {
+    if (!text) return
+    const seen = new Set()
+    const hits = []
+    for (const x of kws) {
+      if (!seen.has(x.t) && text.includes(x.k)) { seen.add(x.t); hits.push(x) }
+    }
+    if (!hits.length) return
+    try {
+      appendFileSync(TRACE_FILE, hits.map(x => JSON.stringify({ t: new Date().toISOString(), sid: String(sid).slice(0, 40), entry: x.t, kw: x.k })).join("\n") + "\n")
+      log("使用率追踪：会话命中 " + hits.length + " 条经验关键词（" + hits.map(x => x.t.slice(0, 30)).join("、") + "）")
+    } catch (e) {
+      log("使用率追踪写 trace 失败：" + (e && e.message ? String(e.message).slice(0, 120) : ""))
+    }
+  })
 }
 
 function log(msg) {
@@ -315,6 +368,8 @@ export const SkillBanner = async ({ client }) => {
           if (fiveOut) {
             log("五步检查点输出：\n" + fiveOut.slice(0, 500))
           }
+          // 使用率追踪（V5 方案甲'）：会话级关键词匹配 → evolution_trace.jsonl
+          trackExperienceUsage(client, sid)
           writePending({ prevSid: sid, gateOut: gateOut, fiveOut: fiveOut, time: new Date().toISOString() })
           log("进化待办已写入（等待下一会话创建时静默注入）")
         }

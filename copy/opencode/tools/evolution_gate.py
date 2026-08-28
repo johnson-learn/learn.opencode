@@ -232,6 +232,26 @@ def experience_health():
         else:
             out.append("[经验健康] deprecation 记录 %d 条，规则文件 [DEPRECATED] 标记 %d 处；最近弃用：%s（若该条未在规则文件显式标记请补）"
                        % (len(dep_entries) + len(dep_heuristic), marks, (dep_entries[-1]["title"] if dep_entries else dep_heuristic[-1])[:80]))
+    # ②b deprecated 条目定位（V5 方案甲'：结构化条目的核心关键词是否出现在规则文件的 [DEPRECATED] 段落）
+    if dep_entries:
+        for e in dep_entries:
+            kws = [k.strip() for k in (e.get("keywords") or "").replace("、", ",").split(",") if k.strip()]
+            if not kws:
+                continue
+            found = False
+            for rf in rule_files:
+                try:
+                    c = open(rf, encoding="utf-8", errors="replace").read()
+                    for para in c.split("\n\n"):
+                        if "[DEPRECATED]" in para and any(k in para for k in kws):
+                            found = True
+                            break
+                    if found:
+                        break
+                except Exception:
+                    pass
+            if not found:
+                out.append("[经验健康] deprecated 定位：『%s』已弃用但其核心关键词未出现在任何规则文件的 [DEPRECATED] 标记段落（请在对应规则条目补显式标记）" % e["title"][:70])
     # ③ 条目级老化（结构化条目：最后验证或固化日期 >180 天）
     today = datetime.date.today()
     aged = []
@@ -247,6 +267,36 @@ def experience_health():
         out.append("[经验健康] 条目级老化：%d 条活跃经验超过 180 天未再验证（外部环境可能已变化，建议抽查重验）：" % len(aged))
         for d, t in aged[-5:]:
             out.append("    · [%s] %s" % (d, t))
+    # ③b 低活性扫描（V5 方案甲'：插件写 evolution_trace.jsonl 的最后引用日期 → >60 天未引用提示下沉）
+    trace_file = os.path.join(CFG, "skills", "default", "evolution_skill", "evolution_trace.jsonl")
+    if os.path.exists(trace_file):
+        last_use = {}
+        try:
+            for ln in open(trace_file, encoding="utf-8", errors="replace"):
+                try:
+                    j = json.loads(ln)
+                    if "entry" in j and "t" in j:
+                        last_use[j["entry"]] = j["t"][:10]
+                except Exception:
+                    pass
+        except Exception:
+            pass
+        low = []
+        for e in entries:
+            if e["status"] != "active" or not e.get("keywords"):
+                continue
+            lu = last_use.get(e["title"])
+            dstr = (lu or e["verified"][:10]) if (lu or e["verified"][:10][:4].isdigit()) else e["date"]
+            try:
+                d = datetime.date(*map(int, dstr.split("-")))
+                if (today - d).days > 60:
+                    low.append((e["date"], e["title"][:80]))
+            except Exception:
+                pass
+        if low:
+            out.append("[经验健康] 低活性：%d 条活跃经验超过 60 天未被引用（使用率追踪为程序化信号，建议下沉 references/ 或标注 deprecated）：" % len(low))
+            for d, t in low[-5:]:
+                out.append("    · [%s] %s" % (d, t))
     # 全库级活性信号
     last_date = None
     for ln in reversed(lines):
@@ -399,16 +449,17 @@ def do_check_5step():
     if ("判定四条件" in text) and ("场景数：1" in text or "场景数:1" in text) and ("踩坑代价高" not in text and "用户点名" not in text):
         trace_warn = "[gate] 四条件可追溯告警：场景数=1 但未标注『踩坑代价高/用户点名』依据——按判定四条件规则，单场景固化必须有高代价或用户点名理由，请补充依据或降级为流水事实类"
     if not missing and not cond_missing and not trace_warn:
-        # 三条件依据软提示（齐全通过时也检查——2026-08-28 V4 方案甲'：防裸『可移植：是』『无重复：是』声明）
+        # 三条件依据软提示（齐全通过时也检查——2026-08-28 V4 方案甲'：防裸『可移植：是』『无重复：是』声明；
+        # V5 方案甲' 扩展：『边界：明确』无依据同样软提示——4/4 条件内容检测齐）
         soft = []
-        for kw in ("可移植", "无重复"):
-            m = re.search(kw + r"：是", text)
+        for kw in ("可移植", "无重复", "边界"):
+            m = re.search(kw + r"：(是|明确)", text)
             if m:
                 tail = text[m.end():m.end() + 25]
                 if "（" not in tail and "(" not in tail:
                     soft.append(kw)
         if soft:
-            print("[gate] 四条件依据软提示：%s 声明为『是』但未附括号依据（建议格式：可移植：是（不含本机路径）/ 无重复：是（已比对 XX））" % "、".join(soft))
+            print("[gate] 四条件依据软提示：%s 声明为『是/明确』但未附括号依据（建议格式：可移植：是（不含本机路径）/ 无重复：是（已比对 XX）/ 边界：明确（触发条件与适用边界））" % "、".join(soft))
         print("[gate] 五步检查点齐全（第一步·归纳~第五步·校验标记全部出现）且判定四条件已显式声明")
         return 0
     if missing:

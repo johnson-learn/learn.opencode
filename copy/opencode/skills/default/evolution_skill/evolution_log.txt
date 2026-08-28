@@ -1157,3 +1157,6 @@
 
 
 [2026-08-28] 框架进化 V4 报告评审（用户要求：先评方案再选，不打补丁）：评估 4 方案后选定方案甲'——经验条目结构化升级（数据模型根因解）：① evolution_log 新条目结构化格式（状态/场景数/最后验证/核心关键词/载体/内容六字段，evolution_skill 第四步约定）② 经验健康引擎升级为按字段精确扫描（待验证全量 top5+总数、deprecated 记录清单+定位提示、条目级 180 天老化+全库 90 天活性）③ 四条件依据软提示（可移植/无重复裸『是』声明提示附括号依据）④ 注入量达标 51.7→50.0KB（regedit 同步层/插件行/instructions 注入规则三处压缩，成功压入上限内）。修复：软提示早退 bug（return 0 位置）+ test_plugin 3d mock 缺四条件声明过时用例。测试：gate 35→37/37、plugin 46/46、regedit 48、instructions 31、health_check 9、consistency 15、charset 7 全绿。不采纳：使用率关键词插件（弱信号+每轮开销，新格式预留核心关键词字段，未来可低成本启用）
+
+
+[2026-08-28] 框架进化 V5 报告评审（先评方案再选）：选定方案甲'——使用率追踪闭环 E 类化（最后 1/8 H 类机制落地）：① 插件 session.idle 会话级关键词匹配（collectExperienceKeywords 解析结构化条目核心关键词+泛词过滤 → 命中写 evolution_trace.jsonl）② 经验健康引擎低活性扫描（trace 最后引用 >60 天 → 提示下沉/deprecated）③ 四条件依据软提示扩展到边界（4/4 内容检测齐）④ deprecated 条目定位（核心关键词 vs 规则文件 [DEPRECATED] 段落）⑤ instructions 使用率自审条款改程序化。测试：test_plugin 46→49/49、test_evolution_gate 37→38/38、regedit 48、instructions 31、health_check 9、consistency 15、charset 7 全绿。不采纳：自动 slim（维持人工精简+告警）、软提示升硬告警（弱信号场景误伤风险高，保持提示级）

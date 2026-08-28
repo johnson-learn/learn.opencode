@@ -110,9 +110,12 @@ r = run5(single_ok)
 check("场景数=1 但带依据时通过（rc=0）", r.returncode == 0 and "齐全" in r.stdout)
 r = run5(single_ok)
 check("裸『可移植：是』『无重复：是』触发依据软提示", "依据软提示" in r.stdout)
-cond_with_basis = "进化：已固化 yyy\n【第一步·归纳】a\n【判定四条件】场景数：2 / 可移植：是（不含本机路径）/ 无重复：是（已比对）/ 边界：明确\n【第二步·归属】b\n【第三步·edit】c\n【第四步·流水】d\n【第五步·校验】e\n"
+cond_with_basis = "进化：已固化 yyy\n【第一步·归纳】a\n【判定四条件】场景数：2 / 可移植：是（不含本机路径）/ 无重复：是（已比对）/ 边界：明确（触发条件与适用边界）\n【第二步·归属】b\n【第三步·edit】c\n【第四步·流水】d\n【第五步·校验】e\n"
 r = run5(cond_with_basis)
 check("三条件附括号依据时无软提示", "依据软提示" not in r.stdout)
+bare_boundary = "进化：已固化 yyy\n【第一步·归纳】a\n【判定四条件】场景数：2 / 可移植：是（不含本机路径）/ 无重复：是（已比对）/ 边界：明确\n【第二步·归属】b\n【第三步·edit】c\n【第四步·流水】d\n【第五步·校验】e\n"
+r = run5(bare_boundary)
+check("裸『边界：明确』触发依据软提示（4/4 条件检测齐）", "依据软提示" in r.stdout and "边界" in r.stdout)
 partial = "进化：已固化 xxx\n【第一步·归纳】a\n【第三步·edit】c\n"
 r = run5(partial)
 check("缺步检出（rc=1）", r.returncode == 1 and "缺失" in r.stdout)
