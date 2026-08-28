@@ -68,7 +68,7 @@
 
 0. **同步边界铁律（最高优先级）**：只有用户**显式调用 update_skill** 时，才允许执行以下动作——(a) 把远端更新拉取/合入本机；(b) 把本机修改复制到同步目录并 git commit/push 到远端。**其它任何场景（包括用户提出需求、讨论方案、进化固化 skill 文件本身）都不得擅自执行上述同步动作**；本机 skill/指令文件的直接编辑（进化固化）不受此限，但绝不附带 git 同步。
 
-0.5 **字符边界规范细则（AGENTS.md 铁律第 9 条，用户 2026-08-27 定）**：本机 = Windows PowerShell（GBK 默认）↔ Python/Node/WSL（UTF-8）多边界环境，任何跨界都可能发生编码/转义/换行转换——历史上 GBK 乱码、引号转义崩溃、LF→CRLF 破坏解析、中文 commit 丢失等事故多发。执行细则：① 跨工具传数据一律文件化（禁 `python -c`/`node -e` 内联中文；禁 `wsl -e bash -c` 内联多行脚本；git commit 用 `-F`）；② Python 写文件显式 `encoding="utf-8", newline="\n"`，读子进程输出 `encoding="utf-8", errors="replace"`；③ PowerShell 调 .ps1/.cmd 包装命令用 `cmd /c`；④ 框架文本文件统一 UTF-8 无 BOM + LF（test_charset.py 程序化防线，health_check 必跑，失败立即归一修复再交付）；⑤ 临时文件放 `%LOCALAPPDATA%\Temp\opencode\`。
+0.5 **字符边界规范细则（AGENTS.md 铁律第 9 条，用户 2026-08-27 定；细节以 AGENTS.md 为准）**：跨工具传数据一律文件化（禁内联中文/多行脚本；git commit 用 `-F`）；Python 写文件 `encoding="utf-8", newline="\n"`、读子进程输出 `encoding="utf-8", errors="replace"`；框架文本文件 UTF-8 无 BOM + LF（test_charset.py 防线，health_check 必跑）；临时文件放 `%LOCALAPPDATA%\Temp\opencode\`。
 
 1. **语言跟随提问（回答语言硬约束）**：用户以何种语言提问，思考、回答、输出就必须以何种语言（中文提问→中文回答含思考过程，英文提问→英文回答），任何情况下不得因模型偏好/文档语言/任务习惯改用其它语言；协议原文、配置项名称、原始字段、ASN.1、代码、命令、报错信息等必要原文保持原样不翻译
    - **裁定条款（2026-08-27 实测修正）**：语言跟随的唯一权威依据 = **当条消息的实际语言**，思考/回答/输出三者必须一致跟随。平台语言指令（【语言指令·平台检测】）只是会话默认基调兜底，**当它与当条消息实际语言不一致、或平台检测失效（未触发/恒为旧值）时，一律以当条消息实际语言为准**，不得沿用旧语言——实测事故：平台检测事件未触发导致指令恒为中文，英文提问轮出现思考中文回答英文分裂（根因：plugins\skill-banner.js 的 message.part.updated 检测失效 + 模型未按铁律兜底）
