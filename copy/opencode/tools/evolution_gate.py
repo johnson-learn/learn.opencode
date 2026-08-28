@@ -25,8 +25,8 @@ STATE_FILES = ("path_map.txt", "sync_target.txt")
 # 五步检查点标记（与 evolution_skill SKILL.md 五步输出格式一致；改格式需同步 SKILL.md）
 FIVE_STEPS = ["第一步·归纳", "第二步·归属", "第三步·edit", "第四步·流水", "第五步·校验"]
 
-WATCH_ROOTS = [os.path.join(CFG, "skills"), os.path.join(CFG, "plugins"), os.path.join(CFG, "tools")]
-WATCH_FILES = [os.path.join(CFG, f) for f in ("AGENTS.md", "instructions.md", "regedit.md", "tools-manifest.md")]
+WATCH_ROOTS = [os.path.join(CFG, "skills"), os.path.join(CFG, "plugins"), os.path.join(CFG, "tools"), os.path.join(CFG, "tests")]
+WATCH_FILES = [os.path.join(CFG, f) for f in ("AGENTS.md", "instructions.md", "regedit.md", "docs-sync.md", "tools-manifest.md")]
 
 
 def iter_watch():
@@ -139,6 +139,25 @@ def check_docs_sync(changed):
     return warnings
 
 
+def classify_new(fp):
+    """新增文件分类（A+C 方案 2026-08-28：适配决策的前置分类）"""
+    rel = fp.replace("\\", "/")
+    if "/skills/" in rel and rel.endswith("SKILL.md"):
+        return "新 skill 入口（需登记 regedit 技能层 + instructions 清单 + 触发方式判定）"
+    if "/skills/" in rel and rel.endswith((".md", ".py", ".ps1", ".txt")):
+        return "skill 附属文件（references/脚本：判定是否路由表引用 + 入口按需读取）"
+    if "/tests/" in rel:
+        return "测试文件（需登记 tests\\README + regedit 测试层 + 挂入门禁自动测试链）"
+    if "/tools/" in rel and rel.endswith((".py", ".ps1")):
+        return "工具/脚本（需登记 tools-manifest + regedit 工具层）"
+    if "/plugins/" in rel:
+        return "插件文件（需登记 regedit 插件层 + test_plugin 用例）"
+    base = os.path.basename(fp)
+    if base.endswith(".md") or base.endswith(".jsonc"):
+        return "规则/配置文档（判定 E 类注入还是 F 类按需 + 30KB 注入量管控）"
+    return "其它新增（判定一次性任务产物则建议存档 tools\\archive 或忽略）"
+
+
 def do_check(sid):
     sp = snap_path(sid)
     if not os.path.exists(sp):
@@ -151,13 +170,32 @@ def do_check(sid):
     for fp, st in snap["files"].items():
         if fp not in cur or cur[fp] != st:
             changed.append(fp)
-    if not changed:
+    # A+C 方案（2026-08-28）：新增/删除文件检测——旧逻辑只对比快照内文件，新增文件不进门禁；
+    # 现在显式检出，供进化检查任务做"适配决策"（四问分析 + 弹窗用户决定）
+    new_files = sorted(fp for fp in cur if fp not in snap["files"])
+    deleted = sorted(fp for fp in snap["files"] if fp not in cur)
+    if not changed and not new_files and not deleted:
         print("[gate] 无规则文件改动，门禁通过（无需固化）")
         os.remove(sp)
         return 0
     print("[gate] 检测到 %d 个规则文件改动：" % len(changed))
     for fp in changed:
         print("  -", fp.replace(CFG, r"<opencode配置目录>"))
+    if new_files:
+        print("[gate] 【新增文件】%d 个（待适配决策：按四问分析→弹窗用户决定 适配/忽略/存档；纳入验收=test_regedit+skill_validate+test_instructions 全绿）：" % len(new_files))
+        for fp in new_files:
+            print("  [+%s] %s" % (classify_new(fp).split("（")[0], fp.replace(CFG, r"<opencode配置目录>")))
+        for fp in new_files:
+            print("    → %s" % classify_new(fp))
+    if deleted:
+        print("[gate] 【删除文件】%d 个（若为框架组件需在 regedit 撤销登记并跑 test_regedit）：" % len(deleted))
+        for fp in deleted:
+            print("  [-]", fp.replace(CFG, r"<opencode配置目录>"))
+    if not changed:
+        # 仅新增/删除（本会话无既有文件改动）：不跑流水兜底与测试，直接清理快照
+        print("[gate] 无既有规则文件改动，仅新增/删除检测（适配决策由进化检查任务执行）")
+        os.remove(sp)
+        return 0
     # 0. 配套漏更检测（docs-sync 映射表反向校验）
     docs_sync_warnings = check_docs_sync(changed)
     # 1. 流水自动追加（若本会话模型未正常追加记录）

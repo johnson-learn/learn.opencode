@@ -30,7 +30,7 @@ collaborates_with:
 | WSL2 + Ubuntu 22.04 | 默认编程环境（编译/运行/调试） | 注册名 `Ubuntu`，vhdx 在 `<WSL安装目录>\Ubuntu2`（旧 <WSL安装目录>\Ubuntu 为残留） | `wsl -l -v`（应显示 Ubuntu Running/Stopped, VERSION 2） | 见 `<离线安装包目录>\WSL安装步骤说明书.html`（MSI 247MB + rootfs 325MB 离线包） |
 | Linux 工具链 | C/C++/脚本开发 | gcc/g++ 11.4、make、cmake 3.22、ninja、gdb 12.1、valgrind、strace、python3.10+pip、perl、jq、git、openssh | `wsl -d Ubuntu -e bash -c "gcc --version && g++ --version && gdb --version && python3 --version"` | `wsl -d Ubuntu -e bash -c "apt-get install -y build-essential gdb valgrind cmake ninja-build python3 python3-pip perl jq git openssh-client"`（apt 已换清华源） |
 | w64devkit | Windows 原生编译备选（winpthreads） | `<工具目录>w64devkit\w64devkit\bin\gcc.exe`（GCC 16.2.0） | `& "<工具目录>w64devkit\w64devkit\bin\gcc.exe" --version` | gh-proxy.com 下载 `w64devkit-x64-2.9.1.7z.exe` 自解压 |
-| core dump 配置 | C 崩溃调试 | `sysctl kernel.core_pattern=/root/cores/core.%e.%p` + `ulimit -c unlimited` | `wsl -d Ubuntu -e bash -c "cat /proc/sys/kernel/core_pattern"`（应非 wsl-capture-crash） | WSL 内执行配置命令（重启后需重配或写入 /etc/sysctl.d/） |
+| core dump 配置 | C 崩溃调试 | `sysctl kernel.core_pattern=<用户目录>/cores/core.%e.%p` + `ulimit -c unlimited` | `wsl -d Ubuntu -e bash -c "cat /proc/sys/kernel/core_pattern"`（应非 wsl-capture-crash） | WSL 内执行配置命令（重启后需重配或写入 /etc/sysctl.d/） |
 | WSL 开机自启 | 保持实例运行（防 60s idle 停止） | 计划任务 `WSL-AutoStart`（sleep 常驻） | `schtasks /query /tn "WSL-AutoStart"` | 管理员：`schtasks /create /tn "WSL-AutoStart" /tr "wsl.exe -d Ubuntu -e bash -c 'sleep 2000000000'" /sc onlogon` |
 | MinGW 6.3 | ⚠ 无 pthread，禁用 | `<工具目录>MinGW` | — | 不安装，多线程用 w64devkit/WSL |
 
@@ -99,7 +99,7 @@ collaborates_with:
     - 其它：git 2.34 / openssh-client / curl / wget / tree / zip / unzip
     - apt 已换清华源（`mirrors.tuna.tsinghua.edu.cn`）
   - 标准调用：`wsl -d Ubuntu -e bash -c "cd /mnt/e/<路径> && gcc -O2 -g x.c -o x && ./x"`；多线程加 `-pthread`
-  - **core dump**：WSL 默认 `core_pattern=|/wsl-capture-crash` 不落盘；且 /mnt 上内核写不出 core。使用前先 `ulimit -c unlimited && sysctl -w kernel.core_pattern=/root/cores/core.%e.%p && mkdir -p /root/cores`，崩溃后 `gdb ./prog /root/cores/core.*` 回溯
+  - **core dump**：WSL 默认 `core_pattern=|/wsl-capture-crash` 不落盘；且 /mnt 上内核写不出 core。使用前先 `ulimit -c unlimited && sysctl -w kernel.core_pattern=<用户目录>/cores/core.%e.%p && mkdir -p <用户目录>/cores`，崩溃后 `gdb ./prog <用户目录>/cores/core.*` 回溯
   - **磁盘映射**：Linux→Windows 盘 `/mnt/c`、`/mnt/e`；Windows→Linux 用 `\\wsl$\Ubuntu\...`（实例 Running 时可用；映射盘符用资源管理器手动映射，net use 走不通 9P）
   - **开机自启**：计划任务 `WSL-AutoStart`（登录时运行 `wsl -d Ubuntu -e bash -c "sleep 2000000000"` 保持实例，防止 60s idle 自动停止）。删除：`schtasks /delete /tn "WSL-AutoStart" /f`（管理员）
   - WSL 离线安装链路（已验证）：gh-proxy.com 下 WSL MSI（需 msilib 校验完整性）→ 提权 msiexec → 清华镜像 wsl rootfs（列目录找真实文件名，带 `-ubuntuXX.XXlts` 后缀）→ `wsl --import`；官方 wsl --install 慢是因为发行版清单在 raw.githubusercontent.com

@@ -170,7 +170,7 @@ function buildTaskText(gateOut, fiveOut) {
   // 进化检查任务文本（6 项强制清单 + 门禁结果 + 五步补做 + 执行时机）
   return (
     "【进化检查·程序化强制·不可跳过】本任务由插件在上一会话结束时生成、本会话创建时注入，必须完整执行，不得以任何理由跳过或精简。**执行时机：本会话你第一次回复时，先输出进化检查结论一行（「进化检查完成：本次无固化项」或固化项清单），再回答用户问题。**逐项执行：\n" +
-    (gateOut ? "【进化门禁·机器已完成】机制步骤已由 evolution_gate 脚本确定性执行，结果：\n" + gateOut.slice(0, 800) + "\n你只需补充智能部分（经验归纳/归属/edit 固化）：\n" : "") +
+    (gateOut ? "【进化门禁·机器已完成】机制步骤已由 evolution_gate 脚本确定性执行，结果：\n" + gateOut.slice(0, 2000) + "\n你只需补充智能部分（经验归纳/归属/edit 固化）：\n" : "") +
     (fiveOut ? "【五步检查点·程序化强制】" + fiveOut.slice(0, 600) + "\n补做任务：按五步流程逐步输出【第一步·归纳】【第二步·归属】【第三步·edit】【第四步·流水】【第五步·校验】结构化中间结果（格式见 evolution_skill SKILL.md）后再执行固化。\n" : "") +
     "1. 经验固化：回顾上一会话，按 instructions.md 智能进化协议五步流程，把可复用经验（新方法/工具/踩坑/风险规避）固化到对应 skill（自动执行）\n" +
     "2. 工具登记：上一会话中用到/发现/提及的任何新工具、脚本、库——无论是否已写进具体 skill——必须登记到 tools-manifest.md（已在分类中的更新条目；新的先入「待补充」清单）\n" +
@@ -178,6 +178,7 @@ function buildTaskText(gateOut, fiveOut) {
     "4. 校验自测：对本次所有 skill 文件改动，跑 python <项目目录>\\temp\\skill_validate.py <opencode配置目录>\\skills；涉及可执行内容的行为自测\n" +
     "5. 合并/拆分/迁移类发现：只输出「进化建议」清单供用户确认，不自动执行\n" +
     "6. 全部完成且无新经验时，回复一行：「进化检查完成：本次无固化项」；否则回复固化项清单\n" +
+    "7. 新增文件适配（A+C 方案 2026-08-28）：若门禁结果含【新增文件】清单，按 evolution_skill「新增文件适配决策」流程执行——四问分析 → question 弹窗让用户逐项决定 适配/忽略/存档 → 适配的走纳入动作（regedit/tools-manifest/instructions 登记）→ 验收测试全绿（test_regedit+skill_validate+test_instructions+health_check）\n" +
     "铁律：不得执行任何 git 同步（同步边界铁律，同步只能由用户显式 update_skill 触发）。"
   )
 }

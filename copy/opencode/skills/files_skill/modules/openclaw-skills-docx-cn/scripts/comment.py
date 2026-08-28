@@ -87,7 +87,7 @@ def _append_xml(xml_path: Path, root_tag: str, content: str) -> None:
     dom = defusedxml.minidom.parseString(xml_path.read_text(encoding="utf-8"))
     root = dom.getElementsByTagName(root_tag)[0]
     ns_attrs = " ".join(f'xmlns:{k}="{v}"' for k, v in NS.items())
-    wrapper_dom = defusedxml.minidom.parseString(f"<root {ns_attrs}>{content}</root>")
+    wrapper_dom = defusedxml.minidom.parseString(f"<root {ns_attrs}>{content}<<用户目录>>")
     for child in wrapper_dom.documentElement.childNodes:  
         if child.nodeType == child.ELEMENT_NODE:
             root.appendChild(dom.importNode(child, True))

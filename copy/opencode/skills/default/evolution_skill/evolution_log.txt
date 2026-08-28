@@ -1141,3 +1141,10 @@
 - 根因：<工具目录> 语义=系统盘根（w64devkit/MSYS2 约定安装盘），setup 误将其绑定 $w64Dir 探测值——未装 w64devkit 时映射缺失 → path_map.txt 无 <工具目录> 行 → to_local 转 0 个文件 + 残留警告；自动类残留检查模式漏 <工具目录> → 误报"路径改写完成"
 - 修复：<工具目录> 移出工具类询问清单，自动写入 $env:SystemDrive+"\"（任何机器一致）；自动类残留模式加 <工具目录>；填写类模式去掉"工具"分支
 - 测试：test_setup_ps1 +3 断言（59→62/62）；test_repo_face 18/18、test_regedit 48/48
+
+
+[2026-08-28] Johnson 机器复验通过（<工具目录> 盘符根映射修复生效）：第 6.5 步工具类不再询问 <工具目录>，第 7 步 to_local 转换 32+72 文件无残留，第 8 步验证 9 项全 OK（opencode/mmdc/python/p2t/git/soffice/Chrome/skills/辅助脚本）；注：Johnson 用 Store 版 Python 3.13（警告已提示），pip 包已装于 Store Python LocalCache 环境且 p2t 可用
+
+[2026-08-28] 框架进化评估报告（docx）评审与采纳：机制 8/10、智能性 5/10 评估公允；采纳 5 项——①固化判定四条件（≥2场景/可移植/不重复/有边界，不满足只记流水）②经验状态标记（active/deprecated/invalidated 只追加不删改）③重要经验二次验证（待二次验证→下次任务验证→记结果）④注入量管控（四注入文件≤30KB，health_check 第⑨项检测，当前实测 50.7KB 超限告警→精简为后续行动项）⑤使用率自审+冲突显式裁决；不采纳——插件分析 LLM 输出追踪使用率（不可靠）；修正报告两处不准确（矛盾修订条款已存在于风险规避节；Gap3 部分已覆盖）。载体：instructions.md/evolution_skill SKILL.md（全局+项目级）/evolution.md/health_check.py 第⑨项/test_health_check 9/9/regedit/tools-manifest/tests README；测试：31+9+48+15+7 全绿。踩坑：Add-Content 追加 evolution.md 引入 CRLF 被 test_charset 拦下已归一修复
+
+[2026-08-28] 新增文件适配闭环（A+C 方案，用户选定实施）：① 发现=evolution_gate 全目录清单快照对比（新增/删除文件显式检出，WATCH_ROOTS 加 tests 目录）② 分析=classify_new 六分类提示 + LLM 四问 ③ 决策=question 弹窗（适配/忽略/存档）④ 纳入=regedit/tools-manifest/instructions 登记 ⑤ 验收=test_regedit+skill_validate+test_instructions+health_check 全绿；插件：gateOut 截断 800→2000 + 进化检查任务加第 7 项（新增文件适配）；evolution_skill 加「新增文件适配决策」流程；测试：test_evolution_gate 25→31/31（新增/删除检出+分类+快照清理）、test_plugin 46/46、regedit/consistency/charset/health_check 全绿；登记：regedit/tests README 同步

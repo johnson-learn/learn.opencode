@@ -3,6 +3,7 @@
 # 检查项：①核心配置齐全 ②skill frontmatter 合法+体积门限 ③插件最近执行 ④测试全部可运行
 #        ⑤门禁最近会话 idle/drain 记录 ⑥evolution_log 待处理项 ⑦平台 API 依赖保障（实验性 hook 可用性）
 #        ⑧字符边界规范（框架文件 CRLF/BOM/编码一致性，铁律第 9 条防线）
+#        ⑨注入量管控（四注入文件合计 ≤30KB，2026-08-28 报告评审后新增）
 import os, sys, json, re, subprocess, glob, datetime
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
@@ -137,6 +138,25 @@ try:
         add_fail("字符边界扫描失败（存在 CRLF/BOM/编码异常文件，需立即归一修复）：" + tail)
 except Exception as e:
     add_fail("字符边界扫描无法执行：" + str(e)[:80])
+
+# ⑨ 注入量管控（四注入文件合计 ≤30KB，超限告警触发精简；2026-08-28 报告评审后新增）
+INJECT_FILES = ["instructions.md", "regedit.md", "tools-manifest.md", "docs-sync.md"]
+INJECT_LIMIT_KB = 30
+total_bytes = 0
+missing_inj = []
+for f in INJECT_FILES:
+    p = os.path.join(CFG, f)
+    if os.path.exists(p):
+        total_bytes += os.path.getsize(p)
+    else:
+        missing_inj.append(f)
+if missing_inj:
+    add_warn("注入文件缺失：%s" % "、".join(missing_inj))
+total_kb = total_bytes / 1024.0
+if total_kb > INJECT_LIMIT_KB:
+    add_warn("注入总量 %.1fKB 超过 %dKB 上限（触发精简：优先压缩示例段落/重复摘要，大表保留速览头行）" % (total_kb, INJECT_LIMIT_KB))
+else:
+    add_ok("注入总量 %.1fKB 在上限 %dKB 内（instructions/regedit/tools-manifest/docs-sync）" % (total_kb, INJECT_LIMIT_KB))
 
 print("【框架健康度报告】 %s" % datetime.datetime.now().strftime("%Y-%m-%d %H:%M"))
 print("-" * 60)

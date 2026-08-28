@@ -33,7 +33,7 @@
 如需从 GitHub 安装：
 
 ```bash
-python3 /root/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py \
+python3 <用户目录>/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py \
   --repo zhaohui-yang/official-document-drafting \
   --path . \
   --name official-document-drafting
@@ -310,7 +310,7 @@ python3 -m pip install -r requirements.txt
 可以直接从 GitHub 安装：
 
 ```bash
-python3 /root/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py \
+python3 <用户目录>/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py \
   --repo zhaohui-yang/official-document-drafting \
   --path . \
   --name official-document-drafting

@@ -108,10 +108,31 @@ check("无固化声明不适用（rc=0）", r.returncode == 0 and "不适用" in
 r = run5("进化检查完成：本次无固化项")
 check("『无固化项』声明不适用五步（rc=0）", r.returncode == 0 and "不适用" in r.stdout)
 
+# 9. 新增/删除文件检测（A+C 方案 2026-08-28：新增文件适配决策的前置检测）
+r = run("--snapshot", sid)
+tmp_skill2 = os.path.join(CFG, "skills", "_gate_test_skill2")
+os.makedirs(tmp_skill2, exist_ok=True)
+open(os.path.join(tmp_skill2, "SKILL.md"), "w", encoding="utf-8").write("---\nname: _gate_test_skill2\ndescription: gate new test\n---\n# new\n")
+new_tool = os.path.join(CFG, "tools", "_gate_new_tool_test.py")
+open(new_tool, "w", encoding="utf-8").write("# gate new tool test\n")
+r = run("--check", sid)
+check("新增文件检出（【新增文件】段输出）", r.returncode == 0 and "【新增文件】" in r.stdout)
+check("新 skill 分类提示（regedit 技能层）", "新 skill 入口" in r.stdout)
+check("新工具分类提示（tools-manifest 登记）", "工具/脚本" in r.stdout)
+check("仅新增无既有改动时快照已清理", len(glob.glob(os.path.join(tempfile.gettempdir(), "opencode_gate", "gate_" + sid + ".json"))) == 0)
+# 删除检测
+r = run("--snapshot", sid)
+os.remove(new_tool)
+r = run("--check", sid)
+check("删除文件检出（【删除文件】段输出）", "【删除文件】" in r.stdout and "_gate_new_tool_test" in r.stdout)
+check("仅删除无既有改动时快照已清理", len(glob.glob(os.path.join(tempfile.gettempdir(), "opencode_gate", "gate_" + sid + ".json"))) == 0)
+
 # 清理临时 skill（try/finally 保证：即使中途断言失败也清理，防 _gate_test_skill 残留污染 regedit 测试）
 import shutil
-tmp_skill = os.path.join(CFG, "skills", "_gate_test_skill")
-shutil.rmtree(tmp_skill, ignore_errors=True)
+for _d in ("_gate_test_skill", "_gate_test_skill2"):
+    shutil.rmtree(os.path.join(CFG, "skills", _d), ignore_errors=True)
+if os.path.exists(new_tool):
+    os.remove(new_tool)
 print("  （注：gate 测试在 evolution_log.txt 追加的骨架条目保留——只增不改铁律）")
 
 print("\n结果：通过 %d 项，失败 %d 项" % (pass_n, fail_n))
