@@ -44,6 +44,7 @@ log_size1 = os.path.getsize(LOG)
 check("流水兜底自动追加", log_size1 > log_size0)
 check("自动测试已执行（含 evolution_consistency）", "test_evolution_consistency" in r.stdout)
 check("待模型补充清单输出", "待模型补充" in r.stdout)
+check("经验健康引擎输出（方案丁：待验证清单/deprecated 校验/老化扫描）", "[经验健康]" in r.stdout)
 
 # 4. 快照文件清理
 import glob
@@ -101,6 +102,12 @@ check("五步标记齐全时通过（rc=0）", r.returncode == 0 and "齐全" in
 full_no_cond = "进化：已固化 xxx\n【第一步·归纳】a\n【第二步·归属】b\n【第三步·edit】c\n【第四步·流水】d\n【第五步·校验】e\n"
 r = run5(full_no_cond)
 check("五步齐全但缺四条件声明时检出（rc=1）", r.returncode == 1 and "判定四条件声明缺失" in r.stdout)
+single_scene = "进化：已固化 yyy\n【第一步·归纳】a\n【判定四条件】场景数：1 / 可移植：是 / 无重复：是 / 边界：明确\n【第二步·归属】b\n【第三步·edit】c\n【第四步·流水】d\n【第五步·校验】e\n"
+r = run5(single_scene)
+check("场景数=1 且无高代价/用户点名依据时四条件可追溯告警（rc=1）", r.returncode == 1 and "可追溯告警" in r.stdout)
+single_ok = "进化：已固化 yyy\n【第一步·归纳】a\n【判定四条件】场景数：1（踩坑代价高，用户点名）/ 可移植：是 / 无重复：是 / 边界：明确\n【第二步·归属】b\n【第三步·edit】c\n【第四步·流水】d\n【第五步·校验】e\n"
+r = run5(single_ok)
+check("场景数=1 但带依据时通过（rc=0）", r.returncode == 0 and "齐全" in r.stdout)
 partial = "进化：已固化 xxx\n【第一步·归纳】a\n【第三步·edit】c\n"
 r = run5(partial)
 check("缺步检出（rc=1）", r.returncode == 1 and "缺失" in r.stdout)

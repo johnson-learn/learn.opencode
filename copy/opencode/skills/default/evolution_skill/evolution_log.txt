@@ -1151,3 +1151,6 @@
 
 
 [2026-08-28] 框架进化 V2 报告评审与采纳：报告确认 8 项新机制中 6/8 为 H 类（LLM 自查）、2/8 E 类；采纳 4 项 H→E 转化——①判定四条件显式声明检测（gate --check-5step：固化响应第一步必须输出【判定四条件】场景数/可移植/无重复/边界结论行，缺声明 rc=1 告警；instructions/evolution_skill 格式同步）②二次验证未闭环程序化计数（gate --check 统计待二次验证/通过数并主动提示）③deprecated 经验规则文件显式标记（[DEPRECATED] 前缀/删除线，注入系统提示可见）④注入上限 30→50KB 修正（V2 指出现实：核心两文件即 40KB，30KB 不现实）；不采纳——使用率关键词追踪（报告自认弱信号，误报风险高，维持 LLM 自查+已知限制）。测试：test_evolution_gate 31→32/32、health_check 9/9、instructions 31/31、regedit 48/48、consistency 15/15、charset 7/7 全绿
+
+
+[2026-08-28] 框架进化 V3 报告评审（用户要求：先评方案再选，不打补丁）：评估 4 方案后选定方案丁（甲+微精简）——经验健康引擎一体化（gate --check 内 experience_health：①待二次验证条目清单含标题摘要 ②deprecated 记录 vs 规则文件 [DEPRECATED] 标记弱校验 ③90 天老化扫描）+ 四条件可追溯检测（--check-5step：场景数=1 须带高代价/点名依据）+ instructions 字符边界细则压缩（去与 AGENTS 铁律重复，-约 400B）。顺带修复两个隐藏 bug：①evolution_gate 缺 import re 致 parse_docs_sync 静默走 FALLBACK（配套漏更检测失真）②docs-sync 映射文件名提取正则（无反引号列提取为空），修复后真实解析与 FALLBACK 一致。测试：test_evolution_gate 32→35/35、instructions 31、regedit 48、health_check 9、consistency 15、charset 7 全绿。不采纳：自动 slim（自动改核心规则文件风险高，维持告警+人工精简）

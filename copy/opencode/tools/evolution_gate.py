@@ -10,7 +10,7 @@
 # 2026-08-27 新增 --check-5step：五步检查点程序化强制（用户高优先级未完成项落地）——
 #   模型执行固化的响应必须含【第一步·归纳】~【第五步·校验】五个标记，缺步由本脚本检出，
 #   插件 session.idle 调用本模式并把缺步警告附加到进化检查任务文本。
-import os, sys, json, subprocess, hashlib, datetime, tempfile
+import os, sys, json, re, subprocess, hashlib, datetime, tempfile
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 CFG = os.path.join(os.path.expanduser("~"), ".config", "opencode")
@@ -108,11 +108,15 @@ def parse_docs_sync():
         result = {}
         for row in re.findall(r"\|\s*\*\*(.*?)\*\*\s*\|\s*(.*?)\s*\|", c):
             title, files_col = row[0].strip(), row[1]
-            # 提取文件名（反引号内以 md/txt/py/js 结尾）
-            fnames = re.findall(r"`([^`]+\.(?:md|txt|py|js))`", files_col)
+            # 提取文件名（docs-sync 文件列中文件名不带反引号，直接匹配扩展名词；
+            # 2026-08-28 修复：原反引号正则提取为空导致映射全空、配套漏更检测失效；
+            # 过滤条件性裸文件名 SKILL.md/AGENTS.md——"对应 SKILL.md""如需铁律"无法静态定位路径）
+            fnames = [f for f in re.findall(r"([A-Za-z0-9_\\-]+\.(?:md|txt|py|js))", files_col)
+                      if f not in ("SKILL.md", "AGENTS.md")]
             for key, kw in TYPE_ROW_KEY.items():
                 if title.startswith(kw):
-                    result[key] = [f.replace("\\", os.sep).replace("/", os.sep) for f in fnames]
+                    if fnames:
+                        result[key] = [f.replace("\\", os.sep).replace("/", os.sep) for f in fnames]
         if result:
             return result
     except Exception:
@@ -159,6 +163,63 @@ def classify_new(fp):
     if base.endswith(".md") or base.endswith(".jsonc"):
         return "规则/配置文档（判定 E 类注入还是 F 类按需 + 30KB 注入量管控）"
     return "其它新增（判定一次性任务产物则建议存档 tools\\archive 或忽略）"
+
+
+def experience_health():
+    """经验健康引擎（方案丁 2026-08-28：把 V3 报告的 4 个零散补丁合并为一体化 E 类扫描）
+    数据源 = evolution_log.txt（唯一事实）。四项扫描：
+    ①待二次验证条目清单（含标题摘要，可操作）②deprecated 记录 vs 规则文件 [DEPRECATED] 标记校验
+    ③老化扫描（>90 天未再验证的活跃条目数）④（四条件可追溯在 --check-5step 单独做）"""
+    if not os.path.exists(LOG):
+        return
+    text = open(LOG, encoding="utf-8", errors="replace").read()
+    lines = text.splitlines()
+    out = []
+    # ① 待二次验证条目清单（含标题行摘要）
+    pending = []
+    for i, ln in enumerate(lines):
+        if "待二次验证" in ln and "二次验证通过" not in ln and ln.strip().startswith("[20"):
+            title = ln.strip()
+            pending.append(title[:110])
+    if pending:
+        out.append("[经验健康] 待二次验证条目 %d 条（请在相关任务中主动套用验证并追加结果）：" % len(pending))
+        for t in pending[-3:]:
+            out.append("    · " + t)
+    # ② deprecated 记录 vs 规则文件显式标记校验（弱校验：有弃用记录但规则文件无任何 [DEPRECATED] 标记）
+    dep_count = text.count("deprecat")
+    if dep_count > 0:
+        rule_files = []
+        for root in WATCH_ROOTS:
+            for dp, dn, fn in os.walk(root):
+                dn[:] = [d for d in dn if d not in IGNORE_DIRS]
+                for f in fn:
+                    if f.endswith(".md"):
+                        rule_files.append(os.path.join(dp, f))
+        marks = 0
+        for rf in rule_files:
+            try:
+                marks += open(rf, encoding="utf-8", errors="replace").read().count("[DEPRECATED]")
+            except Exception:
+                pass
+        if marks == 0:
+            out.append("[经验健康] 流水有 %d 条 deprecation 记录但规则文件无 [DEPRECATED] 显式标记（状态只写流水不可见——请在对应规则条目加前缀标记）" % dep_count)
+        else:
+            out.append("[经验健康] deprecation 记录 %d 条，规则文件 [DEPRECATED] 标记 %d 处（已显式化）" % (dep_count, marks))
+    # ③ 老化扫描（最近 90 天无任何新记录的活跃条目提示——全库级活性信号）
+    today = datetime.date.today()
+    last_date = None
+    for ln in reversed(lines):
+        m = re.match(r"\[(\d{4}-\d{2}-\d{2})\]", ln.strip())
+        if m:
+            try:
+                last_date = datetime.date(*map(int, m.group(1).split("-")))
+            except Exception:
+                pass
+            break
+    if last_date and (today - last_date).days > 90:
+        out.append("[经验健康] 老化提示：最近一条经验记录于 %s（%d 天前）——框架超过 90 天未产生新经验，既有规则可能随外部环境变化老化，建议抽查重验" % (last_date.isoformat(), (today - last_date).days))
+    for o in out:
+        print(o)
 
 
 def do_check(sid):
@@ -248,6 +309,8 @@ def do_check(sid):
         _v = _lc.count("二次验证通过")
         if _p > _v:
             print("[gate] 二次验证未闭环：待二次验证 %d 条 / 已验证通过 %d 条——请在相关任务中主动套用验证并追加结果" % (_p, _v))
+    # 5. 经验健康引擎（方案丁 2026-08-28：待验证清单/deprecated 标记校验/老化扫描一体化）
+    experience_health()
     os.remove(sp)
     return 0
 
@@ -290,13 +353,19 @@ def do_check_5step():
         return 0
     missing = [s for s in FIVE_STEPS if ("【" + s + "】") not in text]
     cond_missing = [k for k in FOUR_COND if ("判定四条件" not in text) or (k + "：" not in text and k + ":" not in text)]
-    if not missing and not cond_missing:
+    # 可追溯性检测（2026-08-28 V3 报告采纳）：场景数=1 时必须给出"踩坑代价高/用户点名"依据
+    trace_warn = ""
+    if ("判定四条件" in text) and ("场景数：1" in text or "场景数:1" in text) and ("踩坑代价高" not in text and "用户点名" not in text):
+        trace_warn = "[gate] 四条件可追溯告警：场景数=1 但未标注『踩坑代价高/用户点名』依据——按判定四条件规则，单场景固化必须有高代价或用户点名理由，请补充依据或降级为流水事实类"
+    if not missing and not cond_missing and not trace_warn:
         print("[gate] 五步检查点齐全（第一步·归纳~第五步·校验标记全部出现）且判定四条件已显式声明")
         return 0
     if missing:
         print("[gate] 五步检查点缺失：%s" % "、".join(missing))
     if cond_missing:
         print("[gate] 判定四条件声明缺失：%s（固化响应第一步必须显式输出【判定四条件】场景数：X / 可移植：是 / 无重复：是 / 边界：明确——四条件是把判定从 LLM 内心判断变为可检测输出的程序化要求）" % "、".join(cond_missing))
+    if trace_warn:
+        print(trace_warn)
     print("[gate] 五步检查点强制要求：执行固化必须按五步流程逐步输出【第一步·归纳】~【第五步·校验】"
           "结构化中间结果（格式见 evolution_skill SKILL.md），缺失步骤请在补做任务中补齐并重新声明")
     return 1
