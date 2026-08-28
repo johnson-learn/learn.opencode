@@ -9,7 +9,7 @@
 |---|---|---|---|
 | skill 结构（frontmatter/name/description/路由引用/体积门限） | `skill_validate.py` | `python tests\skill_validate.py <opencode配置目录>\skills` | ✓ 已建（门限可配置，见 skill_validate_config.json） |
 | skill_validate 配置机制（门限修改/忽略/持久化） | `test_skill_validate_config.py` | `python tests\test_skill_validate_config.py` | ✓ 7/7 |
-| skill-banner 插件（事件处理/任务注入/日志落盘/注册事件系统提示注入/五步检查点/API 风险告警闭环/待办内存传递/平台语言检测持续约束） | `test_plugin.js` | `node tests\test_plugin.js`（需 node） | ✓ 46/46（事件分支 20 + 注册事件注入 14 + 五步/API/待办 7 + 语言检测 5） |
+| skill-banner 插件（事件处理/任务注入/日志落盘/注册事件系统提示注入/五步检查点/API 风险告警闭环/待办内存传递/平台语言检测持续约束/新增文件适配第 7 项） | `test_plugin.js` | `node tests\test_plugin.js`（需 node） | ✓ 46/46（事件分支 20 + 注册事件注入 14 + 五步/API/待办 7 + 语言检测 5） |
 | 平台 API 依赖保障（opencode 二进制 hook 存在性/jsonc 通道/插件注册/注入文件就绪） | `test_platform_api.py` | `python tests\test_platform_api.py` | ✓ 11/11 |
 | 字符边界规范防线（框架文件 CRLF/BOM/编码一致性扫描 + 铁律第 9 条存在性） | `test_charset.py` | `python tests\test_charset.py` | ✓ 7/7 |
 | path_convert.py（往返转换/STATE_FILES/残留扫描白名单化/tests 与 archive 跳过转换/空值映射过滤/工具类全集检出） | `test_path_convert.py` | `python tests\test_path_convert.py` | ✓ 23/23 |
@@ -18,8 +18,8 @@
 | tools-manifest 完整性（分类计数吻合/待补充无重复/包可导入/表结构） | `test_tools_manifest.py` | `python tests\test_tools_manifest.py` | ✓ 21/21 |
 | instructions.md 规则一致性（章节/铁律互查/引用存在/技能清单与目录一致/编写规范） | `test_instructions.py` | `python tests\test_instructions.py` | ✓ 31/31 |
 | evolution 一致性（evolution_log.txt 近 5 条「」声明落入规则文件/evolution.md 规则文件定位与弹窗确认流程抽查） | `test_evolution_consistency.py` | `python tests\test_evolution_consistency.py` | ✓ 15/15 |
-| evolution 门禁（快照/改动检测/流水兜底追加/自动测试触发/待补充清单/--drain 自愈补跑/max_n 限流/配套漏更检测/五步检查点） | `test_evolution_gate.py` | `python tests\test_evolution_gate.py` | ✓ 25/25 |
-| 健康检查（可运行/报告结构/八检查项/无失败项/regedit 登记/--run-quick 实跑） | `test_health_check.py` | `python tests\test_health_check.py` | ✓ 8/8 |
+| evolution 门禁（快照/改动检测/流水兜底追加/自动测试触发/待补充清单/--drain 自愈补跑/max_n 限流/配套漏更检测/五步检查点/新增与删除文件检测） | `test_evolution_gate.py` | `python tests\test_evolution_gate.py` | ✓ 31/31 |
+| 健康检查（可运行/报告结构/九检查项/无失败项/regedit 登记/--run-quick 实跑/注入量管控） | `test_health_check.py` | `python tests\test_health_check.py` | ✓ 9/9 |
 | sync_push 推送门禁（无标记拒绝/非push拒绝/有效推送/标记清除/重推需重确认/WSL 路径判定/自动 to_portable/可移植性阻断） | `test_sync_push.py` | `python tests\test_sync_push.py` | ✓ 16/16 |
 | docs-sync 映射表完整性（变更类型/校验测试存在/被 regedit+AGENTS 引用） | `test_docs_sync.py` | `python tests\test_docs_sync.py` | ✓ 19/19 |
 | 框架引用审计（框架自有文件引用存在性/旧术语残留/README 双向一致） | `test_audit_references.py` | `python tests\test_audit_references.py` | ✓ 3/3 |
