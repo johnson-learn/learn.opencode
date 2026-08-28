@@ -17,8 +17,11 @@ def run(*args):
                           text=True, encoding="utf-8", errors="replace", timeout=300)
 
 sid = "gate-test-" + str(int(time.time()))
-# 备份 log 尾部大小
+# 备份 log 尾部大小 + 清理裸声明计数状态文件（防跨运行污染）
 log_size0 = os.path.getsize(LOG) if os.path.exists(LOG) else 0
+_bare = os.path.join(tempfile.gettempdir(), "opencode_gate", "gate_bare_declare.json")
+if os.path.exists(_bare):
+    os.remove(_bare)
 
 # 1. 快照
 r = run("--snapshot", sid)
@@ -108,14 +111,30 @@ check("场景数=1 且无高代价/用户点名依据时四条件可追溯告警
 single_ok = "进化：已固化 yyy\n【第一步·归纳】a\n【判定四条件】场景数：1（踩坑代价高，用户点名）/ 可移植：是 / 无重复：是 / 边界：明确\n【第二步·归属】b\n【第三步·edit】c\n【第四步·流水】d\n【第五步·校验】e\n"
 r = run5(single_ok)
 check("场景数=1 但带依据时通过（rc=0）", r.returncode == 0 and "齐全" in r.stdout)
-r = run5(single_ok)
 check("裸『可移植：是』『无重复：是』触发依据软提示", "依据软提示" in r.stdout)
 cond_with_basis = "进化：已固化 yyy\n【第一步·归纳】a\n【判定四条件】场景数：2 / 可移植：是（不含本机路径）/ 无重复：是（已比对）/ 边界：明确（触发条件与适用边界）\n【第二步·归属】b\n【第三步·edit】c\n【第四步·流水】d\n【第五步·校验】e\n"
 r = run5(cond_with_basis)
 check("三条件附括号依据时无软提示", "依据软提示" not in r.stdout)
 bare_boundary = "进化：已固化 yyy\n【第一步·归纳】a\n【判定四条件】场景数：2 / 可移植：是（不含本机路径）/ 无重复：是（已比对）/ 边界：明确\n【第二步·归属】b\n【第三步·edit】c\n【第四步·流水】d\n【第五步·校验】e\n"
+# 重置计数状态文件（防与前序用例计数累积）
+_bare = os.path.join(tempfile.gettempdir(), "opencode_gate", "gate_bare_declare.json")
+if os.path.exists(_bare):
+    os.remove(_bare)
 r = run5(bare_boundary)
 check("裸『边界：明确』触发依据软提示（4/4 条件检测齐）", "依据软提示" in r.stdout and "边界" in r.stdout)
+check("软提示含渐进计数（第 X/3 次）", "/3" in r.stdout)
+# 连续 3 次裸声明 → 渐进升级硬告警（V6 剩余问题采纳；先重置计数状态文件防顺序依赖）
+if os.path.exists(_bare):
+    os.remove(_bare)
+for i in range(3):
+    r = run5(bare_boundary)
+check("连续 3 次裸声明升级硬告警（rc=1）", r.returncode == 1 and "四条件硬告警" in r.stdout)
+check("硬告警后计数清零（再声明回到软提示）", run5(bare_boundary).returncode == 0 and "依据软提示" in run5(bare_boundary).stdout)
+# 阈值常量配置化
+import importlib.util as _ilu8
+_gate2 = _ilu8.spec_from_file_location("gate2", GATE)
+_gm2 = _ilu8.module_from_spec(_gate2); _gate2.loader.exec_module(_gm2)
+check("经验健康阈值配置化（常量可调）", hasattr(_gm2, "LOW_USE_DAYS") and hasattr(_gm2, "AGED_DAYS") and hasattr(_gm2, "BARE_DECLARE_LIMIT") and _gm2.BARE_DECLARE_LIMIT == 3)
 partial = "进化：已固化 xxx\n【第一步·归纳】a\n【第三步·edit】c\n"
 r = run5(partial)
 check("缺步检出（rc=1）", r.returncode == 1 and "缺失" in r.stdout)
