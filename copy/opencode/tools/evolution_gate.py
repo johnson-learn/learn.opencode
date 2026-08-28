@@ -166,28 +166,53 @@ def classify_new(fp):
 
 
 def experience_health():
-    """经验健康引擎（方案丁 2026-08-28：把 V3 报告的 4 个零散补丁合并为一体化 E 类扫描）
-    数据源 = evolution_log.txt（唯一事实）。四项扫描：
-    ①待二次验证条目清单（含标题摘要，可操作）②deprecated 记录 vs 规则文件 [DEPRECATED] 标记校验
-    ③老化扫描（>90 天未再验证的活跃条目数）④（四条件可追溯在 --check-5step 单独做）"""
+    """经验健康引擎（方案丁 2026-08-28 一体化；V4 方案甲' 2026-08-28 升级为条目结构化扫描）
+    数据源 = evolution_log.txt。新条目（含"状态："字段的结构化格式）按字段精确扫描；
+    旧自由文本条目用启发式兜底（不误报）。扫描项：
+    ①待二次验证条目全量清单（结构化+启发式，top5+总数）②deprecated 记录清单与规则文件标记校验
+    ③条目级老化（最后验证/固化日期 >180 天）+ 全库级活性信号"""
     if not os.path.exists(LOG):
         return
     text = open(LOG, encoding="utf-8", errors="replace").read()
     lines = text.splitlines()
     out = []
-    # ① 待二次验证条目清单（含标题行摘要）
-    pending = []
-    for i, ln in enumerate(lines):
-        if "待二次验证" in ln and "二次验证通过" not in ln and ln.strip().startswith("[20"):
-            title = ln.strip()
-            pending.append(title[:110])
+    # 解析结构化条目（新格式：以 [日期] 标题 开头，后续行含"状态："字段）
+    entries = []
+    cur = None
+    for ln in lines:
+        m = re.match(r"\[(\d{4}-\d{2}-\d{2})\]\s*(.*)", ln.strip())
+        if m:
+            if cur:
+                entries.append(cur)
+            cur = {"date": m.group(1), "title": m.group(2)[:110], "status": "active",
+                   "scenes": "", "verified": "", "keywords": "", "raw": ln.strip()[:200]}
+        elif cur is not None:
+            if ln.startswith("- 状态："):
+                cur["status"] = ln[len("- 状态："):].strip()
+            elif ln.startswith("- 场景数："):
+                cur["scenes"] = ln[len("- 场景数："):].strip()
+            elif ln.startswith("- 最后验证："):
+                cur["verified"] = ln[len("- 最后验证："):].strip()
+            elif ln.startswith("- 核心关键词："):
+                cur["keywords"] = ln[len("- 核心关键词："):].strip()
+            cur["raw"] += " | " + ln.strip()[:120]
+    if cur:
+        entries.append(cur)
+    # ① 待二次验证清单（结构化优先，启发式兜底）
+    pending = [e for e in entries if e["status"] == "待二次验证"]
+    if not pending:
+        pending = [{"title": l.strip()[11:][:100], "raw": l.strip()[:150]}
+                   for l in lines if "待二次验证" in l and "二次验证通过" not in l and l.strip().startswith("[20")]
     if pending:
         out.append("[经验健康] 待二次验证条目 %d 条（请在相关任务中主动套用验证并追加结果）：" % len(pending))
-        for t in pending[-3:]:
-            out.append("    · " + t)
-    # ② deprecated 记录 vs 规则文件显式标记校验（弱校验：有弃用记录但规则文件无任何 [DEPRECATED] 标记）
-    dep_count = text.count("deprecat")
-    if dep_count > 0:
+        for e in pending[-5:]:
+            out.append("    · %s" % (e["title"] if isinstance(e, dict) and "title" in e else e))
+        if len(pending) > 5:
+            out.append("    （另有 %d 条更早的待验证条目，见 evolution_log）" % (len(pending) - 5))
+    # ② deprecated 记录清单 + 规则文件标记校验
+    dep_entries = [e for e in entries if e["status"] == "deprecated"]
+    dep_heuristic = [l.strip()[:150] for l in lines if ("deprecat" in l.lower()) and l.strip().startswith("[20")]
+    if dep_entries or dep_heuristic:
         rule_files = []
         for root in WATCH_ROOTS:
             for dp, dn, fn in os.walk(root):
@@ -202,11 +227,27 @@ def experience_health():
             except Exception:
                 pass
         if marks == 0:
-            out.append("[经验健康] 流水有 %d 条 deprecation 记录但规则文件无 [DEPRECATED] 显式标记（状态只写流水不可见——请在对应规则条目加前缀标记）" % dep_count)
+            out.append("[经验健康] 有 %d 条 deprecation 记录但规则文件无 [DEPRECATED] 显式标记（状态只写流水不可见——请在对应规则条目加前缀标记）；最近弃用记录：%s"
+                       % (len(dep_entries) + len(dep_heuristic), (dep_entries[-1]["title"] if dep_entries else dep_heuristic[-1])[:80]))
         else:
-            out.append("[经验健康] deprecation 记录 %d 条，规则文件 [DEPRECATED] 标记 %d 处（已显式化）" % (dep_count, marks))
-    # ③ 老化扫描（最近 90 天无任何新记录的活跃条目提示——全库级活性信号）
+            out.append("[经验健康] deprecation 记录 %d 条，规则文件 [DEPRECATED] 标记 %d 处；最近弃用：%s（若该条未在规则文件显式标记请补）"
+                       % (len(dep_entries) + len(dep_heuristic), marks, (dep_entries[-1]["title"] if dep_entries else dep_heuristic[-1])[:80]))
+    # ③ 条目级老化（结构化条目：最后验证或固化日期 >180 天）
     today = datetime.date.today()
+    aged = []
+    for e in entries:
+        dstr = e["verified"][:10] if e["verified"] and e["verified"][:10][:4].isdigit() else e["date"]
+        try:
+            d = datetime.date(*map(int, dstr.split("-")))
+            if (today - d).days > 180 and e["status"] == "active":
+                aged.append((e["date"], e["title"][:80]))
+        except Exception:
+            pass
+    if aged:
+        out.append("[经验健康] 条目级老化：%d 条活跃经验超过 180 天未再验证（外部环境可能已变化，建议抽查重验）：" % len(aged))
+        for d, t in aged[-5:]:
+            out.append("    · [%s] %s" % (d, t))
+    # 全库级活性信号
     last_date = None
     for ln in reversed(lines):
         m = re.match(r"\[(\d{4}-\d{2}-\d{2})\]", ln.strip())
@@ -217,7 +258,7 @@ def experience_health():
                 pass
             break
     if last_date and (today - last_date).days > 90:
-        out.append("[经验健康] 老化提示：最近一条经验记录于 %s（%d 天前）——框架超过 90 天未产生新经验，既有规则可能随外部环境变化老化，建议抽查重验" % (last_date.isoformat(), (today - last_date).days))
+        out.append("[经验健康] 老化提示：最近一条经验记录于 %s（%d 天前）——框架超过 90 天未产生新经验，建议抽查重验" % (last_date.isoformat(), (today - last_date).days))
     for o in out:
         print(o)
 
@@ -358,6 +399,16 @@ def do_check_5step():
     if ("判定四条件" in text) and ("场景数：1" in text or "场景数:1" in text) and ("踩坑代价高" not in text and "用户点名" not in text):
         trace_warn = "[gate] 四条件可追溯告警：场景数=1 但未标注『踩坑代价高/用户点名』依据——按判定四条件规则，单场景固化必须有高代价或用户点名理由，请补充依据或降级为流水事实类"
     if not missing and not cond_missing and not trace_warn:
+        # 三条件依据软提示（齐全通过时也检查——2026-08-28 V4 方案甲'：防裸『可移植：是』『无重复：是』声明）
+        soft = []
+        for kw in ("可移植", "无重复"):
+            m = re.search(kw + r"：是", text)
+            if m:
+                tail = text[m.end():m.end() + 25]
+                if "（" not in tail and "(" not in tail:
+                    soft.append(kw)
+        if soft:
+            print("[gate] 四条件依据软提示：%s 声明为『是』但未附括号依据（建议格式：可移植：是（不含本机路径）/ 无重复：是（已比对 XX））" % "、".join(soft))
         print("[gate] 五步检查点齐全（第一步·归纳~第五步·校验标记全部出现）且判定四条件已显式声明")
         return 0
     if missing:
