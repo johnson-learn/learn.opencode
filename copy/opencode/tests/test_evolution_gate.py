@@ -95,9 +95,12 @@ def run5(text):
                           capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60)
 r = run5("本会话无固化。")
 check("无固化动作时五步检查不适用（rc=0）", r.returncode == 0 and "不适用" in r.stdout)
-full = "进化：已固化 xxx\n【第一步·归纳】a\n【第二步·归属】b\n【第三步·edit】c\n【第四步·流水】d\n【第五步·校验】e\n"
+full = "进化：已固化 xxx\n【第一步·归纳】a\n【判定四条件】场景数：2 / 可移植：是 / 无重复：是 / 边界：明确\n【第二步·归属】b\n【第三步·edit】c\n【第四步·流水】d\n【第五步·校验】e\n"
 r = run5(full)
 check("五步标记齐全时通过（rc=0）", r.returncode == 0 and "齐全" in r.stdout)
+full_no_cond = "进化：已固化 xxx\n【第一步·归纳】a\n【第二步·归属】b\n【第三步·edit】c\n【第四步·流水】d\n【第五步·校验】e\n"
+r = run5(full_no_cond)
+check("五步齐全但缺四条件声明时检出（rc=1）", r.returncode == 1 and "判定四条件声明缺失" in r.stdout)
 partial = "进化：已固化 xxx\n【第一步·归纳】a\n【第三步·edit】c\n"
 r = run5(partial)
 check("缺步检出（rc=1）", r.returncode == 1 and "缺失" in r.stdout)
