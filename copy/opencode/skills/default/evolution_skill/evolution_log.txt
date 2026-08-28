@@ -1166,3 +1166,6 @@
 
 
 [2026-08-28] V6 剩余问题处理（用户直接贴清单，先评方案再选）：选定方案甲——① 四条件渐进硬告警（采纳报告选项 2：裸声明计数持久化 gate_bare_declare.json，连续 3 次软提示升级 rc=1 硬告警并清零，防弱信号一刀切误伤；BARE_DECLARE_LIMIT=3 常量可调）② 阈值配置化（LOW_USE_DAYS=60/AGED_DAYS=180/INACTIVE_DAYS=90 模块级常量）③ 多关键词同时命中（经验 ≥2 关键词需 ≥2 命中才记引用，collectExperienceKeywords 改按标题分组 {t,ks}）④ 自动 slim 继续不采纳，health_check 超限告警升级为行动指引（各文件大小+压缩方向）。踩坑：bare 计数状态文件跨测试运行污染致连锁失败（已加测试开头清理+硬告警清零）；测试断言重复 run5 致计数错位（合并单次调用）。测试：gate 38→42/42、plugin 52/52、regedit 48、instructions 31、health_check 9、consistency 15、charset 7 全绿
+
+
+[2026-08-28] WSL 访问 GitHub 网络方案（gh CLI 认证 + V1.0 Release 创建）：① WSL 直连 github 443 被墙（SSH 22 可通、apt 清华源可通）② Windows 侧系统代理 127.0.0.1:7078 可用但只绑 Windows 环回，WSL NAT 网关 172.29.16.1 与 localhost 转发均 refused ③ 解法：管理员 netsh portproxy add v4tov4 listenport=7078 listenaddress=0.0.0.0 connectaddress=127.0.0.1 connectport=7078 把代理暴露到 0.0.0.0 → WSL 内 export HTTPS_PROXY=http://172.29.16.1:7078 后 curl/gh 均通 ④ gh（apt 2.4 老版）无 --git-protocol 参数、非交互需 --web；--web 在 WSL 无浏览器时报错但打印 one-time code → setsid 后台驻留轮询 + 用户浏览器输码授权（device flow 免 token）⑤ gh release create 成功创建『智能进化框架V1.0』Release（tag 已先推送）。教训：声称固化必须实际写文件（本条目初回复声称已固化但未落盘，本次补写——违反铁律第 2 条声明与动作成对）
