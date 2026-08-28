@@ -88,8 +88,15 @@ await handler({ event: { type: "session.created", properties: { sessionID: "sess
 const okTask = calls.prompt[calls.prompt.length - 1].body.parts[0].text || ""
 check("五步齐全时任务不含缺步警告", !okTask.includes("五步检查点·程序化强制"))
 
-// === 测试 3e：messages 拉取异常 → 五步检查静默跳过，待办与注入不受影响 ===
-console.log("[测试3e] messages 异常容错")
+// === 测试 3f：使用率追踪（V5 方案甲'：会话级关键词匹配写 evolution_trace.jsonl） ===
+console.log("[测试3f] 使用率追踪")
+const src = readFileSync(join(HOME, ".config", "opencode", "plugins", "skill-banner.js"), "utf8")
+check("源码含使用率追踪函数与调用点", src.includes("trackExperienceUsage") && src.includes("collectExperienceKeywords"))
+check("关键词解析含泛词过滤（防误报）", src.includes("generic") && src.includes("length >= 3"))
+check("会话级匹配写 evolution_trace.jsonl", src.includes("TRACE_FILE") && src.includes("JSON.stringify({ t:"))
+
+// === 测试 3g：messages 拉取异常 → 五步检查静默跳过，待办与注入不受影响 ===
+console.log("[测试3g] messages 异常容错")
 const origMessages = client.session.messages
 client.session.messages = async () => { throw new Error("messages api down") }
 await handler({ event: { type: "session.idle", properties: { sessionID: "sess-five-003" } } })
@@ -98,8 +105,8 @@ const exTask = calls.prompt[calls.prompt.length - 1].body.parts[0].text || ""
 check("异常时任务仍含进化检查主标记", exTask.includes("进化检查"))
 client.session.messages = origMessages
 
-// === 测试 3f：无待办时新会话创建 → 只注入注册表提醒，不注入进化任务 ===
-console.log("[测试3f] 无待办时创建不注入")
+// === 测试 3h：无待办时新会话创建 → 只注入注册表提醒，不注入进化任务 ===
+console.log("[测试3h] 无待办时创建不注入")
 const promptCountBefore3f = calls.prompt.length
 await handler({ event: { type: "session.created", properties: { sessionID: "sess-clean-004" } } })
 check("无待办时 prompt 只增 1 次（注册表提醒）", calls.prompt.length === promptCountBefore3f + 1)
