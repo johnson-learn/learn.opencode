@@ -115,6 +115,56 @@ if (-not $SkipPip) {
   }
 } else { Warn "已跳过 pip 包（-SkipPip）" }
 
+# ---------- 4b. 可选大件依赖链（playwright chromium 内核 / weasyprint MSYS2+GTK3；失败仅警告不阻塞） ----------
+Step "4b. 可选大件依赖链（playwright chromium 内核 / weasyprint MSYS2+GTK3）"
+# playwright：pip 包已装时自动补 chromium 内核（约 300MB；-UseChinaMirror 走 npmmirror 镜像）
+if (Test-Cmd "python") {
+  python -c "import playwright" 2>$null
+  if ($LASTEXITCODE -eq 0) {
+    if ($UseChinaMirror) { $env:PLAYWRIGHT_DOWNLOAD_HOST = "https://npmmirror.com/mirrors/playwright" }
+    Write-Host "  安装 playwright chromium 内核（约 300MB，失败仅警告）..."
+    python -m playwright install chromium 2>&1 | Out-Null
+    if ($LASTEXITCODE -eq 0) { Ok "playwright chromium 内核安装完成" }
+    else { Warn "playwright chromium 内核安装失败（可稍后手动：python -m playwright install chromium）" }
+  }
+}
+# weasyprint：pip 包已装时自动补 MSYS2 + GTK3 + 环境变量
+if (Test-Cmd "python") {
+  python -c "import weasyprint" 2>$null
+  if ($LASTEXITCODE -eq 0) {
+    $msysRoot = "C:\msys64"
+    $msysBash = Join-Path $msysRoot "usr\bin\bash.exe"
+    $gtkDll = Join-Path $msysRoot "ucrt64\bin\libgtk-3-0.dll"
+    if (-not (Test-Path $gtkDll)) {
+      Write-Host "  安装 weasyprint 依赖：MSYS2 + GTK3（失败仅警告）..."
+      if (-not (Test-Path $msysBash)) {
+        if (Test-Cmd "winget") {
+          winget install --id MSYS2.MSYS2 -e --silent --disable-interactivity --accept-source-agreements --accept-package-agreements 2>&1 | Out-Null
+          $msysWait = 0
+          while (-not (Test-Path $msysBash) -and $msysWait -lt 60) { Start-Sleep -Seconds 5; $msysWait++ }
+        }
+      }
+      if (Test-Path $msysBash) {
+        Write-Host "    MSYS2 pacman 安装 GTK3（首次需 keyring 初始化，最长约 10 分钟）..."
+        & $msysBash -lc "pacman-key --init 2>/dev/null; pacman-key --populate msys2 2>/dev/null; pacman -Sy --noconfirm 2>/dev/null; pacman -S --noconfirm mingw-w64-ucrt-x86_64-gtk3" 2>&1 | Out-Null
+        $gtkWait = 0
+        while (-not (Test-Path $gtkDll) -and $gtkWait -lt 30) { Start-Sleep -Seconds 5; $gtkWait++ }
+      }
+    }
+    if (Test-Path $gtkDll) {
+      $msysBin = Join-Path $msysRoot "ucrt64\bin"
+      $curEnv = [Environment]::GetEnvironmentVariable("WEASYPRINT_DLL_DIRECTORIES", "User")
+      if (-not $curEnv -or ($curEnv -split ';' -notcontains $msysBin)) {
+        [Environment]::SetEnvironmentVariable("WEASYPRINT_DLL_DIRECTORIES", $msysBin, "User")
+        $env:WEASYPRINT_DLL_DIRECTORIES = $msysBin
+        Ok "WEASYPRINT_DLL_DIRECTORIES 已持久化配置：$msysBin"
+      } else { Ok "WEASYPRINT_DLL_DIRECTORIES 已配置：$msysBin" }
+    } else {
+      Warn "weasyprint 依赖 MSYS2 GTK3 未就绪（可手动：winget install MSYS2.MSYS2 后 pacman -S mingw-w64-ucrt-x86_64-gtk3，配环境变量 WEASYPRINT_DLL_DIRECTORIES=C:\msys64\ucrt64\bin）"
+    }
+  }
+}
+
 # ---------- 5. 汇总 ----------
 Step "5. 安装汇总"
 $stillMissing = @()
@@ -130,8 +180,13 @@ if ($stillMissing.Count -eq 0 -and $stillPy.Count -eq 0) {
   Ok "全部工具安装完成！请重跑 setup-windows.ps1 补齐配置（PATH/path_map/占位符转换）："
   Write-Host "    powershell -NoProfile -ExecutionPolicy Bypass -File setup\setup-windows.ps1"
 } else {
-  Warn "仍有未装工具（可按提示手动安装后重跑本脚本验证）："
-  foreach ($t in $stillMissing) { Warn "  [$($t.tier)] $($t.name)——$($t.hint)" }
+  Warn "仍有未装工具（完整安装方法与命令如下；按方法装好后重跑本脚本验证）："
+  foreach ($t in $stillMissing) {
+    Warn "  [$($t.tier)] $($t.name)"
+    if ($t.guide) {
+      Write-Host "    $($t.guide -replace '`n', "`n    ")" -ForegroundColor Gray
+    }
+  }
   if ($stillPy.Count -gt 0) { Warn "  pip 包：$($stillPy -join ' ')" }
   Write-Host ""
   Write-Host "  已装工具无需等待——现在即可重跑 setup-windows.ps1 补齐已装项的配置：" -ForegroundColor Cyan

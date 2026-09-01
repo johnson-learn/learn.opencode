@@ -93,7 +93,7 @@
 | test_docs_sync.py | `tests\test_docs_sync.py` | G | docs-sync.md 改动后强制（变更类型/校验测试存在/被 regedit+AGENTS 引用，19/19） |
 | test_audit_references.py | `tests\test_audit_references.py` | G | 框架引用审计（引用存在性/旧术语残留/README 双向一致，3/3） |
 | test_repo_face.py | `tests\test_repo_face.py` | G | 仓库门面一致性（门面文件与框架现状对照 + STATE_FILES 工作树残留 + 本机用户名路径动态扫描，18/18；WSL 不可达回退 tests\repo_face\ 镜像） |
-| test_setup_ps1.py | `tests\test_setup_ps1.py` | G | setup-windows.ps1 自动化测试（**2026-09-01 检测模式改造后重写**：开关精简/工具清单展示与必须可选分类/双通道检测 Test-ToolEntry/PATH 自动修复/未装提示跳过与重跑指引/无自动安装残留（worker/镜像/动态版本/按键交互）/npm-pip 缺失汇总提示/WSL 检测化/共享检测模块 setup-check.ps1/install-tools.ps1 一键安装脚本/部署范围/path_convert 体系/盘符动态探测/注册事件注入验证/必备工具缺失告警/&lt;工具目录&gt; 盘符根自动映射/tools-manifest 总表自动对齐/AST 语法，75/75；WSL 不可达回退 tests\repo_face\ 镜像） |
+| test_setup_ps1.py | `tests\test_setup_ps1.py` | G | setup-windows.ps1 自动化测试（**2026-09-01 检测模式改造后重写**：开关精简/工具清单展示与必须可选分类/双通道检测 Test-ToolEntry/PATH 自动修复/未装提示跳过与重跑指引/无自动安装残留（worker/镜像/动态版本/按键交互）/npm-pip 缺失汇总提示/WSL 检测化/共享检测模块 setup-check.ps1/install-tools.ps1 一键安装脚本/部署范围/path_convert 体系/盘符动态探测/注册事件注入验证/必备工具缺失告警/&lt;工具目录&gt; 盘符根自动映射/tools-manifest 总表自动对齐/AST 语法，78/78；WSL 不可达回退 tests\repo_face\ 镜像） |
 | README.md（测试清单） | `tests\README.md` | F | 查测试入口与运行命令 |
 
 ## 数据层
