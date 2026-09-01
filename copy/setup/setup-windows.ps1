@@ -1,19 +1,16 @@
-﻿# ============================================================
-# setup-windows.ps1 — 新电脑一键环境安装与配置
+﻿﻿# ============================================================
+# setup-windows.ps1 — 新电脑一键配置脚本（2026-09-01 检测模式）
 # 用途：根据本仓库迁移包，把全局 skill + 配置 + 辅助脚本部署到新电脑，
-#       并自动安装全部依赖工具（可勾选）。
+#       并检测全部依赖工具（只检测+修复配置，不自动安装，永不阻塞）。
 # 用法：右键"使用 PowerShell 运行"，或在 PowerShell 中执行：
 #       powershell -NoProfile -ExecutionPolicy Bypass -File setup-windows.ps1
-# 说明：安装类操作会请求管理员权限（UAC 弹窗）；全部为官方/镜像静默安装。
+# 工具安装：未装工具按提示手动安装，或运行 setup\install-tools.ps1 一键自动安装。
+# 说明：本脚本不弹 UAC；install-tools.ps1 安装类操作需管理员权限。
 # ============================================================
 param(
-  [switch]$SkipWinget,      # 跳过 winget 安装的软件（Git/Node/Python/Chrome/LibreOffice/Tesseract）
-  [switch]$SkipNpm,         # 跳过 npm 全局包（opencode/mermaid-cli）
-  [switch]$SkipPip,         # 跳过 pip 包（tools-manifest B 类常规包全集）
-  [switch]$SkipBigPkgs,     # 跳过可选大件（playwright+chromium / weasyprint+MSYS2）
   [switch]$SkipDeploy,      # 跳过 skill/配置/脚本部署
-  [switch]$SkipWsl,         # 跳过 WSL 安装
-  [switch]$UseChinaMirror,  # npm/pip 使用国内镜像
+  [switch]$SkipWsl,         # 跳过 WSL 检测
+  [switch]$UseChinaMirror,  # 提示语/配置修复使用国内镜像
   [switch]$NoPathRewrite    # 部署时不改写旧机路径（不推荐）
 )
 $ErrorActionPreference = "Continue"
@@ -24,74 +21,7 @@ $RepoRoot = Split-Path -Parent $RepoRoot            # 脚本在 setup\ 下，仓
 $ConfigDir = Join-Path $env:USERPROFILE ".config\opencode"
 $ToolDir = Join-Path $env:LOCALAPPDATA "Temp\opencode"   # skill 引用的脚本目录（与原机约定一致）
 
-function Test-Cmd([string]$cmd) { return $null -ne (Get-Command $cmd -ErrorAction SilentlyContinue) }
-function Step([string]$msg) { Write-Host "`n=== $msg ===" -ForegroundColor Cyan }
-function Ok([string]$msg) { Write-Host "  [OK] $msg" -ForegroundColor Green }
-function Warn([string]$msg) { Write-Host "  [跳过/警告] $msg" -ForegroundColor Yellow }
-
-$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-
-# LibreOffice 的 soffice 通常不在 PATH，不能只靠 Get-Command 判断是否已安装
-function Test-Soffice {
-  if (Test-Cmd "soffice") { return $true }
-  foreach ($p in @(
-    "C:\Program Files\LibreOffice\program\soffice.exe",
-    "C:\Program Files\LibreOffice\program\soffice.com",
-    "C:\Program Files (x86)\LibreOffice\program\soffice.exe",
-    "C:\Program Files (x86)\LibreOffice\program\soffice.com"
-  )) { if (Test-Path $p) { return $true } }
-  return $false
-}
-
-# Tesseract 同 soffice：winget 装的不进 PATH，需按安装位置探测（LibreOffice 式双通道检测）
-function Test-Tesseract {
-  if (Test-Cmd "tesseract") { return $true }
-  foreach ($p in @(
-    "C:\Program Files\Tesseract-OCR\tesseract.exe",
-    "C:\Program Files (x86)\Tesseract-OCR\tesseract.exe"
-  )) { if (Test-Path $p) { return $true } }
-  return $false
-}
-
-# 依据 winget 包 id 判断是否已装（Chrome/LibreOffice/Tesseract 用安装路径判断更可靠）
-function Test-Pkg([string]$id) {
-  switch ($id) {
-    "Git.Git"                     { return (Test-Cmd "git") }
-    "OpenJS.NodeJS.LTS"           { return (Test-Cmd "node") }
-    "Python.Python.3.12"          { return (Test-Cmd "python") }
-    "Google.Chrome"               { return (Test-Path "C:\Program Files\Google\Chrome\Application\chrome.exe") }
-    "TheDocumentFoundation.LibreOffice" { return (Test-Soffice) }
-    "UB-Mannheim.TesseractOCR"    { return (Test-Tesseract) }
-    default                       { return $false }
-  }
-}
-
-# 安装核心逻辑独立模块（Install-FromMirror / Get-DynamicVersions）：setup 与模拟测试共用同一份代码
-. (Join-Path $PSScriptRoot "setup-install-functions.ps1")
-
-# 获取当前 python 的 pip Scripts 目录（--user 安装后 p2t 等命令所在位置）
-function Get-PipScriptsDir {
-  try {
-    $ub = (python -c "import site; print(site.getuserbase())" 2>$null).Trim()
-    if ($ub) { $d = Join-Path $ub "Scripts"; if (Test-Path $d) { return $d } }
-  } catch {}
-  # 回退：sysconfig 的 scripts 路径
-  try {
-    $sc = (python -c "import sysconfig; print(sysconfig.get_path('scripts'))" 2>$null).Trim()
-    if ($sc -and (Test-Path $sc)) { return $sc }
-  } catch {}
-  return $null
-}
-
-# 把目录加入用户级 PATH（已存在则跳过；返回是否写入）
-function Add-ToUserPath([string]$dir) {
-  if (-not $dir -or -not (Test-Path $dir)) { return $false }
-  $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
-  if ($userPath -and $userPath.TrimEnd(';') -split ';' -contains $dir.TrimEnd('\')) { return $false }
-  [Environment]::SetEnvironmentVariable("Path", ($userPath.TrimEnd(';') + ';' + $dir), "User")
-  $env:Path += ';' + $dir
-  return $true
-}
+. (Join-Path $PSScriptRoot "setup-check.ps1")
 
 # ---------- 0. 前置检查 ----------
 Step "0. 前置检查"
@@ -114,285 +44,94 @@ if ($lp.LongPathsEnabled -ne 1) {
   Ok "Windows 长路径已启用（LongPathsEnabled=1）"
 }
 
-# ---------- 1. winget 安装基础软件 ----------
-if (-not $SkipWinget) {
-  Step "1. 基础软件安装（winget 第一渠道；失败自动换镜像直链第二渠道；再失败手动兜底）"
-  if (-not (Test-Cmd "winget")) {
-    Warn "winget 不存在，跳过软件安装。请手动安装 Git/Node/Python/Chrome/LibreOffice（见 REQUIREMENTS.md §1）"
+# ---------- 1. 工具清单与检测（2026-09-01 用户改造：只检测+修复配置，不自动安装，永不阻塞） ----------
+Step "1. 工具清单与检测（只检测与修复配置，不自动安装；未装工具提示后跳过，装好后重跑本脚本自动补配置）"
+Write-Host ""
+Write-Host "  ---- 工具清单 --------------------------------------------------" -ForegroundColor Cyan
+Write-Host "  [必须] 缺失不影响基本使用（update_skill 双向同步除外）：" -ForegroundColor Yellow
+Write-Host "    Git for Windows / Node.js LTS / Python 3.12 / opencode CLI / pip 常规包集 / WSL2+Ubuntu" -ForegroundColor White
+Write-Host "  [可选] 使用过程中可随时安装（用到对应功能前装好即可）：" -ForegroundColor Yellow
+Write-Host "    Google Chrome / LibreOffice / Tesseract OCR / mermaid-cli(mmdc) / playwright / weasyprint" -ForegroundColor White
+Write-Host "  ------------------------------------------------------------------" -ForegroundColor Cyan
+Write-Host ""
+
+# 工具检测条目：已装 -> [OK]；已装但 PATH 未配置 -> 自动修复；未装 -> 提示（建议命令）+ 跳过
+# 工具清单与检测函数 $checks1 / Test-ToolEntry 由 setup-check.ps1 共享模块提供
+foreach ($t in $checks1) {
+  if (Test-ToolEntry $t) {
+    Ok "[$($t.tier)] $($t.name) 已安装"
+    # 已装但命令不在 PATH -> 修复 PATH（安装位置在但 PATH 未配置的常见场景）
+    if ($t.cmd -and $t.pathDir -and (Test-Path $t.pathDir) -and -not (Test-Cmd $t.cmd)) {
+      if (Add-ToUserPath $t.pathDir) { Ok "    已修复 PATH：$($t.pathDir) 已加入用户 PATH（新开终端生效）" }
+    }
   } else {
-    # 动态版本解析（独立模块 Get-DynamicVersions：npmmirror JSON 目录页 + 清华 HTML 目录页 + 兜底固定版）
-    $dyn = Get-DynamicVersions
-    $gitVer = $dyn.git; $nodeVer = $dyn.node; $pyVer = $dyn.py; $loVer = $dyn.lo; $tesVer = $dyn.tes
-    Ok "动态版本解析：Git $gitVer / Node $nodeVer / Python $pyVer / LibreOffice $loVer / Tesseract $tesVer"
-    $pkgs = @(
-      @{ id = "Git.Git";                         name = "Git for Windows"; required = $true;  check = { (Test-Cmd "git") -or (Test-Path "C:\Program Files\Git\cmd\git.exe") };
-         mirrors = @("https://registry.npmmirror.com/-/binary/git-for-windows/v$gitVer/Git-$($gitVer -replace '\.windows\.1$', '')-64-bit.exe", "https://github.com/git-for-windows/git/releases/download/v$gitVer/Git-$($gitVer -replace '\.windows\.1$', '')-64-bit.exe"); silent = @("/VERYSILENT", "/NORESTART") },
-      @{ id = "OpenJS.NodeJS.LTS";               name = "Node.js LTS";     required = $true;  check = { (Test-Cmd "node") -or (Test-Path "C:\Program Files\nodejs\node.exe") };
-         mirrors = @("https://registry.npmmirror.com/-/binary/node/v$nodeVer/node-v$nodeVer-x64.msi", "https://nodejs.org/dist/v$nodeVer/node-v$nodeVer-x64.msi"); silent = @("/qn", "/norestart") },
-      @{ id = "Python.Python.3.12";              name = "Python 3.12";     required = $true;  check = { (Test-Cmd "python") -or (Test-Path "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe") -or (Test-Path "C:\Program Files\Python312\python.exe") };
-         mirrors = @("https://registry.npmmirror.com/-/binary/python/$pyVer/python-$pyVer-amd64.exe", "https://www.python.org/ftp/python/$pyVer/python-$pyVer-amd64.exe"); silent = @("/quiet", "InstallAllUsers=1", "PrependPath=1") },
-      @{ id = "Google.Chrome";                   name = "Google Chrome";   required = $false; check = { (Test-Path "C:\Program Files\Google\Chrome\Application\chrome.exe") -or (Test-Path "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe") };
-         mirrors = @("https://dl.google.com/chrome/install/latest/chrome_installer.exe", "https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi"); silent = @("/silent", "/install") },
-      @{ id = "TheDocumentFoundation.LibreOffice"; name = "LibreOffice";    required = $false; check = { Test-Soffice };
-         mirrors = @("https://mirrors.tuna.tsinghua.edu.cn/libreoffice/libreoffice/stable/$loVer/win/x86_64/LibreOffice_${loVer}_Win_x86-64.msi", "https://download.documentfoundation.org/libreoffice/stable/$loVer/win/x86_64/LibreOffice_${loVer}_Win_x86-64.msi", "https://gh-proxy.com/https://download.documentfoundation.org/libreoffice/stable/$loVer/win/x86_64/LibreOffice_${loVer}_Win_x86-64.msi"); silent = @("/qn", "/norestart") },
-      @{ id = "UB-Mannheim.TesseractOCR";       name = "Tesseract OCR";  required = $false; check = { Test-Tesseract };
-         mirrors = @("https://gh-proxy.com/https://github.com/UB-Mannheim/tesseract/releases/download/v$tesVer/tesseract-ocr-w64-setup-$tesVer.exe", "https://github.com/UB-Mannheim/tesseract/releases/download/v$tesVer/tesseract-ocr-w64-setup-$tesVer.exe"); silent = @("/S") }
-    )
-    foreach ($p in $pkgs) {
-      $tier = if ($p.required) { "必选" } else { "可选" }
-      if (& $p.check) { Ok "$($p.name) 已安装"; continue }
-      # 双窗口终版（2026-08-28 用户定稿）：工作窗口显示下载/安装进度；
-      # 主窗口每轮显示状态+选项（1=换源/2=放弃/3=退出），按键随时响应，不按键自动继续
-      # worker 全程只弹一次（2026-08-28 用户方案一）：非退出场景不杀 worker，
-      # 仅"按键 3 退出"与"基础软件安装阶段收尾"两处关闭窗口
-      Write-Host "  [$tier] $($p.name) 未安装，开始自动安装（工作窗口显示进度；本窗口选项随时可选）..."
-      $done = $false
-      $phase = "winget"
-      $mirrorIdx = 0
-      $dlFile = $null
-      $lastSize = 0
-      $noProgress = 0
-      $wingetCmdSent = $false
-      $workerDoneFile = Join-Path $env:TEMP ("opencode_worker_cmd.txt" + ".done")
-      Remove-Item $workerDoneFile -Force -ErrorAction SilentlyContinue
-      while (-not $done) {
-        if (& $p.check) { Ok "$($p.name) 安装完成"; break }
-        $statusLine = ""
-        # ---- 自动推进状态机（5 秒/轮） ----
-        if ($phase -eq "winget") {
-          if (-not $wingetCmdSent) {
-            Start-WorkerCommand "winget install --id $($p.id) -e --silent --disable-interactivity --accept-source-agreements --accept-package-agreements"
-            $wingetCmdSent = $true
-            $statusLine = "winget 渠道下载/安装中（工作窗口可见进度）"
-          } elseif (Test-Path $workerDoneFile) {
-            Remove-Item $workerDoneFile -Force -ErrorAction SilentlyContinue
-            Write-Host "    winget 渠道未安装成功，自动切换镜像源渠道..."
-            $phase = "mirror-dl"; $mirrorIdx = 0; $dlFile = $null; $noProgress = 0
-            $statusLine = "切换镜像源渠道..."
-          } else {
-            $noProgress++
-            $statusLine = "winget 安装进行中（已等待 $($noProgress * 5) 秒）"
-            if ($noProgress -ge 120) {
-              Write-Host "    winget 渠道长时间无进展，自动切换镜像源渠道（可随时按键提前干预）..."
-              $phase = "mirror-dl"; $mirrorIdx = 0; $dlFile = $null; $noProgress = 0
-              $statusLine = "切换镜像源渠道..."
-            }
-          }
-        }
-        elseif ($phase -eq "mirror-dl") {
-          if (-not $dlFile) {
-            if ($mirrorIdx -ge $p.mirrors.Count) {
-              # 源尽 → 回到 winget 重试（不退出，自动循环）
-              $phase = "winget"; $wingetCmdSent = $false; $mirrorIdx = 0; $noProgress = 0
-              $statusLine = "全部镜像源已尝试，回到 winget 渠道重试..."
-            } else {
-              $ext = [System.IO.Path]::GetExtension($p.mirrors[$mirrorIdx]).ToLower()
-              $dlFile = Join-Path $env:TEMP ("opencode_dl_" + ($p.id -replace "[^A-Za-z0-9]", "_") + "_$($mirrorIdx + 1)" + $ext)
-              Remove-Item $dlFile -ErrorAction SilentlyContinue
-              $lastSize = 0; $noProgress = 0
-              Write-Host "    镜像源 $($mirrorIdx + 1)/$($p.mirrors.Count) 下载中（工作窗口可见进度）: $($p.mirrors[$mirrorIdx])"
-              try {
-                Start-WorkerCommand "curl.exe -L --connect-timeout 20 -o `"$dlFile`" $($p.mirrors[$mirrorIdx])"
-              } catch {
-                Warn "下载命令发送失败：$($_.Exception.Message)"
-                $mirrorIdx++; $dlFile = $null
-              }
-            }
-          } elseif (Test-Path $dlFile) {
-            $sz = (Get-Item $dlFile).Length
-            if ($sz -ge 1MB -and $sz -eq $lastSize) {
-              Write-Host "    下载完成，自动开始静默安装（$($p.name)）..."
-              $phase = "mirror-install"; $noProgress = 0
-              $ext = [System.IO.Path]::GetExtension($dlFile).ToLower()
-              try {
-                if ($ext -eq ".msi") {
-                  Start-WorkerCommand "msiexec /i `"$dlFile`" /qn /norestart"
-                } else {
-                  Start-WorkerCommand "& `"$dlFile`" $($p.silent -join ' ')"
-                }
-              } catch {
-                Warn "安装命令发送失败：$($_.Exception.Message)"
-                $mirrorIdx++; $dlFile = $null; $phase = "mirror-dl"
-              }
-            } else {
-              $lastSize = $sz
-              $szMB = [math]::Round($sz / 1MB, 2)
-              $noProgress++
-              $statusLine = "镜像源 $($mirrorIdx + 1)/$($p.mirrors.Count) 下载中：已下载 $szMB MB"
-              if ($noProgress -ge 60 -and $szMB -lt 1) {
-                Write-Host "    该源长时间无有效下载，自动换下一个源..."
-                $mirrorIdx++; $dlFile = $null; $noProgress = 0
-              }
-            }
-          } else {
-            $noProgress++
-            $statusLine = "等待下载开始..."
-            if ($noProgress -ge 30) { $mirrorIdx++; $dlFile = $null; $noProgress = 0 }
-          }
-        }
-        elseif ($phase -eq "mirror-install") {
-          $noProgress++
-          $statusLine = "静默安装中（已等待 $($noProgress * 5) 秒，工作窗口可见）"
-          if ($noProgress -ge 120) {
-            Write-Host "    该源安装长时间未完成，自动换下一个源..."
-            $mirrorIdx++; $dlFile = $null; $phase = "mirror-dl"; $noProgress = 0
-          }
-        }
-        # ---- 每轮显示状态 + 选项（按键随时响应，不按键自动继续） ----
-        Write-Host "  【当前工具】$($p.name)：$statusLine"
-        Write-Host "  【选项】随时可选（不输入=继续自动安装，无需等待）："
-        Write-Host "    1 = 换镜像源渠道：停止当前渠道，改用国内镜像源重新下载安装（当前渠道下载慢/失败时推荐）"
-        Write-Host "    2 = 放弃本工具安装：跳过 $($p.name) 继续后续流程（可稍后手动安装或重跑本脚本自动补齐）"
-        Write-Host "    3 = 放弃本次移植：停止一切并退出脚本（下次重跑从头开始，已装工具自动跳过）"
-        try {
-          if ([Console]::KeyAvailable) {
-            $k = [Console]::ReadKey($true)
-            $a = "$($k.KeyChar)"
-            if ($a -eq "1") {
-              $phase = "mirror-dl"; $mirrorIdx = 0; $dlFile = $null; $noProgress = 0
-              Write-Host "    [已选择 1] 换镜像源渠道（下轮自动启动下载）"
-            }
-            elseif ($a -eq "2") {
-              if ($p.required) { Warn "已放弃必选工具 $($p.name) 安装（手动安装后重跑本脚本自动补齐）" }
-              else { Warn "已放弃可选工具 $($p.name) 安装，继续移植" }
-              $done = $true
-            }
-            elseif ($a -eq "3") { Stop-WorkerWindow; Warn "用户选择放弃本次移植，退出脚本"; exit 2 }
-          }
-        } catch {}
-        Start-Sleep -Seconds 5
-      }
-    }
+    Warn "[$($t.tier)] $($t.name) 未安装——请手动安装或使用大模型协助安装（建议命令：$($t.hint)）；或运行 setup\install-tools.ps1 一键自动安装"
+    Warn "    装好后重跑本脚本即可自动补齐相关配置（已装项自动跳过）"
   }
-  # 基础软件安装阶段收尾：关闭工作窗口（worker 全程只弹一次，此处为正常关闭点）
-  Stop-WorkerWindow
-} else { Warn "已跳过基础软件安装（-SkipWinget）" }
+}
 
-  # 安装后自动配置（2026-08-28 用户要求"完成全套工作"）：刷新当前会话 PATH，新装工具立即可用无需重开终端
-  $machinePath = [Environment]::GetEnvironmentVariable("Path", "Machine")
-  $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
-  $env:Path = ($machinePath + ";" + $userPath)
-  Ok "已刷新当前会话 PATH（新装工具环境变量立即可用，无需重开终端）"
+# 已装但 PATH 未配置的修复刷新：当前会话立即生效
+$machinePath = [Environment]::GetEnvironmentVariable("Path", "Machine")
+$userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+$env:Path = ($machinePath + ";" + $userPath)
 
-# ---------- 2. npm 全局包 ----------
-if (-not $SkipNpm) {
-  Step "2. npm 全局包（opencode / mermaid-cli）"
-  if (-not (Test-Cmd "npm")) {
-    Warn "npm 不可用（Node.js 未装或未刷新 PATH）。装好 Node 后重跑本脚本即可。"
-  } else {
-    $reg = if ($UseChinaMirror) { "--registry=https://registry.npmmirror.com" } else { "" }
-    if ($UseChinaMirror) {
-      npm config set registry https://registry.npmmirror.com
-      Ok "npm 镜像源已持久化配置（registry.npmmirror.com，后续 npm 命令自动走国内源）"
-    }
-    if (-not (Test-Cmd "opencode")) {
-      npm i -g opencode-ai $reg
-      if ($?) { Ok "opencode-ai 安装完成" } else { Warn "opencode-ai 安装失败" }
-    } else { Ok "opencode 已安装" }
-    if (-not (Test-Cmd "mmdc")) {
-      npm i -g @mermaid-js/mermaid-cli $reg
-      if ($?) { Ok "mermaid-cli 安装完成" } else { Warn "mermaid-cli 安装失败" }
-    } else { Ok "mmdc 已安装" }
+# ---------- 2. npm 全局包检测（不自动安装，缺失提示） ----------
+Step "2. npm 全局包检测（opencode / mermaid-cli）"
+if (-not (Test-Cmd "npm")) {
+  Warn "npm 不可用（Node.js 未装或未刷新 PATH）。装好 Node 后重跑本脚本即可。"
+} else {
+  if ($UseChinaMirror) {
+    npm config set registry https://registry.npmmirror.com
+    Ok "npm 镜像源已持久化配置（registry.npmmirror.com，后续 npm 命令自动走国内源）"
   }
-} else { Warn "已跳过 npm 全局包（-SkipNpm）" }
+  $npmMissing = @()
+  if (-not (Test-Cmd "opencode")) { $npmMissing += "opencode-ai" }
+  if (-not (Test-Cmd "mmdc")) { $npmMissing += "@mermaid-js/mermaid-cli" }
+  if ($npmMissing.Count -gt 0) {
+    Warn "npm 全局包缺失：$($npmMissing -join '、')——请手动安装或使用大模型协助安装："
+    Warn "  npm i -g $($npmMissing -join ' ')$(if ($UseChinaMirror) { ' --registry=https://registry.npmmirror.com' })"
+    Warn "  装好后重跑本脚本即可自动补齐相关配置"
+  } else { Ok "npm 全局包已齐（opencode / mermaid-cli）" }
+}
 
-# ---------- 3. pip 包 ----------
-if (-not $SkipPip) {
-  Step "3. pip 包（tools-manifest B 类常规包全集）"
-  if (-not (Test-Cmd "python")) {
-    Warn "python 不可用（未装或未刷新 PATH）。装好后重跑本脚本即可。"
-  } else {
-    # 识别 Microsoft Store 版 Python（路径含 WindowsApps，其 --user 目录极长，易触发 torch 安装失败）
-    $pyExe = $null
-    try { $pyExe = (python -c "import sys; print(sys.executable)" 2>$null).Trim() } catch {}
-    if ($pyExe -and $pyExe -like "*WindowsApps*") {
-      Warn "检测到 Microsoft Store 版 Python（$pyExe）。其用户目录路径过长，torch/pix2text 可能安装失败。建议用 winget 安装官方 Python 3.12 后重跑本脚本。"
-    }
-    $pi = if ($UseChinaMirror) { "-i https://pypi.tuna.tsinghua.edu.cn/simple" } else { "" }
-    if ($UseChinaMirror) {
-      python -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
-      Ok "pip 镜像源已持久化配置（清华源，后续 pip 命令自动走国内源）"
-    }
-    # 清单与 tools-manifest.md B 类保持一致（2026-08-31 全量补齐；新增常规包先更新总表，
-    # test_setup_ps1.py 的清单对齐检查会强制本脚本同步）
-    foreach ($pkg in @("pix2text","matplotlib","PyMuPDF","pillow","pypandoc-binary","python-docx","python-pptx","openpyxl","xlrd","pypdf","pdfplumber","chardet","pyzbar","opencv-python","imageio-ffmpeg","docxtpl","Jinja2","python-magic-bin","ocrmypdf")) {
-      Write-Host "  pip install $pkg ..."
-      python -m pip install --upgrade --user $pkg $pi
-      if ($LASTEXITCODE -eq 0) { Ok "$pkg 安装完成" } else { Warn "$pkg 安装失败" }
-    }
-    # 把 pip 的 Scripts 目录加入用户 PATH（否则 p2t 等命令找不到）
-    $scriptsDir = Get-PipScriptsDir
-    if ($scriptsDir -and (Add-ToUserPath $scriptsDir)) {
-      Ok "已将 pip Scripts 目录加入用户 PATH：$scriptsDir（新开终端生效）"
-    }
-    if (-not (Test-Cmd "p2t")) { Warn "p2t 命令仍未在 PATH（可手动加：$scriptsDir）" }
+# ---------- 3. pip 常规包集检测（不自动安装，缺失汇总提示） ----------
+Step "3. pip 常规包集检测（tools-manifest B 类 19 包；playwright/weasyprint 已在第 1 节可选工具检测）"
+if (-not (Test-Cmd "python")) {
+  Warn "python 不可用（未装或未刷新 PATH）。装好 Python 后重跑本脚本即可。"
+} else {
+  # 识别 Microsoft Store 版 Python（路径含 WindowsApps，其 --user 目录极长，易触发 torch 安装失败）
+  $pyExe = $null
+  try { $pyExe = (python -c "import sys; print(sys.executable)" 2>$null).Trim() } catch {}
+  if ($pyExe -and $pyExe -like "*WindowsApps*") {
+    Warn "检测到 Microsoft Store 版 Python（$pyExe）。其用户目录路径过长，torch/pix2text 可能安装失败。建议用 winget 安装官方 Python 3.12 后重跑本脚本。"
   }
-} else { Warn "已跳过 pip 包（-SkipPip）" }
-
-# ---------- 3b. 可选大件（playwright / weasyprint；下载量大、依赖链长，失败仅警告不阻塞） ----------
-if (-not $SkipBigPkgs) {
-  Step "3b. 可选大件（playwright + chromium / weasyprint + MSYS2）"
-  if (-not (Test-Cmd "python")) {
-    Warn "python 不可用，跳过可选大件（装好后重跑本脚本补齐）"
-  } else {
-    $pi = if ($UseChinaMirror) { "-i https://pypi.tuna.tsinghua.edu.cn/simple" } else { "" }
-    # playwright：headless 渲染 HTML→PDF/截图；chromium 内核约 300MB，慢网用 npmmirror 镜像
-    try {
-      python -c "import playwright" 2>$null
-      $pwInstalled = ($LASTEXITCODE -eq 0)
-      if (-not $pwInstalled) {
-        Write-Host "  pip install playwright ..."
-        python -m pip install --upgrade --user playwright $pi
-        $pwInstalled = ($LASTEXITCODE -eq 0)
-      }
-      if ($pwInstalled) {
-        if ($UseChinaMirror) { $env:PLAYWRIGHT_DOWNLOAD_HOST = "https://npmmirror.com/mirrors/playwright" }
-        Write-Host "  python -m playwright install chromium（内核约 300MB，可在本脚本结束后后台补装）..."
-        python -m playwright install chromium
-        if ($LASTEXITCODE -eq 0) { Ok "playwright + chromium 安装完成" } else { Warn "playwright chromium 内核下载失败（可手动：python -m playwright install chromium）" }
-      } else { Warn "playwright 安装失败（可手动：pip install playwright）" }
-    } catch { Warn "playwright 安装异常（可手动安装）" }
-    # weasyprint：MSYS2（GTK3 DLL）+ 用户环境变量 WEASYPRINT_DLL_DIRECTORIES + pip 包
-    $msysRoot = "C:\msys64"
-    $msysBash = Join-Path $msysRoot "usr\bin\bash.exe"
-    $gtkDll = Join-Path $msysRoot "ucrt64\bin\libgtk-3-0.dll"
-    if (-not (Test-Path $gtkDll)) {
-      if (-not (Test-Path $msysBash)) {
-        Write-Host "  winget 安装 MSYS2（工作窗口，最长等待 10 分钟）..."
-        Start-WorkerCommand "winget install --id MSYS2.MSYS2 -e --silent --disable-interactivity --accept-source-agreements --accept-package-agreements"
-        $msysWait = 0
-        while (-not (Test-Path $msysBash) -and $msysWait -lt 120) { Start-Sleep -Seconds 5; $msysWait++ }
-      }
-      if (Test-Path $msysBash) {
-        Write-Host "  MSYS2 pacman 安装 GTK3（工作窗口，最长等待 10 分钟）..."
-        Start-WorkerCommand "& `"$msysBash`" -lc 'pacman -Syu --noconfirm; pacman -S --noconfirm mingw-w64-ucrt-x86_64-gtk3'"
-        $gtkWait = 0
-        while (-not (Test-Path $gtkDll) -and $gtkWait -lt 120) { Start-Sleep -Seconds 5; $gtkWait++ }
-      } else { Warn "MSYS2 未安装成功（可手动 winget install MSYS2.MSYS2 后重跑本脚本）" }
-    }
-    if (Test-Path $gtkDll) {
-      $msysBin = Join-Path $msysRoot "ucrt64\bin"
-      $curEnv = [Environment]::GetEnvironmentVariable("WEASYPRINT_DLL_DIRECTORIES", "User")
-      if (-not $curEnv -or ($curEnv -split ';' -notcontains $msysBin)) {
-        [Environment]::SetEnvironmentVariable("WEASYPRINT_DLL_DIRECTORIES", $msysBin, "User")
-        $env:WEASYPRINT_DLL_DIRECTORIES = $msysBin
-        Ok "WEASYPRINT_DLL_DIRECTORIES 已持久化配置：$msysBin"
-      }
-      Write-Host "  pip install weasyprint ..."
-      python -m pip install --upgrade --user weasyprint $pi
-      if ($LASTEXITCODE -eq 0) { Ok "weasyprint 安装完成" } else { Warn "weasyprint 安装失败（可手动：pip install weasyprint）" }
-    } else { Warn "MSYS2 GTK3 未就绪，weasyprint 跳过（见 REQUIREMENTS.md 手动安装）" }
+  if ($UseChinaMirror) {
+    python -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+    Ok "pip 镜像源已持久化配置（清华源，后续 pip 命令自动走国内源）"
   }
-  # 大件段收尾：关闭工作窗口（若本段弹过）
-  Stop-WorkerWindow
-} else { Warn "已跳过可选大件（-SkipBigPkgs）" }
+  # import 检测表 $pyPkgs 由 setup-check.ps1 共享模块提供（与 tools-manifest B 类一致）
+  $missingPkgs = @()
+  foreach ($pp in $pyPkgs) {
+    python -c "import $($pp.mod)" 2>$null
+    if ($LASTEXITCODE -ne 0) { $missingPkgs += $pp.pkg }
+  }
+  if ($missingPkgs.Count -gt 0) {
+    Warn "pip 常规包缺失 $($missingPkgs.Count) 个——请手动安装或使用大模型协助安装："
+    Warn "  python -m pip install --upgrade --user $($missingPkgs -join ' ')$(if ($UseChinaMirror) { ' -i https://pypi.tuna.tsinghua.edu.cn/simple' })"
+    Warn "  装好后重跑本脚本即可自动补齐相关配置"
+  } else { Ok "pip 常规包集全部已安装（19/19）" }
+  # 已装 Python 但 pip Scripts 不在 PATH -> 修复
+  $scriptsDir = Get-PipScriptsDir
+  if ($scriptsDir -and (Add-ToUserPath $scriptsDir)) {
+    Ok "已将 pip Scripts 目录加入用户 PATH：$scriptsDir（新开终端生效）"
+  }
+  if (-not (Test-Cmd "p2t")) { Warn "p2t 命令仍未在 PATH（可手动加：$scriptsDir）" }
+}
 
-# ---------- 4. WSL ----------
+# ---------- 4. WSL2 + Ubuntu（检测+提示，不自动安装） ----------
 if (-not $SkipWsl) {
-  Step "4. WSL2 + Ubuntu 22.04"
+  Step "4. WSL2 + Ubuntu 22.04（已在第 1 节检测；此处仅提示补救路径）"
   $wslOk = $false
-  # 发行版注册位置：新版 WSL（应用商店版）在 HKCU，旧版在 HKLM；发行版名可能为 Ubuntu / Ubuntu-22.04。
-  # 用注册表判断可避免 wsl.exe 输出 UTF-16 编码导致的字符串匹配失效问题。
   foreach ($root in @("HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss","HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Lxss")) {
     foreach ($k in (Get-ChildItem $root -ErrorAction SilentlyContinue)) {
       $dn = (Get-ItemProperty $k.PSPath -ErrorAction SilentlyContinue).DistributionName
@@ -402,14 +141,11 @@ if (-not $SkipWsl) {
   }
   if ($wslOk) { Ok "WSL Ubuntu 已就绪" }
   else {
-    Write-Host "  运行 install-wsl.ps1（需要管理员权限，可能要求重启）..."
     $installer = Join-Path $RepoRoot "setup\install-wsl.ps1"
-    if (Test-Path $installer) {
-      Start-Process powershell -Verb RunAs -ArgumentList "-NoProfile","-ExecutionPolicy","Bypass","-File","`"$installer`""
-      Write-Host "  已启动管理员窗口安装 WSL，请在弹窗中确认。装完可重跑本脚本验证。"
-    } else { Warn "install-wsl.ps1 未找到" }
+    Warn "WSL2 + Ubuntu 未安装——请手动安装（右键管理员运行 setup\install-wsl.ps1，可能需重启一次）："
+    Warn "  装好后重跑本脚本即可自动补齐相关配置"
   }
-} else { Warn "已跳过 WSL（-SkipWsl）" }
+} else { Warn "已跳过 WSL 检测（-SkipWsl）" }
 
 # ---------- 5. 部署 skill / 配置 / 脚本 ----------
 if (-not $SkipDeploy) {
