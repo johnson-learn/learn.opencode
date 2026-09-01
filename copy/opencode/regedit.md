@@ -95,6 +95,7 @@
 | test_repo_face.py | `tests\test_repo_face.py` | G | 仓库门面一致性（门面对照+STATE_FILES 残留+本机路径扫描，18/18；WSL 不可达回退 repo_face 镜像） |
 | test_setup_ps1.py | `tests\test_setup_ps1.py` | G | setup-windows.ps1 自动化测试（检测模式：工具清单必须/可选分类、双通道检测、PATH 修复、未装提示跳过、无自动安装残留、共享模块 setup-check、install-tools 一键安装、tools-manifest 总表对齐、AST，78/78；WSL 不可达回退 repo_face 镜像） |
 | README.md（测试清单） | `tests\README.md` | F | 查测试入口与运行命令 |
+| L1 领域自测（7 个） | `skills\*\tests\test_skill_self.py`（+program_skill 的 test_compile_template.py） | G | 每个 skill 的领域自测（2026-09-01 框架进化评审落地）：入口规范/模块引用无悬空/references 无悬空/技能特定断言；evolution_gate 精准触发（改哪个 skill 自动跑哪个）；program_skill 另有 c-project 骨架 WSL 实编译行为自测（WSL 不可达自动跳过） |
 
 ## 数据层
 

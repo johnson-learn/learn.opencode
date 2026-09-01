@@ -144,3 +144,7 @@ collaborates_with:
 - 详见 `references/tools.md`（工具依赖/LobeHub CLI/skills 站点绕过/批量安装/抓取细节）
 - 详见 `references/search-strategy.md`（关键词拆解/可信度分级/反模式/证据表）
 - 详见 `references/deep-research-template.md`（深度研究五步流程与质量门槛）
+
+## 本 skill 经验索引（分域健康监控台账）
+
+> 本 skill 相关经验在 `<opencode配置目录>\skills\default\evolution_skill\evolution_log.txt` 中带「归属：find_skill」字段的条目；active 条目摘要：skillsmp/skills.sh/LobeHub 三站绕过细节、ghproxy 镜像渠道优先级、断网排查（系统代理空端口/aTrust 路由劫持 ping -S 定位）。低活性/待验证条目由经验健康引擎（gate --check）按归属分组提示。

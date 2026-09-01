@@ -201,6 +201,8 @@ def experience_health():
                 cur["verified"] = ln[len("- 最后验证："):].strip()
             elif ln.startswith("- 核心关键词："):
                 cur["keywords"] = ln[len("- 核心关键词："):].strip()
+            elif ln.startswith("- 归属："):
+                cur["owner"] = ln[len("- 归属："):].strip()
             cur["raw"] += " | " + ln.strip()[:120]
     if cur:
         entries.append(cur)
@@ -303,6 +305,23 @@ def experience_health():
             out.append("[经验健康] 低活性：%d 条活跃经验超过 60 天未被引用（使用率追踪为程序化信号，建议下沉 references/ 或标注 deprecated）：" % len(low))
             for d, t in low[-5:]:
                 out.append("    · [%s] %s" % (d, t))
+    # ④ 归属分组统计（2026-09-01 框架进化评审建议：分域健康监控前提——流水条目带"归属：xxx_skill"字段）
+    owners = {}
+    for e in entries:
+        ow = (e.get("owner") or "").strip()
+        if not ow:
+            continue
+        owners.setdefault(ow, {"n": 0, "last": ""})
+        owners[ow]["n"] += 1
+        if e.get("date", "") > owners[ow]["last"]:
+            owners[ow]["last"] = e.get("date", "")
+    if owners:
+        parts = []
+        for k in sorted(owners):
+            parts.append("%s %d 条(最近 %s)" % (k, owners[k]["n"], owners[k]["last"]))
+        out.append("[经验健康] 按归属分组（结构化 active 条目）：" + "、".join(parts))
+    else:
+        out.append("[经验健康] 归属分组：流水条目尚无『归属：xxx_skill』字段（进化第四步结构化格式请补归属字段，分域健康监控依赖此字段）")
     # 全库级活性信号
     last_date = None
     for ln in reversed(lines):
@@ -384,6 +403,21 @@ def do_check(sid):
     py = sys.executable
     if any("skills" in fp for fp in changed):
         run_test("skill_validate", [py, os.path.join(TESTS, "skill_validate.py"), os.path.join(CFG, "skills")])
+    # L1 领域自测精准触发（2026-09-01 框架进化评审：改哪个 skill 跑哪个 skill 的 tests/test_skill_self.py）
+    skill_hits = set()
+    for fp in list(changed) + list(new_files):
+        m = re.match(r"skills[/\\](?:default[/\\])?([A-Za-z0-9_]+)", fp.replace(CFG, "").lstrip("\\/"))
+        if m:
+            skill_hits.add(m.group(1))
+    for sk in sorted(skill_hits):
+        base = os.path.join(CFG, "skills", "default", sk) if sk == "evolution_skill" else os.path.join(CFG, "skills", sk)
+        t = os.path.join(base, "tests", "test_skill_self.py")
+        if os.path.isfile(t):
+            run_test("L1:" + sk, [py, t])
+        if sk == "program_skill":
+            t2 = os.path.join(base, "tests", "test_compile_template.py")
+            if os.path.isfile(t2):
+                run_test("L1:program_compile", [py, t2])
     if any(fp.endswith("regedit.md") for fp in changed):
         run_test("test_regedit", [py, os.path.join(TESTS, "test_regedit.py")])
     if any("plugins" in fp for fp in changed):

@@ -99,4 +99,11 @@ collaborates_with:
 - 详见 `references/debugging.md`（gdb/valgrind/core dump 排查）
 - 详见 `references/coding-standards.md`（C 编码规范与错误处理）
 - 详见 `references/unit-test.md`（Unity/CTest 用例与覆盖率）
+- 详见 `references/embedded-build.md`（交叉编译/工具链文件/OpenOCD）
+- 详见 `references/deploy-remote.md`（ssh/rsync 远程编译运行与日志回传）
+- 详见 `references/build-systems.md`（Makefile 多目录/条件编译/平台判断）
 - 工程骨架：`templates/c-project/`（新项目直接复制）
+
+## 本 skill 经验索引（分域健康监控台账）
+
+> 本 skill 相关经验在 `<opencode配置目录>\skills\default\evolution_skill\evolution_log.txt` 中带「归属：program_skill」字段的条目；active 条目摘要：编译脚本三版套路（Bash/Batch/PS）、WSL 环境全量配置、core dump 落盘坑、w64devkit 双轨验证、Windows 提权子进程窗口管理。低活性/待验证条目由经验健康引擎（gate --check）按归属分组提示。

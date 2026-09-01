@@ -184,3 +184,7 @@ collaborates_with:
 - 详见 `references/ocr-formula.md`
 - 详见 `references/html-svg.md`
 - 详见 `references/elements.md`
+
+## 本 skill 经验索引（分域健康监控台账）
+
+> 本 skill 相关经验在 `<opencode配置目录>\skills\default\evolution_skill\evolution_log.txt` 中带「归属：files_skill」字段的条目；active 条目摘要：LibreOffice soffice.com+独立 profile 调用规范、python-pptx 表格渲染双坑（空 cell 占位/伪合并）、PDF 文本校验法。低活性/待验证条目由经验健康引擎（gate --check）按归属分组提示。

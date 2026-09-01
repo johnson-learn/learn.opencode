@@ -131,3 +131,7 @@ collaborates_with:
 - 详见 `references/figure-requirements.md`
 - 详见 `references/html-check.md`
 - 双轨提取/公式核实通用流程：见 files_skill 的 `<opencode配置目录>\skills\files_skill\references\dual-track-extraction.md`（按需读取）
+
+## 本 skill 经验索引（分域健康监控台账）
+
+> 本 skill 相关经验在 `<opencode配置目录>\skills\default\evolution_skill\evolution_log.txt` 中带「归属：3gpp_skill」字段的条目；active 条目摘要：文档提取双轨要求（文本+图片识别核实）、FTP 结构/下载链路、SVG 绘图规范。低活性/待验证条目由经验健康引擎（gate --check）按归属分组提示。
