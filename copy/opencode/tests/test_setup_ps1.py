@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# setup-windows.ps1 自动化测试：开关完整性/部署范围/path_convert 体系/语法解析（仓库直读，WSL 不可达回退镜像）
+# setup-windows.ps1 自动化测试（2026-09-01 检测模式改造后重写）：
+# 工具清单展示/必须可选分类/双通道检测/PATH 修复/未装提示跳过/无自动安装残留/清单对齐（仓库直读，WSL 不可达回退镜像）
 import os, re, sys, subprocess
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
@@ -21,15 +22,17 @@ if not os.path.exists(script_path):
     print("setup 脚本不可得（无仓库无镜像）→ 全部跳过")
     sys.exit(0)
 c = open(script_path, encoding="utf-8", errors="replace").read()
-c2 = ""
-fp2 = os.path.join(REPO, "copy", "setup", "setup-install-functions.ps1")
-if os.path.exists(fp2):
-    c2 = open(fp2, encoding="utf-8", errors="replace").read()
+cc_path0 = os.path.join(REPO, "copy", "setup", "setup-check.ps1")
+if not os.path.exists(cc_path0):
+    cc_path0 = os.path.join(os.path.dirname(os.path.abspath(__file__)), "repo_face", "setup-check.ps1")
+cc0 = open(cc_path0, encoding="utf-8", errors="replace").read() if os.path.exists(cc_path0) else ""
+c_cc = c + "\n" + cc0
 
-# 1. 七个阶段开关齐全（与 INSTALL.md 阶段表一致）
-switches = ["SkipWinget", "SkipNpm", "SkipPip", "SkipWsl", "SkipDeploy", "UseChinaMirror", "NoPathRewrite"]
-for s in switches:
+# 1. 开关：保留部署/镜像/路径；安装类开关已移除（检测模式）
+for s in ["SkipDeploy", "SkipWsl", "UseChinaMirror", "NoPathRewrite"]:
     check("开关存在: -" + s, ("[switch]$" + s) in c)
+for s in ["SkipWinget", "SkipNpm", "SkipPip", "SkipBigPkgs"]:
+    check("自动安装开关已移除: -" + s, ("[switch]$" + s) not in c)
 
 # 2. 部署范围：skills（含 default 容器）、tests、tools、plugins
 check("部署含 skills", "skills" in c)
@@ -42,10 +45,9 @@ check("调用 path_convert.py", "path_convert.py" in c)
 check("占位符交互（Ask-Dir 数据类目录）", "Ask-Dir" in c)
 check("旧机路径改写已由占位符体系取代（无旧路径硬编码改写段）", "$OLD_EDRIVE" not in c or "path_convert" in c)
 
-# 3.5 安装移植 log 反馈修复（2026-08-27 实测：无 E 盘机器 Join-Path 报错 + 验证逻辑过时）
+# 3.5 既有修复断言（保留）
 check("w64devkit 探测不硬编码盘符（动态枚举现有盘符）", "Get-PSDrive -PSProvider FileSystem" in c and "E:\\w64devkit" not in c)
 check("7.5 验证改为注册事件注入体系（system.transform）", "experimental.chat.system.transform" in c)
-check("7.5 不再要求 opencode.jsonc 含 instructions 注册", "含 instructions 注册" not in c)
 check("辅助脚本部署检查指向实际部署位置 $ToolDir（Temp\\opencode）", 'Test-Path (Join-Path $ToolDir "extract-docx.ps1")' in c)
 check("w64devkit 探测用独立变量 $w64Dir（防覆盖 $ToolDir——PS 变量大小写不敏感）", "$w64Dir = \"\"" in c and "$toolDir = \"\"" not in c)
 check("工具类空值当场交互询问（安装时闭环，不写空值行）", "未自动探测到" in c and "回车跳过（不写入映射" in c and "装好工具后重跑本脚本自动补齐" in c)
@@ -54,61 +56,50 @@ check("<工具目录> 自动映射系统盘根（不绑 w64devkit，防映射缺
 check("自动类残留检查含 <工具目录>（防映射缺失时误报路径改写完成）", '"<用户目录>|<opencode配置目录>|<用户临时目录>|<工具目录>"' in c)
 check("<工具目录> 不归填写类残留检查（填写类模式不含工具分支）", '<(项目|源码|WSL安装|离线安装包|LibreOffice|Chrome|Node|3GPP文档库)目录>' in c)
 
-# 3.7 安装交互优化（用户 2026-08-27 要求：必选/可选分级、新窗口安装、等待/放弃/换源/退出选项）
-check("工具必选/可选分级（Git/Node/Python 必选）", "required = $true" in c and "required = $false" in c)
-check("主窗口模式（除 WSL 安装提权环节外不弹新窗口）", "Start-ChildWindow" not in c and ("Start-Process powershell" not in c or "install-wsl" in c))
-check("双窗口终版：主窗口每轮显示详细选项（1=换源/2=放弃/3=退出详述）+ 随时按键响应", "【选项】随时可选" in c and "1 = 换镜像源渠道：停止当前渠道" in c and "2 = 放弃本工具安装" in c and "3 = 放弃本次移植" in c and "[Console]::KeyAvailable" in c)
-check("随时三选项（换源/放弃/放弃移植）", "已放弃必选工具" in c and "放弃本次移植" in c)
-check("可选工具失败两选项（换源重试/放弃可选继续）", "已放弃可选工具" in c)
-check("放弃移植退出码（exit 2）", "exit 2" in c)
-check("主窗口模式无窗口清理逻辑残留", "Close-SpawnedWindows" not in c and "taskkill" not in c and "Start-DownloadWindow" not in c)
-check("安装命令发送到工作窗口（msiexec）", "Start-WorkerCommand \"msiexec" in c)
-check("镜像直链第二渠道（npmmirror 国内高速源 + 各包静默参数）", "registry.npmmirror.com" in c and "gh-proxy.com" in c and "dl.google.com" in c and "mirrors.tuna.tsinghua.edu.cn" in c)
-check("多安装源逐个尝试（mirrors 数组 + 换下一个源）", "mirrors = @" in c and "换下一个源" in c2)
-check("镜像渠道安装函数（msi 走 msiexec / exe 直跑 / 下载校验 <1MB 判失败）", "Install-FromMirror" in c2 and "msiexec" in c2 and "Length -lt 1MB" in c2)
-check("镜像渠道下载命令发送到工作窗口 + 进度显示", "Start-WorkerCommand \"curl.exe" in c and "下载中：已下载" in c)
-check("自动切换渠道（winget 失败自动换镜像源，源尽自动回 winget 循环重试）", "自动切换镜像源渠道" in c and "回到 winget 渠道重试" in c)
-check("主窗口模式无 [4] 非静默窗口选项", "非静默" not in c)
-check("LibreOffice 版本动态解析（防固定版本号被镜像站清理致全源 404）", "动态版本解析：Git" in c and "libreoffice/stable/" in c2 and "$loVer" in c2)
-check("Git/Node/Python 全动态化（npmmirror 目录页 JSON 解析 + 兜底固定版）", "binary/git-for-windows/" in c2 and "binary/node/" in c2 and "binary/python/" in c2 and "gitVer" in c2 and "nodeVer" in c2 and "pyVer" in c2)
-check("Node 动态解析限 LTS 偶数大版本", "% 2 -eq 0" in c2)
+# 4. 2026-09-01 检测模式核心（用户改造：只检测+修复，不自动安装，永不阻塞）
+check("工具清单展示（必须/可选分类文案）", "[必须]" in c and "[可选]" in c and "update_skill" in c)
+check("必须类语义说明（缺失不影响基本使用，update_skill 除外）", "缺失不影响基本使用" in c)
+check("可选类语义说明（使用过程中可安装）", "使用过程中可随时安装" in c)
+check("检测条目含双通道（Test-Soffice/Test-Tesseract/pathChecks/pyImport/wslCheck）", "Test-ToolEntry" in c_cc and "sofficeCheck" in c_cc and "tessCheck" in c_cc and "pyImport" in c_cc and "wslCheck" in c_cc)
+check("Git 检测含 PATH 修复目录（C:\\Program Files\\Git\\cmd）", "C:\\Program Files\\Git\\cmd" in c_cc)
+check("Node 检测含 PATH 修复目录（C:\\Program Files\\nodejs）", "C:\\Program Files\\nodejs" in c_cc)
+check("已装但 PATH 未配置 → 自动修复（Add-ToUserPath）", "已修复 PATH" in c and "Add-ToUserPath" in c)
+check("未装提示语（请手动安装或使用大模型协助安装）", "请手动安装或使用大模型协助安装" in c)
+check("未装提示重跑（装好后重跑本脚本自动补配置）", "装好后重跑本脚本即可自动补齐相关配置" in c)
+check("检测后刷新当前会话 PATH（修复立即生效）", 'GetEnvironmentVariable("Path", "Machine")' in c)
 
-# 3.9 模拟测试（用户 2026-08-28 要求真模拟：mock curl/Start-Process 实际执行安装分支流转，非文本断言）
-if mode == "仓库直读":
-    sim = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_setup_sim.ps1")
-    funcs = os.path.join(REPO, "copy", "setup", "setup-install-functions.ps1")
-    try:
-        r = subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", sim, "-FuncFile", funcs],
-                           capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300)
-        check("模拟测试 test_setup_sim.ps1 执行通过（mock 分支流转 + 窗口停止信号 + 单窗口复用 + tesseract 动态版本 23/23）", r.returncode == 0 and "SIM_RESULT: pass=23 fail=0" in r.stdout)
-    except Exception:
-        check("模拟测试 test_setup_sim.ps1 执行通过（mock 分支流转 + 窗口停止信号 + 单窗口复用 + tesseract 动态版本 23/23）", False)
-else:
-    print("  （镜像回退模式：跳过模拟测试，函数文件不可得）")
-check("winget 命令发送到单一工作窗口 + 自动状态机", "Start-WorkerCommand \"winget" in c and "开始自动安装" in c)
-check("worker 全程只弹一次（方案一：非退出场景不杀 worker，Stop-WorkerWindow 仅 3 处=按键3退出+阶段收尾×2）", c.count("Stop-WorkerWindow") == 3)
-check("新包开始清理上包 done 残留（防 winget 阶段误判换源）", "Remove-Item $workerDoneFile -Force" in c)
-check("检测双通道（命令 OR 安装位置文件，防新装 PATH 未刷新误判）", "C:\\Program Files\\nodejs\\node.exe" in c and "C:\\Program Files\\Git\\cmd\\git.exe" in c)
-
-# 3.8 安装后自动配置（用户 2026-08-28 要求"完成全套工作"：环境变量/镜像源持久化）
-check("安装后刷新当前会话 PATH（新装工具立即可用）", "GetEnvironmentVariable(\"Path\", \"Machine\")" in c and "已刷新当前会话 PATH" in c)
+# 5. npm 检测化
+check("npm 缺失汇总提示（不逐个自动装）", "npm 全局包缺失" in c and "npm i -g $($npmMissing" in c)
+check("npm 无自动安装执行（无 -g 直接安装调用）", "npm i -g opencode-ai $reg" not in c)
 check("npm 镜像源持久化配置（registry.npmmirror.com）", "npm config set registry" in c)
+
+# 6. pip 检测化
+check("pip import 检测表 19 包（pix2text~ocrmypdf）", all(x in c_cc for x in ['"pix2text"', '"pypandoc-binary"', '"python-pptx"', '"opencv-python"', '"python-magic-bin"', '"ocrmypdf"']))
+check("pip 缺失汇总提示（一次性列出缺失清单）", "pip 常规包缺失" in c and "$missingPkgs -join" in c)
+check("pip 无自动安装循环（无 foreach pip install）", 'python -m pip install --upgrade --user $pkg' not in c)
+check("pip Scripts 目录 PATH 修复保留（Get-PipScriptsDir + Add-ToUserPath）", "Get-PipScriptsDir" in c)
 check("pip 镜像源持久化配置（清华源）", "pip config set global.index-url" in c)
+
+# 7. WSL 检测化
+check("WSL 检测+提示（不自动拉起 install-wsl）", "Start-Process powershell" not in c and "install-wsl.ps1" in c and "请手动安装（右键管理员运行" in c)
+
+# 8. 无自动安装残留（worker/镜像/动态版本/交互循环全移除）
+check("无 worker 窗口机制残留", "Start-WorkerCommand" not in c and "Stop-WorkerWindow" not in c)
+check("无镜像直链下载残留", "mirrors = @" not in c and "curl.exe -L" not in c)
+check("无动态版本解析残留", "Get-DynamicVersions" not in c and "npmmirror.com/-/binary" not in c)
+check("无自动安装状态机/按键交互残留", "[Console]::KeyAvailable" not in c and "winget install --id" not in c and "自动切换镜像源渠道" not in c)
+
+# 9. 填写类与自动类残留检测均排除 tests 目录
 check("填写类与自动类残留检测均排除 tests 目录（repo_face 镜像保留占位符是设计）", c.count("FullName -notmatch \"\\\\tests\\\\\"") >= 2)
 
-# 3.10 安装清单全量补齐（2026-08-31 用户要求：所有必要工具按安装要求纳入，LibreOffice 式优化推广到全工具）
-check("SkipBigPkgs 开关存在（可选大件 playwright/weasyprint）", "[switch]$SkipBigPkgs" in c)
-check("Tesseract 纳入 winget 安装清单（UB-Mannheim.TesseractOCR）", "UB-Mannheim.TesseractOCR" in c)
-check("Tesseract 双通道检测函数（Test-Tesseract：命令 OR 安装位置）", "Test-Tesseract" in c and "C:\\Program Files\\Tesseract-OCR\\tesseract.exe" in c)
-check("Tesseract 版本动态解析（gh-proxy 代理 GitHub API + 兜底固定版）", "api.github.com/repos/UB-Mannheim/tesseract" in c2 and "$tesVer" in c2)
-check("Tesseract 镜像双渠道（gh-proxy + GitHub 直连）", "tesseract-ocr-w64-setup-$tesVer.exe" in c)
-check("pip 常规包清单覆盖 19 个（B 类全集减大件）", all(x in c for x in ['"pix2text"','"pypandoc-binary"','"python-docx"','"python-pptx"','"openpyxl"','"xlrd"','"pypdf"','"pdfplumber"','"chardet"','"pyzbar"','"opencv-python"','"imageio-ffmpeg"','"docxtpl"','"Jinja2"','"python-magic-bin"','"ocrmypdf"']))
-check("可选大件段存在（playwright chromium 镜像 + weasyprint MSYS2 链）", "PLAYWRIGHT_DOWNLOAD_HOST" in c and "WEASYPRINT_DLL_DIRECTORIES" in c and "mingw-w64-ucrt-x86_64-gtk3" in c)
-check("weasyprint 环境变量持久化到用户级", "GetEnvironmentVariable(\"WEASYPRINT_DLL_DIRECTORIES\", \"User\")" in c)
-check("Tesseract 纳入验证汇总", 'name = "Tesseract"' in c)
+# 10. 必备工具缺失醒目告警保留（8.5）
+check("必备工具缺失告警块存在（8.5）", "必备工具缺失" in c)
+check("必备清单区分（opencode CLI/python/p2t/git）", all(x in c for x in ["opencode CLI", "p2t", "git"]))
+check("可选工具提示区分（不影响核心使用）", "不影响核心使用" in c)
+check("补救重跑命令提示", "setup-windows.ps1" in c and "重跑" in c)
+check("必备缺失时非零退出码（exit 1）", "exit 1" in c)
 
-# 3.11 安装清单与 tools-manifest 总表自动对齐（2026-08-31 用户要求：后续新增必需工具自动纳入同方案）
-# 解析总表 B 类包名 → 必须出现在 setup 的 pip 清单或大件段；D 类 Tesseract → 安装清单；F 类 apt 包 → install-wsl.ps1
+# 11. 安装清单与 tools-manifest 总表自动对齐（B 类包 ⊆ pip 检测表或第 1 节可选工具；D 类 Tesseract ⊆ 检测；F 类 apt ⊆ install-wsl）
 tm_path = os.path.join(REPO, "copy", "opencode", "tools-manifest.md")
 if not os.path.exists(tm_path):
     tm_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "repo_face", "tools-manifest.md")
@@ -121,10 +112,10 @@ if os.path.exists(tm_path):
             m = re.match(r"^\|\s*([A-Za-z0-9][A-Za-z0-9\-\.]*)\s*\|", line)
             if m:
                 b_pkgs.append(m.group(1).lower())
-    setup_lower = c.lower() + c2.lower()
-    b_missing = [p for p in b_pkgs if p.lower() not in setup_lower]
-    check("tools-manifest B 类包全部纳入 setup 安装清单（pip 19 + 大件 2；缺失: %s）" % ",".join(b_missing) if b_missing else "tools-manifest B 类包全部纳入 setup 安装清单（pip 19 + 大件 2）", len(b_missing) == 0)
-    check("tools-manifest D 类 Tesseract 纳入 setup（UB-Mannheim winget 条目）", "UB-Mannheim.TesseractOCR" in tm and "UB-Mannheim.TesseractOCR" in c)
+    c_lower = (c + "\n" + cc0).lower()
+    b_missing = [p for p in b_pkgs if p not in c_lower]
+    check("tools-manifest B 类包全部纳入 setup 检测清单（pip 表+可选工具；缺失: %s）" % ",".join(b_missing) if b_missing else "tools-manifest B 类包全部纳入 setup 检测清单（pip 表+可选工具）", len(b_missing) == 0)
+    check("tools-manifest D 类 Tesseract 纳入检测（UB-Mannheim 提示）", "UB-Mannheim.TesseractOCR" in tm and "UB-Mannheim.TesseractOCR" in c_cc)
     apt_m = re.search(r"apt install ([^\n`\|]+)", tm)
     wsl_path = os.path.join(REPO, "copy", "setup", "install-wsl.ps1")
     if apt_m and os.path.exists(wsl_path):
@@ -135,16 +126,9 @@ if os.path.exists(tm_path):
     else:
         check("tools-manifest F 类 apt 包全部纳入 install-wsl.ps1", False)
 else:
-    check("tools-manifest B 类包全部纳入 setup 安装清单（总表不可得，跳过）", True)
+    check("tools-manifest B 类包全部纳入 setup 检测清单（总表不可得，跳过）", True)
 
-# 3.6 必备工具缺失醒目告警（用户 2026-08-27 要求：缺失/安装失败必须醒目提醒）
-check("必备工具缺失告警块存在（8.5）", "必备工具缺失" in c)
-check("必备清单区分（opencode CLI/python/p2t/git）", all(x in c for x in ["opencode CLI", "p2t", "git"]))
-check("可选工具提示区分（不影响核心使用）", "不影响核心使用" in c)
-check("补救重跑命令提示", "setup-windows.ps1" in c and "重跑" in c)
-check("必备缺失时非零退出码（exit 1）", "exit 1" in c)
-
-# 4. PowerShell 语法可解析（AST）
+# 12. PowerShell 语法可解析（AST）
 try:
     r = subprocess.run(["powershell", "-NoProfile", "-Command",
                         "$t = $null; $errs = $null; [System.Management.Automation.Language.Parser]::ParseFile('%s', [ref]$t, [ref]$errs) | Out-Null; if ($errs.Count -gt 0) { $errs | ForEach-Object { Write-Host $_.Message }; exit 1 }" % script_path.replace("'", "''")],
@@ -155,15 +139,70 @@ try:
 except Exception as e:
     check("PowerShell 语法解析通过（AST）", False)
 
-# 5. 与 INSTALL.md 阶段表一致（阶段描述关键词）
+# 13. 与 INSTALL.md 阶段表一致（阶段描述关键词）
 install = ""
 ip = os.path.join(REPO, "copy", "INSTALL.md")
 if not os.path.exists(ip):
     ip = os.path.join(os.path.dirname(os.path.abspath(__file__)), "repo_face", "INSTALL.md")
 if os.path.exists(ip):
     install = open(ip, encoding="utf-8", errors="replace").read()
-    for stage in ["SkipWinget", "SkipNpm", "SkipPip", "SkipWsl", "SkipDeploy", "NoPathRewrite"]:
+    for stage in ["SkipDeploy", "SkipWsl", "NoPathRewrite"]:
         check("INSTALL.md 阶段表含 " + stage, stage in install)
+
+# 14. install-tools.ps1 一键安装脚本（2026-09-01 新增：与 setup 检测共享清单，独立自动安装）
+it_path = os.path.join(REPO, "copy", "setup", "install-tools.ps1")
+if not os.path.exists(it_path):
+    it_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "repo_face", "install-tools.ps1")
+if os.path.exists(it_path):
+    it = open(it_path, encoding="utf-8", errors="replace").read()
+    check("install-tools.ps1 存在", True)
+    check("install-tools 共享检测模块（dot-source setup-check.ps1）", 'setup-check.ps1' in it)
+    check("install-tools winget 渠道安装（--silent + 已装跳过）", "winget install --id" in it and "--silent" in it)
+    check("install-tools 失败跳过继续（每工具独立、不阻塞）", "失败自动跳过继续" in it or "winget 安装未成功" in it)
+    check("install-tools npm/pip 渠道（镜像可选）", "npm i -g" in it and "python -m pip install" in it)
+    check("install-tools 汇总报告（装完提示重跑 setup-windows.ps1）", "安装汇总" in it and "setup-windows.ps1" in it)
+    check("install-tools 开关（UseChinaMirror/SkipNpm/SkipPip）", "[switch]$UseChinaMirror" in it and "[switch]$SkipNpm" in it and "[switch]$SkipPip" in it)
+    check("install-tools BOM 存在（PowerShell 5.1 UTF-8 中文解析前提）", it.startswith("\ufeff"))
+    check("setup-check.ps1 共享模块 BOM 存在", True)
+else:
+    check("install-tools.ps1 存在", False)
+
+# 15. 共享检测模块 setup-check.ps1
+cc_path = os.path.join(REPO, "copy", "setup", "setup-check.ps1")
+if not os.path.exists(cc_path):
+    cc_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "repo_face", "setup-check.ps1")
+if os.path.exists(cc_path):
+    cc = open(cc_path, encoding="utf-8", errors="replace").read()
+    check("setup-check.ps1 含工具清单（checks1 + wingetId + tier 分类）", "$checks1 = @" in cc and "wingetId" in cc and 'tier = "必须"' in cc and 'tier = "可选"' in cc)
+    check("setup-check.ps1 含检测函数（Test-ToolEntry/Test-Soffice/Test-Tesseract）", "function Test-ToolEntry" in cc and "function Test-Soffice" in cc and "function Test-Tesseract" in cc)
+    check("setup-check.ps1 含 pip import 检测表（pyPkgs）", "$pyPkgs = @" in cc)
+    check("setup-check.ps1 BOM 存在（PowerShell 5.1 UTF-8 中文解析前提）", cc.startswith("\ufeff"))
+    check("setup-windows.ps1 BOM 存在", c.startswith("\ufeff"))
+else:
+    check("setup-check.ps1 含工具清单", False)
+
+# 16. tools-manifest A/D 类工具与 checks1 清单对齐（后续新增工具强制同步检测清单）
+if os.path.exists(cc_path):
+    cc2 = open(cc_path, encoding="utf-8", errors="replace").read()
+    tm2_path = os.path.join(REPO, "copy", "opencode", "tools-manifest.md")
+    if not os.path.exists(tm2_path):
+        tm2_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "repo_face", "tools-manifest.md")
+    tm2 = open(tm2_path, encoding="utf-8", errors="replace").read() if os.path.exists(tm2_path) else ""
+    a_sec = re.search(r"## A\. 基础环境.*?\n(.*?)(?=\n## )", tm2, re.S)
+    d_sec = re.search(r"## D\. OCR 与公式识别.*?\n(.*?)(?=\n## )", tm2, re.S)
+    winget_ids = []
+    for sec in (a_sec, d_sec):
+        if not sec:
+            continue
+        for line in sec.group(1).splitlines():
+            m = re.search(r"`winget install ([A-Za-z0-9\-\.]+)`", line)
+            if m:
+                winget_ids.append(m.group(1))
+    c2_lower = cc2.lower()
+    missing_ids = [w for w in winget_ids if w.lower() not in c2_lower]
+    check("tools-manifest A/D 类 winget 包全部纳入 setup-check 检测清单（缺失: %s）" % ",".join(missing_ids) if missing_ids else "tools-manifest A/D 类 winget 包全部纳入 setup-check 检测清单", len(missing_ids) == 0)
+else:
+    check("tools-manifest A/D 类工具全部纳入 setup-check 检测清单", False)
 
 print("\n结果：通过 %d 项，失败 %d 项" % (pass_n, fail_n))
 sys.exit(1 if fail_n else 0)
