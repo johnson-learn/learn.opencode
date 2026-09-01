@@ -54,10 +54,10 @@ if ($existing -match "Ubuntu-22.04") {
   }
 }
 
-Write-Host "=== 4. Ubuntu 内初始化（编译工具链）===" -ForegroundColor Cyan
+Write-Host "=== 4. Ubuntu 内初始化（编译与开发工具链，清单与 tools-manifest.md F 类一致）===" -ForegroundColor Cyan
 if (wsl -l -v 2>&1 | Select-String "Ubuntu-22.04") {
-  wsl -d Ubuntu-22.04 -- bash -c "sudo apt update -y && sudo apt install -y build-essential git python3 curl && echo WSL-READY"
-  Write-Host "  Ubuntu 初始化完成（build-essential/git/python3/curl）"
+  wsl -d Ubuntu-22.04 -- bash -c "sudo apt update -y && sudo apt install -y build-essential gdb valgrind cmake ninja-build git python3 python3-pip perl jq curl openssh-client && echo WSL-READY"
+  Write-Host "  Ubuntu 初始化完成（build-essential/gdb/valgrind/cmake/ninja-build/git/python3+pip/perl/jq/curl/openssh-client）"
 }
 
 Write-Host ""

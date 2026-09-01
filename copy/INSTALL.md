@@ -6,21 +6,22 @@
 
 ```powershell
 # 克隆仓库（或解压 zip）
-git clone <仓库地址>
-进入\copy\setup
+git clone <仓库地址> copy
+cd copy
 
 # 一键安装：软件 + npm/pip 源 + WSL + 部署 skill/配置/脚本 + 路径自动改写
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File setup-windows.ps1 -UseChinaMirror
+powershell -NoProfile -ExecutionPolicy Bypass -File setup\setup-windows.ps1 -UseChinaMirror
 ```
 
 脚本各阶段说明（均可单独跳过）：
 
 | 阶段 | 开关 | 内容 |
 |---|---|---|
-| 1 基础软件 | `-SkipWinget` | Git / Node.js LTS / Python 3.12 / Chrome / LibreOffice（winget 静默安装，已装的自动跳过） |
+| 1 基础软件 | `-SkipWinget` | Git / Node.js LTS / Python 3.12 / Chrome / LibreOffice / Tesseract OCR（winget 静默安装，已装的自动跳过；失败自动换镜像直链） |
 | 2 npm 源 | `-SkipNpm` | opencode-ai、@mermaid-js/mermaid-cli（`-UseChinaMirror` 走 npmmirror） |
-| 3 pip 源 | `-SkipPip` | pix2text、matplotlib、PyMuPDF、pillow（`-UseChinaMirror` 走清华源） |
-| 4 WSL | `-SkipWsl` | 调起 `install-wsl.ps1`（管理员窗口；可能需要重启一次） |
+| 3 pip 源 | `-SkipPip` | tools-manifest B 类常规包全集 19 个（pix2text、python-docx、python-pptx、openpyxl、PyMuPDF、ocrmypdf 等；`-UseChinaMirror` 走清华源） |
+| 3b 可选大件 | `-SkipBigPkgs` | playwright（+chromium 内核，走 npmmirror 镜像）、weasyprint（+MSYS2 GTK3 + WEASYPRINT_DLL_DIRECTORIES 环境变量自动持久化）；失败仅警告不阻塞 |
+| 4 WSL | `-SkipWsl` | 调起 `install-wsl.ps1`（管理员窗口；含 WSL 内 Linux 工具链 gdb/valgrind/cmake/ninja/pip/perl/jq/openssh-client；可能需要重启一次） |
 | 5~6 部署 | `-SkipDeploy` | 复制 skill/配置/tests/tools 到 `~\.config\opencode\`；辅助脚本到 `%LOCALAPPDATA%\Temp\opencode\` |
 | 6.5~7 路径配置 | `-NoPathRewrite` | 自动探测工具类目录（LibreOffice/Chrome/Node/WSL）+ 数据类目录交互选择（默认/定制）+ path_convert.py 占位符转本机真实路径 |
 
@@ -28,7 +29,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File setup-windows.ps1 -UseCh
 1. 重启终端 / opencode
 2. 首次使用 p2t 会下载模型（约 1~2 GB），慢网先设 `$env:HF_ENDPOINT = "https://hf-mirror.com"`
 3. mmdc 渲染前设 `$env:PUPPETEER_EXECUTABLE_PATH` 指向系统 Chrome（skill 中有记载）
-4. WeasyPrint 需设用户环境变量 `WEASYPRINT_DLL_DIRECTORIES=C:\msys64\ucrt64\bin`（MSYS2 已装 GTK 后）
+4. WeasyPrint 环境变量 `WEASYPRINT_DLL_DIRECTORIES` 已由脚本自动持久化（跳过 3b 时需手动：`<工具目录>msys64\ucrt64\bin`）
 
 ## 方式 B：手动安装（脚本不可用时按此操作）
 

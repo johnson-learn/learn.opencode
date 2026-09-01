@@ -25,7 +25,7 @@
 | Git for Windows | 版本控制 | `winget install Git.Git` | `git --version` |
 | Node.js LTS | node/npm/npx | `winget install OpenJS.NodeJS.LTS` | `node --version` |
 | Python 3.12 | 一切脚本基础 | `winget install Python.Python.3.12` | `python --version` |
-| Google Chrome | headless 校验、浏览器渲染 | `winget install Google.Chrome` | 检查 `C:\Program Files\Google\Chrome\Application\chrome.exe` |
+| Google Chrome | headless 校验、浏览器渲染 | `winget install Google.Chrome` | 检查 `<Chrome目录>\chrome.exe` |
 | LibreOffice 26.x | 批量文档转 PDF/转换 | `winget install TheDocumentFoundation.LibreOffice` | `soffice.com --headless -env:UserInstallation=file:///C:/Temp/LO --version` |
 
 ## B. Python 环境与核心包（pip 清华源：`-i https://pypi.tuna.tsinghua.edu.cn/simple`）

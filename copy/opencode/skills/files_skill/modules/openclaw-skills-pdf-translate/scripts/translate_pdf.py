@@ -45,8 +45,8 @@ def register_fonts():
         '/System/Library/Fonts/STHeiti Light.ttc',  # macOS 黑体（推荐）
         '/System/Library/Fonts/PingFang.ttc',       # macOS 苹方
         '/System/Library/Fonts/Helvetica.ttc',      # 后备
-        '<工具目录>Windows/Fonts/msyh.ttc',                # Windows 微软雅黑
-        '<工具目录>Windows/Fonts/simhei.ttf',              # Windows 黑体
+        'C:\Windows/Fonts/msyh.ttc',                # Windows 微软雅黑
+        'C:\Windows/Fonts/simhei.ttf',              # Windows 黑体
         '/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf',  # Linux
     ]
 

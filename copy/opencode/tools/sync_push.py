@@ -38,6 +38,20 @@ def run_git(args, repo):
                           encoding="utf-8", errors="replace")
 
 
+def msgfile_exists(repo, msgfile):
+    # 2026-08-31 修复：WSL 仓库场景下 UNC 视图与 WSL 内文件系统可能不一致（9p 快照），
+    # Windows 侧 os.path.exists 对 \\wsl.localhost\...\tmp 等路径可能误报不存在——转 WSL 路径后由 WSL 内 test -f 兜底
+    if os.path.exists(msgfile):
+        return True
+    if is_wsl_repo(repo):
+        wp = to_wsl_path(msgfile)
+        r = subprocess.run(["wsl", "-d", "Ubuntu", "-e", "bash", "-c",
+                            "test -f %s" % sh_quote(wp)],
+                           capture_output=True, text=True, encoding="utf-8", errors="replace")
+        return r.returncode == 0
+    return False
+
+
 def main():
     if len(sys.argv) < 4:
         print("用法: python sync_push.py <确认标记文件> <git仓库目录> <commit消息文件>")
@@ -57,7 +71,7 @@ def main():
     except Exception as e:
         print("[sync_push] 确认标记无效：" + str(e))
         return 2
-    if not os.path.exists(msgfile):
+    if not msgfile_exists(repo, msgfile):
         print("[sync_push] commit 消息文件不存在：" + msgfile)
         return 2
     # 可移植性转换防线（2026-08-27 用户指正：转换不能在提交之后才发现缺失——脚本自动执行，流程漏步不再可能）：

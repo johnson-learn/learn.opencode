@@ -77,7 +77,7 @@ function Stop-WorkerWindow {
 function Get-DynamicVersions {
   # 动态版本解析（2026-08-28 用户要求全部动态化：从镜像目录页解析最新可用版本，
   # 防镜像站清理历史版本致固定版本 404；解析失败回退固定版本兜底）
-  $gitVer = $null; $nodeVer = $null; $pyVer = $null; $loVer = $null
+  $gitVer = $null; $nodeVer = $null; $pyVer = $null; $loVer = $null; $tesVer = $null
   try {
     $gitList = curl.exe -s --connect-timeout 15 "https://registry.npmmirror.com/-/binary/git-for-windows/" | ConvertFrom-Json
     $gitVer = $gitList | Where-Object { $_ -match '^v\d+\.\d+\.\d+\.windows\.1/$' } | ForEach-Object { $_.Trim('/').TrimStart('v') } | Sort-Object { [version]($_ -replace '\.windows\.1$', '') } -Descending | Select-Object -First 1
@@ -94,11 +94,18 @@ function Get-DynamicVersions {
     $loIdx = curl.exe -s --connect-timeout 15 "https://mirrors.tuna.tsinghua.edu.cn/libreoffice/libreoffice/stable/"
     $loVer = [regex]::Matches($loIdx, 'href="(\d+\.\d+\.\d+)/"') | ForEach-Object { $_.Groups[1].Value } | Sort-Object { [version]$_ } -Descending | Select-Object -First 1
   } catch {}
+  try {
+    # Tesseract（UB-Mannheim GitHub release）：GitHub API 经 gh-proxy 代理（直连可能被墙）
+    $tesApi = curl.exe -s --connect-timeout 15 "https://gh-proxy.com/https://api.github.com/repos/UB-Mannheim/tesseract/releases/latest" | ConvertFrom-Json
+    $tesVer = ($tesApi.tag_name -replace '^v', '')
+    if (-not $tesVer -or $tesVer -notmatch '^\d+\.\d+\.\d+$') { $tesVer = $null }
+  } catch {}
   if (-not $gitVer) { $gitVer = "2.45.2.windows.1" }
   if (-not $nodeVer) { $nodeVer = "20.15.1" }
   if (-not $pyVer) { $pyVer = "3.12.4" }
   if (-not $loVer) { $loVer = "24.8.0" }
-  return @{ git = $gitVer; node = $nodeVer; py = $pyVer; lo = $loVer }
+  if (-not $tesVer) { $tesVer = "5.4.0" }
+  return @{ git = $gitVer; node = $nodeVer; py = $pyVer; lo = $loVer; tes = $tesVer }
 }
 
 # ---------- 同步镜像安装（主循环不用；保留供模拟测试与备用） ----------

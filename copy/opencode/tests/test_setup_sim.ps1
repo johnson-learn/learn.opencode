@@ -44,6 +44,7 @@ function curl.exe {
   elseif ($url -like "*binary/python/*") { Write-Output '["3.12.4/","3.12.7/","3.13.1/"]' }
   elseif ($url -like "*git-for-windows/*") { Write-Output '["v2.45.2.windows.1/","v2.47.1.windows.1/"]' }
   elseif ($url -like "*libreoffice/stable/*") { Write-Output '<html><a href="24.8.0/">24.8.0</a> <a href="26.8.0/">26.8.0</a></html>' }
+  elseif ($url -like "*api.github.com/repos/UB-Mannheim/tesseract*") { Write-Output '{"tag_name":"5.5.0"} ' }
   else { Write-Output "[]" }
 }
 
@@ -102,6 +103,7 @@ Check "Node 解析为最新 LTS 偶数版 22.14.0" ($v.node -eq "22.14.0")
 Check "Python 解析为 3.12 系列最新 3.12.7" ($v.py -eq "3.12.7")
 Check "Git 解析为最新 2.47.1.windows.1" ($v.git -eq "2.47.1.windows.1")
 Check "LibreOffice 解析为 26.8.0" ($v.lo -eq "26.8.0")
+Check "Tesseract 解析为 5.5.0（gh-proxy 代理 GitHub API）" ($v.tes -eq "5.5.0")
 
 # ---------- 场景 2：解析失败兜底固定版本 ----------
 Write-Host "[场景2] 解析失败兜底"
@@ -111,6 +113,7 @@ $v = Get-DynamicVersions
 Check "全失败时 Git 兜底 2.45.2.windows.1" ($v.git -eq "2.45.2.windows.1")
 Check "全失败时 Node 兜底 20.15.1" ($v.node -eq "20.15.1")
 Check "全失败时 LibreOffice 兜底 24.8.0" ($v.lo -eq "24.8.0")
+Check "全失败时 Tesseract 兜底 5.4.0" ($v.tes -eq "5.4.0")
 $script:mockDlFail = $false
 
 # ---------- 场景 3：镜像渠道安装成功（下载+提权安装+检测通过） ----------

@@ -121,6 +121,30 @@ conv8 = pc.convert(txt8, pmap2)
 check("空值场景 convert 无全局插入（文本未爆炸膨胀）", len(conv8) <= len(txt8) * 3)
 check("convert 防御：显式空 key 对直接跳过", pc.convert("hello world", [("", "<空key>")]) == "hello world")
 
+# === 用例 9：安装约定位置保护（盘符根 <工具目录> 映射不吞 C:\ 约定前缀，2026-08-31 实测） ===
+print("[用例9] 安装约定位置保护（to_portable 保留字面）")
+guard_txt = (r"装 C:\Program Files\Git 与 C:\Program Files (x86)\X 与 C:\Windows\sys 与 C:\Temp\LO "
+             r"与 C:\msys64\ucrt64\bin 与 C:\w64devkit\bin 与 C:\Users\<用户名>\.config 与 C:/Temp/LO2 与 " + HOME + r"\real 与 " + CFG_DIR)
+conv9 = pc.convert(guard_txt, pairs)
+check("C:\\Program Files 保留字面", r"C:\Program Files\Git" in conv9)
+check("C:\\Program Files (x86) 保留字面", r"C:\Program Files (x86)\X" in conv9)
+check("C:\\Windows 保留字面", r"C:\Windows\sys" in conv9)
+check("C:\\msys64 保留字面", r"C:\msys64\ucrt64\bin" in conv9)
+check("C:\\w64devkit 保留字面", r"C:\w64devkit\bin" in conv9)
+check("C:\\Users\\<用户名> 字面占位形式保留", r"C:\Users\<用户名>\.config" in conv9)
+check("C:/Temp/ 正斜杠形式保留", "C:/Temp/LO2" in conv9)
+check("本机真实用户目录仍正常转占位符", HOME not in conv9 and ("<" + "用户目录" + ">") in conv9)
+check("配置目录仍正常转占位符", CFG_DIR not in conv9 and ("<" + "opencode配置目录" + ">") in conv9)
+
+# 用例 9b：guard 只作用于盘符根映射——约定位置下的长映射（如 <LibreOffice目录>）仍正常转换
+pairs_custom = [("C:\\Program Files\\LibreOffice", "<LibreOffice目录>"), ("C:\\", "<工具目录>")]
+txt9b = r"装 C:\Program Files\LibreOffice\program\soffice.com 与 C:\Program Files\Other\x 与 C:\msys64\y 与 C:\Users\<用户名>\z"
+conv9b = pc.convert(txt9b, pairs_custom)
+check("guard 下长映射正常转换（<LibreOffice目录> 生效）", "<LibreOffice目录>\\program\\soffice.com" in conv9b)
+check("guard 前缀保留字面（C:\\Program Files\\Other 不被根映射吞）", r"C:\Program Files\Other\x" in conv9b)
+check("guard 前缀保留字面（C:\\msys64 不被根映射吞）", r"C:\msys64\y" in conv9b)
+check("C:\\Users\\<用户名> 字面保留", r"C:\Users\<用户名>\z" in conv9b)
+
 shutil.rmtree(tmp, ignore_errors=True)
 print("\n结果：通过 %d 项，失败 %d 项" % (pass_n, fail_n))
 sys.exit(1 if fail_n else 0)

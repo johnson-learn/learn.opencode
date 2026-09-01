@@ -60,13 +60,13 @@
 - **规则冲突裁决点**：新经验与旧规则矛盾时禁止静默二选一——必须在响应中显式标注"与旧规则 X 冲突，按新验证结果修订"并同步改旧条目
 
 ### 应用范围
-- 4 个全局 skill（按领域归档）+ instructions.md（全局规则）+ 后续新增 skill（自动适用编写规范与本协议）
+- 6 个全局 skill（按领域归档）+ instructions.md（全局规则）+ 后续新增 skill（自动适用编写规范与本协议）
 - 新项目注入的项目级副本随全局源同步（重新执行 inject_skills.py 即更新）
 - 项目/文件夹 md（AGENTS.md 等）：项目特定经验写入该项目的 AGENTS.md
 
 ## 全局通用回答规则（所有会话一律遵守，无论是否触发 skill）
 
-0. **同步边界铁律（最高优先级）**：只有用户**显式调用 update_skill** 时，才允许执行以下动作——(a) 把远端更新拉取/合入本机；(b) 把本机修改复制到同步目录并 git commit/push 到远端。**其它任何场景（包括用户提出需求、讨论方案、进化固化 skill 文件本身）都不得擅自执行上述同步动作**；本机 skill/指令文件的直接编辑（进化固化）不受此限，但绝不附带 git 同步。
+0. **同步边界铁律（最高优先级）**：只有用户**显式调用 update_skill** 时，才允许执行以下动作——(a) 把远端更新拉取/合入本机；(b) 把本机修改复制到同步目录并 git commit/push 到远端。**其它任何场景（包括用户提出需求、讨论方案、进化固化 skill 文件本身）都不得擅自执行上述同步动作**；本机 skill/指令文件的直接编辑（进化固化）不受此限，但绝不附带 git 同步。**直接编辑仓库工作树文件（如用户指定改 copy\ 下文件）时，向仓库写入框架文件一律先 `python tools\path_convert.py to_portable <仓库目录>` 幂等转占位符版（或编辑后用其转换），禁止直接 Copy-Item 本机全局目录文件——本机文件是 to_local 本机路径版，直接复制会把本机特征（用户名/盘符）污染进仓库（2026-08-31 实测：ppt_skill 回滚时直接复制致 test_repo_face 检出 <用户目录> 污染，to_portable 后修复）**。
 
 0.5 **字符边界规范细则（AGENTS.md 铁律第 9 条，用户 2026-08-27 定；细节以 AGENTS.md 为准）**：跨工具传数据一律文件化（禁内联中文/多行脚本；git commit 用 `-F`）；Python 写文件 `encoding="utf-8", newline="\n"`、读子进程输出 `encoding="utf-8", errors="replace"`；框架文本文件 UTF-8 无 BOM + LF（test_charset.py 防线，health_check 必跑）；临时文件放 `%LOCALAPPDATA%\Temp\opencode\`。
 
