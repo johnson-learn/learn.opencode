@@ -63,7 +63,9 @@ check("drain 检测到残留快照", "残留快照" in r.stdout and sid in r.std
 snaps_after = glob.glob(os.path.join(tempfile.gettempdir(), "opencode_gate", "gate_" + sid + ".json"))
 check("drain 补跑后快照清理", len(snaps_after) == 0)
 r = run("--drain")
-check("无残留时 drain 正常返回", "无残留快照" in r.stdout)
+snaps_sid = glob.glob(os.path.join(tempfile.gettempdir(), "opencode_gate", "gate_" + sid + ".json"))
+check("无残留时 drain 正常返回（rc=0 且测试 sid 快照已清；真实会话快照由 drain 顺带消费不误判）",
+      r.returncode == 0 and len(snaps_sid) == 0)
 
 # 6. drain max_n 限制：残留超过上限仅审计不阻塞
 for i in range(4):

@@ -79,7 +79,7 @@
 |---|---|---|---|
 | skill_validate.py | `tests\skill_validate.py` | G | 每次 skill 改动后强制（铁律第 8 条）；体积门限可配置（--set-limit/--ignore/--ignore-all） |
 | test_skill_validate_config.py | `tests\test_skill_validate_config.py` | G | skill_validate 配置机制改动后强制（7/7） |
-| test_plugin.js | `tests\test_plugin.js` | G | 插件改动后强制（52/52：事件分支 20 + 注册事件注入 14 + 五步检查点/API 告警闭环/待办内存传递 7 + 平台语言检测 5 + 使用率追踪 6（含端到端行为测试）） |
+| test_plugin.js | `tests\test_plugin.js` | G | 插件改动后强制（52/52：事件分支/注册事件注入/五步检查点/语言检测/使用率追踪） |
 | test_charset.py | `tests\test_charset.py` | G | 字符边界规范防线：框架文件 CRLF/BOM/UTF-8 解码扫描 + 铁律第 9 条存在性（7/7）；health_check 第⑧项必跑；扫描失败立即归一修复再交付 |
 | test_platform_api.py | `tests\test_platform_api.py` | G | **平台 API 依赖保障**：opencode 二进制仍实现 experimental.chat.system.transform hook / jsonc 通道 / 插件注册 / 4 注入文件就绪（11/11）——opencode 升级或移除该实验性 API 时此测试失败告警；每次 health_check --run 必跑 |
 | test_path_convert.py | `tests\test_path_convert.py` | G | path_convert 改动后强制（23/23：往返转换/STATE_FILES/残留扫描白名单化/tests 与 archive 目录跳过转换/空值映射过滤/工具类全集检出） |
@@ -87,13 +87,13 @@
 | test_regedit.py | `tests\test_regedit.py` | G | 注册表改动后强制（本表与实际文件系统一致性） |
 | test_tools_manifest.py | `tests\test_tools_manifest.py` | G | 工具总表改动后强制（分类计数吻合/待补充无重复/包可导入/表结构，19/19） |
 | test_instructions.py | `tests\test_instructions.py` | G | instructions.md 改动后强制（章节/铁律互查/引用存在/技能清单与目录一致/编写规范，31/31） |
-| test_evolution_gate.py | `tests\test_evolution_gate.py` | G | evolution_gate 改动后强制（快照/改动检测/流水兜底/自动测试触发/待补充清单/--drain 自愈补跑/max_n 限流/配套漏更检测/五步检查点/判定四条件声明/四条件可追溯/四条件依据软提示与渐进硬告警（连续 3 次）/阈值常量配置化/经验健康引擎（结构化条目扫描+低活性）/新增与删除文件检测，42/42） |
+| test_evolution_gate.py | `tests\test_evolution_gate.py` | G | evolution_gate 改动后强制（快照/改动检测/流水兜底/自动测试/配套漏更/五步检查点/判定四条件/软提示硬告警/阈值配置/经验健康引擎/新增删除文件检测，42/42） |
 | test_health_check.py | `tests\test_health_check.py` | G | health_check 改动后强制（可运行/报告结构/九检查项/无失败项/regedit 登记/--run-quick 实跑/注入量管控，9/9） |
 | test_sync_push.py | `tests\test_sync_push.py` | G | sync_push 改动后强制（无标记拒绝/非push拒绝/有效推送/标记清除/重推需重确认/WSL 路径判定与转换/自动 to_portable/可移植性阻断/msgfile_exists 双通道，19/19） |
 | test_docs_sync.py | `tests\test_docs_sync.py` | G | docs-sync.md 改动后强制（变更类型/校验测试存在/被 regedit+AGENTS 引用，19/19） |
 | test_audit_references.py | `tests\test_audit_references.py` | G | 框架引用审计（引用存在性/旧术语残留/README 双向一致，3/3） |
-| test_repo_face.py | `tests\test_repo_face.py` | G | 仓库门面一致性（门面文件与框架现状对照 + STATE_FILES 工作树残留 + 本机用户名路径动态扫描，18/18；WSL 不可达回退 tests\repo_face\ 镜像） |
-| test_setup_ps1.py | `tests\test_setup_ps1.py` | G | setup-windows.ps1 自动化测试（**2026-09-01 检测模式改造后重写**：开关精简/工具清单展示与必须可选分类/双通道检测 Test-ToolEntry/PATH 自动修复/未装提示跳过与重跑指引/无自动安装残留（worker/镜像/动态版本/按键交互）/npm-pip 缺失汇总提示/WSL 检测化/共享检测模块 setup-check.ps1/install-tools.ps1 一键安装脚本/部署范围/path_convert 体系/盘符动态探测/注册事件注入验证/必备工具缺失告警/&lt;工具目录&gt; 盘符根自动映射/tools-manifest 总表自动对齐/AST 语法，78/78；WSL 不可达回退 tests\repo_face\ 镜像） |
+| test_repo_face.py | `tests\test_repo_face.py` | G | 仓库门面一致性（门面对照+STATE_FILES 残留+本机路径扫描，18/18；WSL 不可达回退 repo_face 镜像） |
+| test_setup_ps1.py | `tests\test_setup_ps1.py` | G | setup-windows.ps1 自动化测试（检测模式：工具清单必须/可选分类、双通道检测、PATH 修复、未装提示跳过、无自动安装残留、共享模块 setup-check、install-tools 一键安装、tools-manifest 总表对齐、AST，78/78；WSL 不可达回退 repo_face 镜像） |
 | README.md（测试清单） | `tests\README.md` | F | 查测试入口与运行命令 |
 
 ## 数据层

@@ -28,8 +28,10 @@ def collect_framework_files():
     return sorted(set(out))
 
 def resolve_ref(fp, ref):
-    # 相对引用所在文件目录解析
+    # 相对引用所在文件目录解析；references/ 下跨目录引用 modules/<id>/GUIDE.md 时从 skill 根解析
     base = os.path.dirname(fp)
+    if ref.startswith("modules/"):
+        base = os.path.dirname(base)
     cand = os.path.normpath(os.path.join(base, ref.replace("/", "\\")))
     return cand
 
@@ -63,8 +65,8 @@ for fp in files:
             continue
         if not re.search(r"\.(md|txt|py|js|json|jsonc)$", ref):
             continue
-        if ref in tests_files or "skill_validate.py" in ref or "path_convert.py" in ref:
-            continue  # tests 目录裸文件名特例
+        if ref in tests_files or "skill_validate.py" in ref or "path_convert.py" in ref or "health_check.py" in ref:
+            continue  # tests/tools 目录裸文件名特例
         if ref in ("README.md", "INSTALL.md", "REQUIREMENTS.md", "AGENTS.md"):
             continue  # 仓库配套文档裸文件名（仓库 copy\ 下，同步流程用语）
         if ref in ("evolution.md", "evolution_log.txt"):

@@ -27,7 +27,7 @@ collaborates_with:
 
 | 工具 | 用途 | 本机位置/版本 | 检查命令 | 缺失时安装 |
 |---|---|---|---|---|
-| curl.exe | 下载/探测（-L 重定向、-A UA 头、-m 超时、-o 输出） | Windows 自带 `<工具目录>Windows\System32\curl.exe` | `curl.exe --version` | Windows 10+ 自带 |
+| curl.exe | 下载/探测（-L 重定向、-A UA 头、-m 超时、-o 输出） | Windows 自带 `C:\Windows\System32\curl.exe` | `curl.exe --version` | Windows 10+ 自带 |
 | node + market-cli | LobeHub 市场搜索/安装 | npx 缓存 `<用户目录>\AppData\Local\npm-cache\_npx\06aaad52133b3ed7\node_modules\@lobehub\market-cli\dist\cli.js`（含凭证 `~\.lobehub-market\credentials.json`） | `& node <cli.js> --help` | `npx -y @lobehub/market-cli register --name xxx --description xxx --source open-claw`（凭证需重新注册） |
 | Python 3.12 | 下载脚本（fetch_skills.py）、MSI 校验（msilib） | `python` | `python --version` | python.org |
 | tar / Expand-Archive | 解压 tarball/zip | Windows 自带 | `tar --version` | 自带 |
@@ -68,29 +68,12 @@ collaborates_with:
 | **skills.directory** | 候选目录站 | — | ✗ 抓取返回空（不存在或反爬） |
 | **github.com/topics/claude-skills** | GitHub topic 聚合页（官方分类入口） | GitHub 直连不通时走 kkgithub 网页镜像 | ✗ 直连不通（本机 GitHub 被墙） |
 
-### LobeHub CLI 用法（本机凭证已注册）
-```
-& node "<用户目录>\AppData\Local\npm-cache\_npx\06aaad52133b3ed7\node_modules\@lobehub\market-cli\dist\cli.js" skills search --q "关键词"
-（同上）skills install <identifier> --dir <目录>
-（npx 方式：& "<Node目录>\npx.cmd" -y @lobehub/market-cli ...；token 失效时先 auth refresh）
-```
-- search/view/install 对 token 要求不同；view 报 invalid_token 时直接 install 通常可行
+### LobeHub CLI / skills.sh / skillsmp 绕过细节（详见 references/tools.md，按需读取）
 
-### skills.sh 绕过细节
-- API 端点（`/api/v1/skills/*`）全部需要 Vercel OIDC token
-- sitemap 链路：`sitemap.xml` → `sitemap-skills-1/2.xml`（共 2 万条 skill URL）→ 本地 `Where-Object { $_ -match "关键词" }` 过滤 ✓
-- curl 直接抓页面被反爬（14 字节），必须用 webfetch
-- 大仓库批量：ghproxy tarball → 递归找 SKILL.md → 装入 modules → 改名 GUIDE.md
-
-### skillsmp.com 绕过细节
-- curl 被反爬（几百字节），必须用 webfetch
-- 分类入口：`/zh/categories/documents`（文档处理 9.2 万）、`/zh/occupations`（SOC 职业）
-- 多详情页并行抓取时用 general 子代理批量处理（每页 SKILL.md 完整，直接落盘 GUIDE.md）
-
-### GitHub skill 仓库批量安装脚本
-- 批量脚本：`python <opencode配置目录>\tools\fetch_skills.py [仓库名过滤]`（ghproxy 下载 tarball → 递归找 SKILL.md → 按 PLAN 映射装入目标 skill 的 modules/ → SKILL.md 改名 GUIDE.md）
-- 大仓库（如 claude-office-skills 140+ 技能）装完后按白名单清理非目标模块
-- 已知失败：超大仓库下载超时（pdf-converter-mineru）、超长路径（imbad0202，Windows 路径限制）、部分仓库 tarball 截断（改走 skillsmp 详情页抓取）
+- LobeHub：本机 CLI 已注册凭证；`& node <cli.js> skills search --q "关键词"` / `skills install <id> --dir <目录>`；view 报 invalid_token 时直接 install 通常可行
+- skills.sh：API 需 Vercel OIDC → sitemap 链路绕过；curl 被反爬必须 webfetch
+- skillsmp.com：curl 被反爬必须 webfetch；分类入口 `/zh/categories/documents`、`/zh/occupations`
+- GitHub skill 批量安装：`python <opencode配置目录>\tools\fetch_skills.py [仓库名过滤]`（ghproxy tarball → 递归找 SKILL.md → 装入 modules → 改名 GUIDE.md）
 
 ## 标准/文献资源站点
 
@@ -129,15 +112,15 @@ collaborates_with:
 | HF 模型 | hf-mirror | `export HF_ENDPOINT=https://hf-mirror.com` | 未验证（whisper/pix2tex 模型可走此路） |
 | winget | 无可靠镜像 | winget 源常指向 GitHub，失败时改用 ghproxy 直下安装包 | ✗ 本机 pandoc/tesseract 均失败 |
 
-## 已装入 modules 的搜索/研究子技能（find_skill/modules）
+## 已装入 modules 的搜索/研究子技能（find_skill/modules，首选/备选）
 
-| 系列 | 内容 | 依赖 |
-|---|---|---|
-| `lllllllama-rigorpilot-skills-*`（11 个） | paper-context-resolver 论文解析、ai-research-explore/reproduction、repo-intake、safe-debug 等 | 免费 |
-| `inference-sh-skills-web-search` | 网页搜索 | 免费 |
-| `parallel-web-parallel-agent-skills-*`（11 个） | parallel-deep-research、parallel-web-search、parallel-web-extract、findall 等 | 免费（需 parallel CLI 可选） |
-| `firecrawl-firecrawl-workflows-*`（16 个） | firecrawl-deep-research、research-papers、knowledge-base 等 | **需 FIRECRAWL_API_KEY，先确认** |
-| `199-biotechnologies-claude-deep-research-skill-*` | 深度研究工作流 | 免费 |
+| 系列 | 定位 | 内容 | 依赖 |
+|---|---|---|---|
+| `firecrawl-firecrawl-workflows-*`（16 个） | **首选**：网页/深度研究 | firecrawl-deep-research、research-papers、knowledge-base 等 | **需 FIRECRAWL_API_KEY，先确认** |
+| `parallel-web-parallel-agent-skills-*`（11 个） | **备选**：并行批量 | parallel-deep-research、parallel-web-search、parallel-web-extract、findall 等 | 免费（需 parallel CLI 可选） |
+| `lllllllama-rigorpilot-skills-*`（11 个） | **备选**：代码/项目/论文探索 | paper-context-resolver、ai-research-explore/reproduction、repo-intake、safe-debug | 免费 |
+| `199-biotechnologies-claude-deep-research-skill-*` | 备选：深度研究工作流 | 深度研究报告流程 | 免费 |
+| `inference-sh-skills-web-search` | 备选：网页搜索 | 通用搜索 | 免费 |
 
 ## 网页内容抓取
 
@@ -154,3 +137,10 @@ collaborates_with:
 - 临时文件放 `<用户临时目录>\opencode` 或项目 temp，用完清理
 - 下载一律带 `-L`（跟随重定向）和超时 `-m`；tar 解压前先 `tar -tzf` 验证
 - 与 files_skill / 3gpp_skill 联动：`find_skill&files_skill：任务` 获取资源后立即处理
+- 本机网络断联排查（详见 references/tools.md 或按需排查）：系统代理指向空端口时连直连都失败（先查 Internet Settings ProxyEnable）；零信任客户端路由劫持（aTrust metric 25 vs 真实网关 281）——`ping -S <各网卡源IP> <目标IP>` 逐链路定位
+
+## 详细知识索引（按需读取，不随入口注入）
+
+- 详见 `references/tools.md`（工具依赖/LobeHub CLI/skills 站点绕过/批量安装/抓取细节）
+- 详见 `references/search-strategy.md`（关键词拆解/可信度分级/反模式/证据表）
+- 详见 `references/deep-research-template.md`（深度研究五步流程与质量门槛）

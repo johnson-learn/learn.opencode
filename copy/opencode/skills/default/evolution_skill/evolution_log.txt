@@ -758,7 +758,7 @@
 - 根因：update_skill 流程 cp 后漏跑 to_portable → 含本机路径的 instructions.md 被推上 GitHub（sync_push 当时仅警告不阻断）
 - 修复1：sync_push 推送前**自动执行 to_portable**（对仓库 copy/opencode 目录，幂等）——流程漏步不再可能
 - 修复2：可移植性特征扫描由警告升级为**阻断**（git status 变更列表逐个扫描，检出 Users\用户名 特征即拒绝）
-- 修复3：instructions.md 第 33 行本机路径示例占位符化（<工具目录>Users\<用户名>）
+- 修复3：instructions.md 第 33 行本机路径示例占位符化（C:\Users\<用户名>）
 - test_sync_push 14→16/16（自动转换 + 阻断两用例）；已推送 8a2aebd，自动 to_portable 生效 rc=0
 [2026-08-27] 会话自动门禁（sess-clean-004） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
 - <opencode配置目录>\tools-manifest.md
@@ -1169,3 +1169,100 @@
 
 
 [2026-08-28] WSL 访问 GitHub 网络方案（gh CLI 认证 + V1.0 Release 创建）：① WSL 直连 github 443 被墙（SSH 22 可通、apt 清华源可通）② Windows 侧系统代理 127.0.0.1:7078 可用但只绑 Windows 环回，WSL NAT 网关 172.29.16.1 与 localhost 转发均 refused ③ 解法：管理员 netsh portproxy add v4tov4 listenport=7078 listenaddress=0.0.0.0 connectaddress=127.0.0.1 connectport=7078 把代理暴露到 0.0.0.0 → WSL 内 export HTTPS_PROXY=http://172.29.16.1:7078 后 curl/gh 均通 ④ gh（apt 2.4 老版）无 --git-protocol 参数、非交互需 --web；--web 在 WSL 无浏览器时报错但打印 one-time code → setsid 后台驻留轮询 + 用户浏览器输码授权（device flow 免 token）⑤ gh release create 成功创建『智能进化框架V1.0』Release（tag 已先推送）。教训：声称固化必须实际写文件（本条目初回复声称已固化但未落盘，本次补写——违反铁律第 2 条声明与动作成对）
+
+[2026-08-31 16:02] 来源：露天矿性能指标一页纸PPT任务
+- 事实记录：当前模型不支持图片输入，无法目视检查渲染结果；替代验证=LibreOffice 转换成功(rc=0) + python-pptx 文本回读核对 + 文本框行数程序化估算。状态：active
+
+[2026-08-31] python-pptx 表格 LibreOffice 渲染双坑（空cell折叠 + rowSpan/vMerge 行丢失）
+- 状态：active
+- 场景数：1（踩坑代价高：渲染缺行=数据完整性风险，不易察觉，符合四条件①例外）
+- 最后验证：2026-08-31
+- 核心关键词：pptx表格渲染、LibreOffice、PDF文本校验
+- 载体：files_skill/SKILL.md「PPTX / 演示文稿」章节注意事项
+- 内容：① a:tbl 无文本空 cell → LibreOffice 渲染时所在行折叠丢失，空 cell 必须写空格占位；② rowSpan+vMerge 垂直合并 → vMerge 之后行被丢弃，改用组首行文字+空格占位+同色填充伪合并；③ 渲染校验：LibreOffice 转 PDF + PyMuPDF get_text 比对关键字符串（注意提取插空格需容错），当前模型不能看图时此法为排版校验主通道。本机实测验证：无占位时 PDF 文本 779 字符缺 6 行，加空格占位后 1067 字符 23 行全渲染 ✓
+
+[2026-08-31] 新建全局 skill：ppt_skill（PPT 生成与美化）
+- 状态：active
+- 场景数：1（用户点名创建，非经验归纳；事实记录）
+- 最后验证：2026-08-31
+- 核心关键词：ppt_skill、新 skill 创建、注册表同步
+- 载体：skills/ppt_skill/SKILL.md + references/layout-templates.md；regedit.md 技能层 6→7；instructions.md 技能清单与应用范围；tests/test_regedit.py 目录清单 5→6；tests/README.md 用例数 47/48、31/32
+- 内容：ppt_skill 内容沉淀自本会话两轮实战（doc 提取性能指标→一页纸→两页+表格+背景优化），含 LibreOffice 渲染双坑铁律与版式参数速查；验收 test_regedit 48/48、test_instructions 32/32、skill_validate 全绿。提醒：需重启 opencode 生效；项目注入待首次显式调用时按铁律 6 执行
+
+[2026-08-31] setup-windows.ps1 安装清单全量补齐（用户方案 A + 机制化自动对齐）
+- 状态：active
+- 场景数：1（用户点名，机制类变更）
+- 最后验证：2026-08-31
+- 核心关键词：setup安装清单、tools-manifest对齐、Tesseract
+- 载体：copy/setup/setup-windows.ps1（pip 4→19 常规包+可选大件段 playwright/weasyprint+Tesseract 安装条目+Test-Tesseract 双通道检测+验证汇总）、copy/setup/setup-install-functions.ps1（Get-DynamicVersions+tesseract gh-proxy GitHub API）、copy/setup/install-wsl.ps1（Linux 工具链补全 gdb/valgrind/cmake/ninja/pip/perl/jq/openssh-client）、copy/INSTALL.md+copy/REQUIREMENTS.md（阶段表/清单同步）、tests/test_setup_ps1.py+test_setup_sim.ps1（本机+WSL 两份，62→74/74、21→23/23）、regedit.md+tests/README.md 用例数
+- 内容：① 用户指出"只有 LibreOffice 做了优化"——按方案 A 全量补齐：pip 19 常规包+可选大件（-SkipBigPkgs 开关）+Tesseract（winget+gh-proxy 双渠道+LibreOffice 式 Test-Tesseract 检测）+WSL 工具链补全；② 用户要求"后续新增必需工具自动纳入"——test_setup_ps1.py 新增 tools-manifest 总表自动对齐检查（B 类包⊆setup 清单、D 类 Tesseract、F 类 apt⊆install-wsl），新增工具进总表即测试失败强制同步；③ 大件段结束 Stop-WorkerWindow 防 worker 窗口残留（Stop-WorkerWindow 计数 2→3 断言同步）。验证：test_setup_ps1 74/74、sim 23/23、repo_face 18/18、charset 7/7、regedit 48/48 全绿
+
+[2026-08-31] 删除全局 skill：ppt_skill（用户指令回滚，创建记录保留于上方流水）
+- 状态：active
+- 场景数：1（用户点名删除；事实记录）
+- 最后验证：2026-08-31
+- 核心关键词：ppt_skill、skill 删除、回滚
+- 载体：删除 skills/ppt_skill/ 整目录；regedit.md 技能层 7→6；instructions.md 技能清单与应用范围 7→6；tests/test_regedit.py 目录清单 6→5；tests/README.md 用例数 48→47、32→31；repo_face REQUIREMENTS/INSTALL 与 WSL copy 同步回滚
+- 内容：删除流程坑位——从本机直接 Copy-Item 同步到 WSL 仓库会把 to_local 本机路径版文件覆盖进仓库工作树（test_repo_face 17/18 检出本机用户名特征）→ 修复用 path_convert.py to_portable 对仓库 copy/opencode 目录幂等转回占位符版（sync_push 同款机制）。经验固化：**仓库工作树文件同步一律经 to_portable，禁止直接复制本机全局文件**。验收：skill_validate 全绿、test_regedit 47/47、test_instructions 31/31、test_repo_face 18/18、test_charset 7/7
+
+[2026-09-01] Windows 断网排查：系统代理空端口 + aTrust 路由劫持
+- 状态：active
+- 来源：用户报告"本机上不了网"排查会话（网络故障诊断实测）
+- 验证状态：2026-09-01 本机实测（关系统代理后 curl 直连百度 HTTP 200 恢复）
+- 核心关键词：断网排查、系统代理空端口、aTrust 路由劫持、ping -S 定位链路
+- 归属：find_skill/SKILL.md「环境注意」章节追加两条
+- 内容：① 系统代理指向无监听端口（127.0.0.1:7079，代理软件未运行）时 curl --noproxy 直连也失败，关闭 ProxyEnable 后恢复；② aTrust 零信任客户端以低度量路由（metric 25）劫持默认路由（真实网关 metric 281），TCP 被黑洞而 ICMP 通，用 ping -S <源IP> 逐网卡定位故障链路。历史遗留：8-28 会话为 WSL GitHub 设的系统代理 7078 + netsh portproxy 7078 规则仍在（空转发无害）
+
+[2026-09-01] update_skill 双向同步完成（两轮推送 99ac8c8 + 476e165）+ 同步链路三坑修复
+- 状态：active
+- 场景数：1（用户显式调用 update_skill；机制缺陷三连踩坑，代价高）
+- 最后验证：2026-09-01
+- 核心关键词：to_portable guard、msgfile_exists、update_skill 推送
+- 载体：tools/path_convert.py + tests/path_convert.py + tests/test_path_convert.py（guard 机制 23→36/36）、tools/sync_push.py + tests/test_sync_push.py（msgfile_exists 双通道 16→19/19）、instructions.md 同步边界铁律补充、仓库 22+ 文件
+- 内容：① 坑1【to_portable 误转安装约定位置】：path_map <工具目录>=盘符根（<工具目录>）映射把 C:\Program Files/C:\msys64/C:\Users\<用户名> 等约定位置吞成 <工具目录>Program Files 等——修复：GUARD_PREFIXES 保护清单（哨兵替换→转换→还原）；② 坑2【guard 挡长映射】：guard 先于映射执行会把 <LibreOffice目录>=<LibreOffice目录> 这类长映射挡住——修复：guard 只作用于盘符根映射（_is_root_pair 分流，先跑非根映射再 guard 保护跑根映射）；③ 坑3【sync_push msgfile 检查 WSL 失效】：UNC 视图与 WSL 内文件系统不一致，os.path.exists 对 \wsl.localhost\Ubuntu\tmp 误报不存在——修复：msgfile_exists 双通道（Windows 检查 + WSL 内 test -f 兜底）；④ 经验：仓库工作树同步一律 to_portable（已写入 instructions 铁律第 0 条）。推送：两轮弹窗确认均选择"推送"，sync_push 门禁执行，HEAD==origin/main 无反向合入需求
+
+[2026-09-01] setup 脚本检测模式改造（用户要求：自动安装失败阻塞 → 只检测+提示永不阻塞）+ install-tools 一键安装脚本
+- 状态：active
+- 场景数：1（用户点名改造 + 后续补要求：全盘修改/后续新增工具/智能进化/双向移植/独立安装脚本）
+- 最后验证：2026-09-01
+- 核心关键词：setup检测模式、install-tools、共享检测模块、BOM
+- 载体：copy/setup/setup-windows.ps1（检测模式重写 -759 行）、copy/setup/setup-check.ps1（新增共享检测模块：checks1 清单+Test-ToolEntry+pyPkgs，注释内含"后续新增工具"机制说明）、copy/setup/install-tools.ps1（新增一键自动安装：winget/npm/pip 渠道、每工具独立失败跳过、汇总）、删除 setup-install-functions.ps1+test_setup_sim.ps1（worker 自动安装链退役）、tests/test_setup_ps1.py 重写 75/75（install-tools 断言+A/D 类 winget id 对齐+BOM 检查）、INSTALL/REQUIREMENTS/COPY_README/regedit/tests README 同步
+- 内容：① 检测模式：清单展示（必须=缺失不影响基本使用 update_skill 除外/可选=使用中可装）→双通道检测→已装但 PATH 未配置自动修复→未装提示（手动或大模型装）跳过→收尾提示重跑；② 机制：后续新增工具先登 tools-manifest 再进 setup-check 清单（test 对齐检查强制）；③ 坑【PowerShell 5.1 BOM】：无 BOM UTF-8 的 .ps1 中文被 GBK 误读致语法错误——仓库 .ps1 必须 UTF-8 with BOM（原 setup-windows 即 BOM，我重写时丢失，AST 报缺括号/引号乱错定位到注释行，xxd 查 BOM 定位）；④ install-tools 与 setup 共用 setup-check.ps1 清单（单一权威源）。验证：test_setup_ps1 75/75、repo_face 18/18、regedit 48/48、instructions 31/31、charset 7/7、path_convert 36/36、update_skill 40/40、tools_manifest 19/19、skill_validate 全绿
+[2026-09-01] 会话自动门禁（gate-test-1788239067） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-09-01] 会话自动门禁（gate-test-1788239067） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools\_gate_new_tool_test.py
+
+[2026-09-01] 会话自动门禁（gate-test-1788239116） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-09-01] 会话自动门禁（gate-test-1788239116） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools\_gate_new_tool_test.py
+
+[2026-09-01] 会话自动门禁（gate-test-1788239468） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-09-01] 会话自动门禁（gate-test-1788239468） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools\_gate_new_tool_test.py
+
+[2026-09-01] 会话自动门禁（gate-test-1788239540） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-09-01] 会话自动门禁（gate-test-1788239540） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools\_gate_new_tool_test.py
+
+[2026-09-01] 会话自动门禁（gate-test-1788239547） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-09-01] 会话自动门禁（gate-test-1788239547） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools\_gate_new_tool_test.py
+
+
+[2026-09-01] skill_framework_plan.html 分析落地（用户要求多套方案对比综合+全局无遗留无错误有自测）
+- 状态：active
+- 场景数：1（用户点名按手册优化，后续 program_skill 为重点）
+- 最后验证：2026-09-01
+- 核心关键词：skill 框架优化、program_skill、templates 约定
+- 载体：3gpp_skill/SKILL.md（删重复"详细知识"块+引用改占位符）、program_skill（SKILL.md 重构收窄 C 为主 5.5K→6.7K 含 4 族路由表+核心铁律；新建 references/tools.md·compile-scripts.md·debugging.md·coding-standards.md·unit-test.md；新建 templates/c-project 工程骨架（main.c/Makefile/CMakeLists.txt/.gitignore/README）；移除 lang-go-concurrency 模块 14→13）、files_skill（scripts/ 归档 extract-docx/doc.ps1 + SKILL.md 引用改占位符）、evolution_skill（templates/ 两个固化模板）、find_skill（references×3 + 系列首选/备选标注 + 长细节下沉）、instructions.md（编写规范加 5b templates/ 目录约定 + 通用规则压缩）、regedit.md（测试层描述压缩 332B）、test_audit_references.py（modules/ 跨目录引用解析 + health_check.py 裸名特例）、test_evolution_gate.py（drain 用例抗真实快照竞态）
+- 内容：① 手册建议对照现状后逐项甄别：Johnson 残留仅存在于历史流水（无需修）、find_skill 已较完善（补 references 与首选标注而非重写）、update_skill 门限 15KB 内保持；② program_skill 定位收窄 C 为主（Go/Rust/Java/前端后端明确不做），C 基础模版待用户提供后放入 templates/；③ 坑【test_evolution_gate 环境竞态】：测试"无残留时 drain"断言全局无快照，真实会话插件快照残留致失败——修复为断言 rc=0+测试 sid 快照清理；④ 注入量超限 50.9KB（新增 5b 条目触发）→ 压缩 instructions 通用规则与 regedit 测试层描述回 50KB 内。验证：全量 17 套测试全绿（plugin 52/52、gate 42/42、health_check 9/9 OK 8 警告 2 失败 0、audit 3/3、charset 7/7 等）
