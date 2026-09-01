@@ -1,0 +1,8 @@
+build/
+*.o
+*.a
+*.so
+app
+app.exe
+core
+core.*

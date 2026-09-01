@@ -1,111 +1,102 @@
 ---
 name: program_skill
-description: 编程开发综合技能（全局 skill，仅显式触发，不靠关键词自动调用）。Use ONLY when 用户消息显式包含 "program_skill：" 或 "program_skill:"，或以 "program_skill&"、"program_skill " 与其他技能名并列后跟冒号——冒号后为用户任务。加载后执行任务：C/C++/Python/Shell/Java/JavaScript/TypeScript/Go/Rust 等编程语言开发、前端开发（HTML/CSS/React/Vue）、后端开发（数据库/API/框架）、构建部署、代码质量与重构、编程学习等。默认在 WSL Linux 环境（Ubuntu 22.04）编译运行。普通消息仅提及编程/代码但无 "program_skill：" 前缀时，不调用本技能。
+description: C 编程与编译专家技能（全局 skill，仅显式触发，不靠关键词自动调用）。Use ONLY when 用户消息显式包含 "program_skill：" 或 "program_skill:"，或以 "program_skill&"、"program_skill " 与其他技能名并列后跟冒号——冒号后为用户任务。加载后执行任务：C 语言开发（嵌入式/系统级/网络通信/协议栈）、C 编译脚本生成（Batch/PS/Bash 动态编译）、构建工具链（GCC/CMake/Make/arm-none-eabi）、静态分析与内存安全、调试（gdb/valgrind/core dump）与性能优化、C 单元测试；C++/Shell/Python 仅作为 C 构建与验证的辅助。默认在 WSL Linux 环境（Ubuntu 22.04）编译运行，备选 w64devkit Windows 原生编译。普通消息仅提及编程/C 代码但无 "program_skill：" 前缀时，不调用本技能。
 collaborates_with:
   - files_skill
   - find_skill
 ---
 
-# program_skill —— 编程开发综合技能
+# program_skill —— C 编程与编译
 
 ## 典型触发场景
 
-- "program_skill：写一个 C 程序并编译运行"
-- "program_skill：Python 脚本处理 CSV 并画图"
-- "program_skill：这个段错误怎么排查（gdb 调试）"
-- "帮我写个 Bash 脚本批量重命名（隐式匹配可推荐本技能）"
-- "program_skill：CMake 工程构建流程讲解"
+- "program_skill：写一个 C 程序（多线程+链表+消息队列）并编译运行"
+- "program_skill：这个段错误怎么排查（gdb/valgrind/core dump）"
+- "program_skill：生成 C 编译脚本（多文件自动依赖）"
+- "program_skill：CMake 工程搭建与交叉编译（arm-none-eabi）"
+- "program_skill：给这段 C 代码写单元测试（Unity/CTest + 覆盖率）"
 
 ## 不处理的边界
 
 - 不做文档/PDF/图片处理（推荐 files_skill）
 - 不做 3GPP 协议分析（推荐 3gpp_skill）
-- 默认 WSL Linux 环境编译运行；Windows 原生需求须用户明确
+- 不做 Go/Rust/Java/前端/后端业务开发（本技能聚焦 C；需要时另建独立 skill）
+- 默认 WSL Linux 环境编译运行；Windows 原生需求须用户明确（备选 w64devkit）
 
+## 🛠 工具依赖清单（摘要，详版见 references/tools.md）
 
-## 🛠 工具依赖清单（移植到新机器时先逐项检查）
+| 工具 | 用途 | 检查命令 |
+|---|---|---|
+| WSL2 + Ubuntu 22.04 | 默认编译/运行/调试环境 | `wsl -l -v` |
+| Linux 工具链 | gcc 11.4/cmake 3.22/gdb 12.1/valgrind/strace | `wsl -d Ubuntu -e bash -c "gcc --version && gdb --version"` |
+| w64devkit | Windows 原生 GCC 备选（winpthreads） | `& "C:\w64devkit\w64devkit\bin\gcc.exe" --version` |
 
-| 工具 | 用途 | 本机位置/版本 | 检查命令 | 缺失时安装 |
-|---|---|---|---|---|
-| WSL2 + Ubuntu 22.04 | 默认编程环境（编译/运行/调试） | 注册名 `Ubuntu`，vhdx 在 `<WSL安装目录>\Ubuntu2`（旧 <WSL安装目录>\Ubuntu 为残留） | `wsl -l -v`（应显示 Ubuntu Running/Stopped, VERSION 2） | 见 `<离线安装包目录>\WSL安装步骤说明书.html`（MSI 247MB + rootfs 325MB 离线包） |
-| Linux 工具链 | C/C++/脚本开发 | gcc/g++ 11.4、make、cmake 3.22、ninja、gdb 12.1、valgrind、strace、python3.10+pip、perl、jq、git、openssh | `wsl -d Ubuntu -e bash -c "gcc --version && g++ --version && gdb --version && python3 --version"` | `wsl -d Ubuntu -e bash -c "apt-get install -y build-essential gdb valgrind cmake ninja-build python3 python3-pip perl jq git openssh-client"`（apt 已换清华源） |
-| w64devkit | Windows 原生编译备选（winpthreads） | `<工具目录>w64devkit\w64devkit\bin\gcc.exe`（GCC 16.2.0） | `& "<工具目录>w64devkit\w64devkit\bin\gcc.exe" --version` | gh-proxy.com 下载 `w64devkit-x64-2.9.1.7z.exe` 自解压 |
-| core dump 配置 | C 崩溃调试 | `sysctl kernel.core_pattern=<用户目录>/cores/core.%e.%p` + `ulimit -c unlimited` | `wsl -d Ubuntu -e bash -c "cat /proc/sys/kernel/core_pattern"`（应非 wsl-capture-crash） | WSL 内执行配置命令（重启后需重配或写入 /etc/sysctl.d/） |
-| WSL 开机自启 | 保持实例运行（防 60s idle 停止） | 计划任务 `WSL-AutoStart`（sleep 常驻） | `schtasks /query /tn "WSL-AutoStart"` | 管理员：`schtasks /create /tn "WSL-AutoStart" /tr "wsl.exe -d Ubuntu -e bash -c 'sleep 2000000000'" /sc onlogon` |
-| MinGW 6.3 | ⚠ 无 pthread，禁用 | `<工具目录>MinGW` | — | 不安装，多线程用 w64devkit/WSL |
+**移植说明**：核心 = WSL2 + Linux 工具链（apt 一条命令重建）；w64devkit 备选；源码目录约定 `<源码目录>\`（新机器自行创建，详见 references/tools.md）。
 
-**移植说明**：核心 = WSL2（离线安装包在 <离线安装包目录>，含两本说明书）+ Linux 工具链（apt 一条命令重建）；w64devkit 是备选；源码目录约定 `<源码目录>\`（新机器自行创建）。
+## 通用输出规则
 
-本技能是**唯一注册入口**，按语言/功能分类聚合编程子技能（位于 `modules/`，资源库不独立注册）。
-
-## 分类体系（modules 目录前缀）
-
-| 前缀 | 类别 |
-|---|---|
-| `c-*` | C 语言 |
-| `cpp-*` | C++ |
-| `py-*` | Python |
-| `shell-*` | Shell/脚本 |
-| `js-*` | JavaScript/TypeScript |
-| `frontend-*` | 前端框架（React/Vue/CSS） |
-| `backend-*` | 后端（数据库/API/服务） |
-| `lang-*` | 其它语言（Go/Rust/Java/...） |
-| `general-*` | 通用工程（质量/重构/调试/构建） |
-
-## 通用输出规则（全部任务遵守）
-
-- **语言跟随提问**：用户以何种语言提问，思考、回答、输出就以何种语言（中文提问→中文回答，英文提问→英文回答）；代码、命令、报错信息、字段名等必要原文保持原样不翻译
-- **含"输出"二字 → HTML 交付**：提问中出现"输出"二字时，最终答案必须以 HTML 文件输出（代码高亮、规范排版），内容详细、不限字数篇幅；HTML 保存到提问时所在工作目录并浏览器打开（用户另行指定目录时按用户指定）
+- **语言跟随提问**：用户以何种语言提问，思考、回答、输出就以何种语言；代码、命令、报错信息、字段名等必要原文保持原样不翻译
+- **含"输出"二字 → HTML 交付**：最终答案以 HTML 文件输出（代码高亮、规范排版），内容详细不限篇幅；保存到提问时所在工作目录并浏览器打开
 
 ## 处理流程
 
-1. 确认任务语言/类别 → 路由到对应前缀的子技能，**先读 `modules/<目录>/GUIDE.md` 再按其说明执行**
-2. **编程任务默认使用 WSL Linux 环境**（用户已确认）：编译、运行、调试一律走 `wsl -d Ubuntu -e bash -c "..."`，**源码固定放 `<源码目录>\`**（Windows 盘，Linux 内经 `/mnt/e/opencode_code/` 访问）
-3. 未命中任何子技能时，按通用编程实践直接作答
-4. 需要联网获取依赖/镜像/资料时联动 find_skill；需要文档处理时联动 files_skill
+1. 确认任务类型：写码 / 编译脚本 / 构建系统 / 静态分析 / 调试 / 测试 / 性能
+2. 按路由表先读 `modules/<目录>/GUIDE.md` 再按其说明执行
+3. **编程任务默认 WSL Linux 环境**：编译运行一律 `wsl -d Ubuntu -e bash -c "..."`，源码固定放 `<源码目录>\`（Linux 内 `/mnt/e/opencode_code/`）；多线程加 `-pthread`
+4. 未命中任何子技能时，按通用 C 实践直接作答；项目骨架复制 `templates/c-project/`
+5. 需要联网获取依赖/镜像/资料联动 find_skill；文档处理联动 files_skill
 
-## 路由表（按语言/功能）
+## 路由表（按任务，4 族）
 
-| 类别 | 子技能（modules 下目录） | 说明 |
+### ① C 核心族（首选）
+| 任务 | 子技能（modules 下目录） | 说明 |
 |---|---|---|
-| C 语言 | `c-gcc-embedded-build` | GCC 嵌入式工程构建（CMake + arm-none-eabi-gcc，扫描/编译/重建/ELF 大小分析） |
-| C 语言 | `c-compile-script-generator` | C 编译脚本生成器（Batch/PowerShell/Bash 的 GCC 动态编译脚本） |
-| C 语言 | `c-static-analysis` | 嵌入式 C/C++ 静态分析（cppcheck/clang-tidy/GCC analyzer/MISRA-C） |
-| C 语言 | `c-embedded-systems` | 嵌入式 C（STM32/ESP32/FreeRTOS/裸机/功耗优化/实时系统） |
-| C 语言 | `c-memory-safety-patterns` | 内存安全（RAII/所有权/智能指针/资源管理，C/C++/Rust 通用） |
-| C++ | `cpp-compiler-flags` | C++ 编译/链接标志（GCC/Clang/MSVC/MinGW/IntelLLVM，-O/-march/LTO/PGO） |
-| C++ | `cpp-coding-standards` | C++ Core Guidelines 编码标准（现代/安全/惯用） |
-| C++ | `cpp-testing` | C++ 测试（GoogleTest/CTest、覆盖率、sanitizers） |
-| Shell | `shell-linux-shell-scripting` | Linux 生产脚本（系统管理/监控/备份/用户管理模板） |
-| Shell | `shell-bash-linux` | Bash/Linux 终端模式（关键命令/管道/错误处理） |
-| Shell | `shell-bash-defensive-patterns` | 防御性 Bash（生产级脚本/CI/CD/容错） |
-| 其它语言 | `lang-go-concurrency` | Go 并发（goroutine/channel/sync/context） |
-| 通用工程 | `general-threading-architecture` | 系统级线程架构（拓扑感知线程固定/核心隔离/SPSC/低延迟） |
-| 通用工程 | `general-pair-programming` | AI 结对编程（驱动/导航模式、TDD、代码审查、安全扫描） |
-| Python | `py-*` | 待安装 |
-| JavaScript/TS | `js-*` | 待安装 |
-| 前端 | `frontend-*` | 待安装 |
-| 后端 | `backend-*` | 待安装 |
+| C 编译脚本生成（多文件自动依赖） | `c-compile-script-generator` | ★最高频：Batch/PS/Bash 动态编译脚本 |
+| GCC 嵌入式工程构建 | `c-gcc-embedded-build` | CMake + arm-none-eabi，扫描/编译/ELF 分析 |
+| 静态分析 | `c-static-analysis` | cppcheck/clang-tidy/GCC analyzer/MISRA-C |
+| 嵌入式 C 开发 | `c-embedded-systems` | STM32/ESP32/FreeRTOS/裸机/实时 |
+| 内存安全 | `c-memory-safety-patterns` | 所有权/资源管理/防泄漏模式 |
 
-## 环境注意
+### ② C++ 扩展族（仅取对 C 有用部分）
+| 任务 | 子技能 | 说明 |
+|---|---|---|
+| 编译链接标志 | `cpp-compiler-flags` | -O/-march/LTO/PGO，C 同样适用 |
+| 编码标准 | `cpp-coding-standards` | 取适用 C 的部分 |
+| 测试框架 | `cpp-testing` | GoogleTest/CTest/覆盖率/sanitizers，C 单测同样适用 |
 
-- **编程默认环境：WSL Linux（用户已确认）**。本机 WSL2 + Ubuntu 22.04.5 LTS @ <WSL安装目录>\Ubuntu（实际 vhdx 在 <WSL安装目录>\Ubuntu2 的注册实例）
-  - 已装工具链（全量）：
-    - 编译器：gcc/g++ 11.4
-    - 构建：make 4.3 / cmake 3.22 / ninja 1.10 / pkg-config / autoconf / automake / libtool
-    - 调试分析：gdb 12.1 / valgrind 3.18 / strace 5.16 / htop 3.0
-    - 脚本：python3 3.10 + pip + venv / perl 5.34 / jq 1.6 / bash / sed / awk
-    - 开发库：libssl-dev、zlib1g-dev、libsqlite3-dev、libreadline-dev、libncurses-dev、libffi-dev、libbz2-dev、liblzma-dev、libcurl4-openssl-dev
-    - 其它：git 2.34 / openssh-client / curl / wget / tree / zip / unzip
-    - apt 已换清华源（`mirrors.tuna.tsinghua.edu.cn`）
-  - 标准调用：`wsl -d Ubuntu -e bash -c "cd /mnt/e/<路径> && gcc -O2 -g x.c -o x && ./x"`；多线程加 `-pthread`
-  - **core dump**：WSL 默认 `core_pattern=|/wsl-capture-crash` 不落盘；且 /mnt 上内核写不出 core。使用前先 `ulimit -c unlimited && sysctl -w kernel.core_pattern=<用户目录>/cores/core.%e.%p && mkdir -p <用户目录>/cores`，崩溃后 `gdb ./prog <用户目录>/cores/core.*` 回溯
-  - **磁盘映射**：Linux→Windows 盘 `/mnt/c`、`/mnt/e`；Windows→Linux 用 `\\wsl$\Ubuntu\...`（实例 Running 时可用；映射盘符用资源管理器手动映射，net use 走不通 9P）
-  - **开机自启**：计划任务 `WSL-AutoStart`（登录时运行 `wsl -d Ubuntu -e bash -c "sleep 2000000000"` 保持实例，防止 60s idle 自动停止）。删除：`schtasks /delete /tn "WSL-AutoStart" /f`（管理员）
-  - WSL 离线安装链路（已验证）：gh-proxy.com 下 WSL MSI（需 msilib 校验完整性）→ 提权 msiexec → 清华镜像 wsl rootfs（列目录找真实文件名，带 `-ubuntuXX.XXlts` 后缀）→ `wsl --import`；官方 wsl --install 慢是因为发行版清单在 raw.githubusercontent.com
-  - WSLg 图形：本机不可用（向日葵 OrayIddDriver + Intel 集显 vGPU 冲突，dxg ioctl -22，RemoteApp 窗口 visible=False）；GUI 需求改用 Windows 侧编辑器
-- 备选 Windows 原生编译：**w64devkit 2.9.1**（便携 GCC 16.2.0 + winpthreads，路径 `<工具目录>w64devkit\w64devkit\bin`，用时 `$env:PATH = "<工具目录>w64devkit\w64devkit\bin;" + $env:PATH`；链接 winmm 需 `-lwinmm`）；MinGW 6.3.0（<工具目录>MinGW）无 pthread 勿用
-- Linux C 验证套路：代码加 `#ifdef _WIN32` 适配层（localtime_r→localtime_s、clock_nanosleep→Sleep(timeBeginPeriod)），w64devkit 编译通过即逻辑正确；Windows Sleep 粒度极限 ~1ms，0.5ms 级精确节拍仅 Linux 上 clock_nanosleep(TIMER_ABSTIME) 可达
-- 中文输出优先；文件编码 UTF-8
-- 安装新工具遵循用户规则：200M 以内直接装，超过先询问；Linux 内装包走 `apt install`（非 yum，Ubuntu 是 Debian 系）
-- **Windows 提权子进程窗口管理（✓ 2026-08-28 实测）**：`Start-Process powershell -Verb RunAs` 弹的提权进程，主进程非管理员时 `Stop-Process` 会静默失败 → 窗口残留。可靠停止方案 = **信号文件自毁**：子进程循环每 ~400ms 轮询 stop 信号文件（`Test-Path $stopF → exit`），主进程写信号文件即触发退出；`Stop-Process` 仅作兜底；启动参数**不加 `-NoExit`**（否则 exit 后窗口仍停留）。信号文件放 `$env:TEMP`（双方皆可写），新子进程启动前先清理残留信号
+### ③ Shell 服务族（为 C 构建流程服务）
+| 任务 | 子技能 | 说明 |
+|---|---|---|
+| Linux 构建脚本 | `shell-linux-shell-scripting` | 环境搭建/自动化 |
+| Bash 终端 | `shell-bash-linux` | 编译命令组合/管道/错误处理 |
+| 防御性脚本 | `shell-bash-defensive-patterns` | 编译脚本健壮性/CI |
+
+### ④ 通用工程族（C 项目工程化）
+| 任务 | 子技能 | 说明 |
+|---|---|---|
+| 多线程架构 | `general-threading-architecture` | 核心隔离/SPSC/低延迟 |
+| AI 结对编程 | `general-pair-programming` | TDD/代码审查/安全扫描 |
+
+## 核心铁律（逐条可检验）
+
+1. **C 代码必须实编译实运行验证**：写出的 C 代码必须在 WSL 里 `gcc -Wall -Wextra` 无警告编译并实际跑通，禁止只给代码不验证
+2. **内存与线程安全优先**：涉及指针/动态内存/多线程时，主动加边界检查与防泄漏措施；多线程必须 `-pthread`
+3. **编译脚本幂等可重入**：生成的编译脚本必须支持重复执行、自动依赖扫描、失败非零退出
+4. **环境双轨**：Linux 代码加 `#ifdef _WIN32` 适配层，w64devkit 编译通过即逻辑正确（0.5ms 级精确节拍仅 Linux 可达）
+5. **错误处理显式**：系统调用/库函数返回值必须检查，禁止忽略错误码
+
+## 环境注意（摘要，详版见 references/tools.md）
+
+- 默认 WSL2 + Ubuntu 22.04.5；标准调用 `wsl -d Ubuntu -e bash -c "cd /mnt/e/<路径> && gcc -O2 -g x.c -o x && ./x"`
+- core dump 需先配置（/mnt 写不出 core 的坑）：`ulimit -c unlimited && sysctl -w kernel.core_pattern=...`，详见 references/debugging.md
+- 备选 w64devkit 2.9.1（Windows 原生 GCC 16.2 + winpthreads）；MinGW 6.3 无 pthread 勿用
+- 安装新工具：200M 以内直接装，超过先询问；Linux 内 `apt install`
+
+## 详细知识索引（按需读取，不随入口注入）
+
+- 详见 `references/tools.md`（WSL/w64devkit/工具链全量配置与移植）
+- 详见 `references/compile-scripts.md`（动态编译脚本模板库）
+- 详见 `references/debugging.md`（gdb/valgrind/core dump 排查）
+- 详见 `references/coding-standards.md`（C 编码规范与错误处理）
+- 详见 `references/unit-test.md`（Unity/CTest 用例与覆盖率）
+- 工程骨架：`templates/c-project/`（新项目直接复制）

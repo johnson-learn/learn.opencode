@@ -139,9 +139,9 @@ collaborates_with:
 
 ## 文字提取
 
-- **docx/doc 批量文本提取（本机脚本，实战验证可用）**：
-  - docx：`powershell -NoProfile -ExecutionPolicy Bypass -File "<用户临时目录>\opencode\extract-docx.ps1"`
-  - doc（老格式，先 soffice.com 批量转 docx：`--convert-to docx --outdir 目录 *.doc`，再提取）：`powershell -NoProfile -ExecutionPolicy Bypass -File "<用户临时目录>\opencode\extract-doc.ps1"`
+- **docx/doc 批量文本提取（本机脚本，实战验证可用；已归档进本 skill `scripts\`，路径登记 path_map）**：
+  - docx：`powershell -NoProfile -ExecutionPolicy Bypass -File "<opencode配置目录>\skills\files_skill\scripts\extract-docx.ps1"`
+  - doc（老格式，先 soffice.com 批量转 docx：`--convert-to docx --outdir 目录 *.doc`，再提取）：`powershell -NoProfile -ExecutionPolicy Bypass -File "<opencode配置目录>\skills\files_skill\scripts\extract-doc.ps1"`
   - **⚠ 铁律：提取文本必须同步用图片识别工具（p2t）核实**——3GPP 等文档中公式、符号、记号为图片式（OLE 对象），纯文本提取不出字符，资料读取必然不完整；双轨流程：文本提取 + soffice 转 PDF → PyMuPDF 渲染 PNG → p2t `formula/page` 模式识别，两轨合并，差异以图片识别为准（详见 3gpp_skill「文档提取双轨要求」）
 - 原生文本 PDF/docx/pptx/xlsx → 首选对应 Anthropics 官方技能（`modules/anthropics-skills-pdf` / `-docx` / `-pptx`）。
 - 扫描件 → 走 OCR 章节流程。
