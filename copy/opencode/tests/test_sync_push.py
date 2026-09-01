@@ -94,6 +94,14 @@ check("is_wsl_repo 识别普通 Windows 路径", _spm.is_wsl_repo(r"C:\tmp\repo"
 check("to_wsl_path UNC 转换", _spm.to_wsl_path(r"\\wsl.localhost\Ubuntu\home\github\learn.opencode") == "/home/github/learn.opencode")
 check("to_wsl_path 非 WSL 原样返回", _spm.to_wsl_path(r"C:\tmp\repo") == r"C:\tmp\repo")
 
+# 5b. msgfile_exists 双通道（2026-08-31 实测：WSL 仓库 UNC 视图与 WSL 内文件系统不一致）
+check("msgfile_exists 本地文件存在", _spm.msgfile_exists(repo, msgfile) is True)
+check("msgfile_exists 本地文件不存在（非 WSL 仓库）", _spm.msgfile_exists(repo, os.path.join(tmp, "nope.txt")) is False)
+wsl_msg = r"\\wsl.localhost\Ubuntu\tmp\__no_such_msg__.txt"
+if _spm.is_wsl_repo(wsl_msg):
+    check("msgfile_exists WSL 场景走 WSL 内 test -f 兜底（不存在返回 False）", _spm.msgfile_exists(
+        r"\\wsl.localhost\Ubuntu\home\github\learn.opencode", wsl_msg) is False)
+
 shutil.rmtree(tmp, ignore_errors=True)
 print("\n结果：通过 %d 项，失败 %d 项" % (pass_n, fail_n))
 sys.exit(1 if fail_n else 0)
