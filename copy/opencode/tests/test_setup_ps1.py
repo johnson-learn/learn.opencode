@@ -65,6 +65,10 @@ check("Git 检测含 PATH 修复目录（C:\\Program Files\\Git\\cmd）", "C:\\P
 check("Node 检测含 PATH 修复目录（C:\\Program Files\\nodejs）", "C:\\Program Files\\nodejs" in c_cc)
 check("已装但 PATH 未配置 → 自动修复（Add-ToUserPath）", "已修复 PATH" in c and "Add-ToUserPath" in c)
 check("未装提示语（请手动安装或使用大模型协助安装）", "请手动安装或使用大模型协助安装" in c)
+check("未装提示含完整安装方法（guide 字段输出）", "guide" in c_cc and "安装方法" in c_cc and "完整命令" in c_cc)
+check("未装提示含国内镜像方案（npmmirror/清华/gh-proxy）", "registry.npmmirror.com" in c_cc and "pypi.tuna.tsinghua.edu.cn" in c_cc and "gh-proxy.com" in c_cc)
+check("WSL 未装提示含手动方法（wsl --install -d Ubuntu-22.04）", "wsl --install -d Ubuntu-22.04" in c_cc)
+check("weasyprint 未装提示含完整链（MSYS2+pacman+环境变量）", "pacman -S --noconfirm mingw-w64-ucrt-x86_64-gtk3" in c_cc and "setx WEASYPRINT_DLL_DIRECTORIES" in c_cc)
 check("未装提示重跑（装好后重跑本脚本自动补配置）", "装好后重跑本脚本即可自动补齐相关配置" in c)
 check("检测后刷新当前会话 PATH（修复立即生效）", 'GetEnvironmentVariable("Path", "Machine")' in c)
 
@@ -162,8 +166,7 @@ if os.path.exists(it_path):
     check("install-tools npm/pip 渠道（镜像可选）", "npm i -g" in it and "python -m pip install" in it)
     check("install-tools 汇总报告（装完提示重跑 setup-windows.ps1）", "安装汇总" in it and "setup-windows.ps1" in it)
     check("install-tools 开关（UseChinaMirror/SkipNpm/SkipPip）", "[switch]$UseChinaMirror" in it and "[switch]$SkipNpm" in it and "[switch]$SkipPip" in it)
-    check("install-tools BOM 存在（PowerShell 5.1 UTF-8 中文解析前提）", it.startswith("\ufeff"))
-    check("setup-check.ps1 共享模块 BOM 存在", True)
+    check("install-tools 单层 BOM（无双重 BOM——双重会致 PS 5.1 报 #/param 无法识别）", it.startswith("\ufeff") and not it.startswith("\ufeff\ufeff"))
 else:
     check("install-tools.ps1 存在", False)
 
@@ -176,8 +179,8 @@ if os.path.exists(cc_path):
     check("setup-check.ps1 含工具清单（checks1 + wingetId + tier 分类）", "$checks1 = @" in cc and "wingetId" in cc and 'tier = "必须"' in cc and 'tier = "可选"' in cc)
     check("setup-check.ps1 含检测函数（Test-ToolEntry/Test-Soffice/Test-Tesseract）", "function Test-ToolEntry" in cc and "function Test-Soffice" in cc and "function Test-Tesseract" in cc)
     check("setup-check.ps1 含 pip import 检测表（pyPkgs）", "$pyPkgs = @" in cc)
-    check("setup-check.ps1 BOM 存在（PowerShell 5.1 UTF-8 中文解析前提）", cc.startswith("\ufeff"))
-    check("setup-windows.ps1 BOM 存在", c.startswith("\ufeff"))
+    check("setup-check.ps1 单层 BOM（无双重 BOM）", cc.startswith("\ufeff") and not cc.startswith("\ufeff\ufeff"))
+    check("setup-windows.ps1 单层 BOM（无双重 BOM）", c.startswith("\ufeff") and not c.startswith("\ufeff\ufeff"))
 else:
     check("setup-check.ps1 含工具清单", False)
 

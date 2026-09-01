@@ -1,4 +1,4 @@
-﻿﻿# ============================================================
+﻿# ============================================================
 # setup-windows.ps1 — 新电脑一键配置脚本（2026-09-01 检测模式）
 # 用途：根据本仓库迁移包，把全局 skill + 配置 + 辅助脚本部署到新电脑，
 #       并检测全部依赖工具（只检测+修复配置，不自动安装，永不阻塞）。
@@ -65,8 +65,11 @@ foreach ($t in $checks1) {
       if (Add-ToUserPath $t.pathDir) { Ok "    已修复 PATH：$($t.pathDir) 已加入用户 PATH（新开终端生效）" }
     }
   } else {
-    Warn "[$($t.tier)] $($t.name) 未安装——请手动安装或使用大模型协助安装（建议命令：$($t.hint)）；或运行 setup\install-tools.ps1 一键自动安装"
-    Warn "    装好后重跑本脚本即可自动补齐相关配置（已装项自动跳过）"
+    Warn "[$($t.tier)] $($t.name) 未安装"
+    if ($t.guide) {
+      Write-Host "    $($t.guide -replace '`n', "`n    ")" -ForegroundColor Gray
+    }
+    Warn "    或运行 setup\install-tools.ps1 一键自动安装；装好后重跑本脚本即可自动补齐相关配置（已装项自动跳过）"
   }
 }
 
