@@ -87,16 +87,57 @@ def build_portable_map():
     m.sort(key=lambda x: len(x[0]), reverse=True)
     return m
 
+# 安装约定位置保护清单（to_portable 不转换，保留字面）：
+# 任何机器安装后路径相同的系统/工具约定位置，如 C:\Program Files、C:\msys64、C:\Users\<用户名>（字面占位形式）。
+# 根因（2026-08-31 实测）：path_map 中 <工具目录>=盘符根（C:\）时，to_portable 会把 C:\ 前缀全部吞成
+# <工具目录>Program Files 等，破坏仓库"安装约定位置保留字面"约定（update_skill 人工核查规则）。
+GUARD_PREFIXES = [
+    r"C:\Program Files (x86)",
+    r"C:\Program Files",
+    r"C:\Windows",
+    r"C:\Temp",
+    r"C:/Temp",
+    r"C:\msys64",
+    r"C:\w64devkit",
+    r"C:\Users\<用户名>",
+    r"/mnt/c/Users/<用户名>",
+]
+
+def _is_root_pair(real):
+    # 盘符根映射（如 <工具目录>=C:\，长度 3）：这类映射会吞掉其后所有路径段，需 guard 保护
+    return len(real) == 3 and real[1] == ":" and real[2] == "\\"
+
 def convert(text, pairs):
-    for real, ph in pairs:
+    roots = [p for p in pairs if _is_root_pair(p[0])]
+    others = [p for p in pairs if not _is_root_pair(p[0])]
+
+    def sub(pair):
+        nonlocal text
+        real, ph = pair
         # 防御：空 key 映射（path_map 空值填写）直接跳过，防 replace("", ph) 全局插入
         if not real or not ph:
-            continue
+            return
         text = text.replace(real, ph)
         # URL 风格（正斜杠，如 file:///<工具目录>Users/x）也替换
         real_slash = real.replace("\\", "/")
         if real_slash != real:
             text = text.replace(real_slash, ph)
+
+    # 非根映射正常替换（长路径优先已由调用方排序保证；<LibreOffice目录>=C:\Program Files\LibreOffice
+    # 这类映射必须先于 guard 执行，否则被"安装约定位置保护"挡住）
+    for p in others:
+        sub(p)
+    # 根映射（如 <工具目录>=C:\）：先哨兵保护安装约定位置，再替换盘符根，最后还原
+    guards = []
+    for i, g in enumerate(GUARD_PREFIXES):
+        if g in text:
+            sentinel = "@@PATHGUARD%d@@" % i
+            text = text.replace(g, sentinel)
+            guards.append((sentinel, g))
+    for p in roots:
+        sub(p)
+    for sentinel, g in guards:
+        text = text.replace(sentinel, g)
     return text
 
 # 状态文件保护：这些本机特定文件不参与任何转换（防止 path_map 自我指涉；path_convert.py 自身含占位符键，转换会自毁）

@@ -7,9 +7,10 @@
 # 说明：安装类操作会请求管理员权限（UAC 弹窗）；全部为官方/镜像静默安装。
 # ============================================================
 param(
-  [switch]$SkipWinget,      # 跳过 winget 安装的软件（Git/Node/Python/Chrome/LibreOffice）
+  [switch]$SkipWinget,      # 跳过 winget 安装的软件（Git/Node/Python/Chrome/LibreOffice/Tesseract）
   [switch]$SkipNpm,         # 跳过 npm 全局包（opencode/mermaid-cli）
-  [switch]$SkipPip,         # 跳过 pip 包（pix2text/matplotlib/pymupdf/pillow）
+  [switch]$SkipPip,         # 跳过 pip 包（tools-manifest B 类常规包全集）
+  [switch]$SkipBigPkgs,     # 跳过可选大件（playwright+chromium / weasyprint+MSYS2）
   [switch]$SkipDeploy,      # 跳过 skill/配置/脚本部署
   [switch]$SkipWsl,         # 跳过 WSL 安装
   [switch]$UseChinaMirror,  # npm/pip 使用国内镜像
@@ -42,7 +43,17 @@ function Test-Soffice {
   return $false
 }
 
-# 依据 winget 包 id 判断是否已装（Chrome/LibreOffice 用安装路径判断更可靠）
+# Tesseract 同 soffice：winget 装的不进 PATH，需按安装位置探测（LibreOffice 式双通道检测）
+function Test-Tesseract {
+  if (Test-Cmd "tesseract") { return $true }
+  foreach ($p in @(
+    "C:\Program Files\Tesseract-OCR\tesseract.exe",
+    "C:\Program Files (x86)\Tesseract-OCR\tesseract.exe"
+  )) { if (Test-Path $p) { return $true } }
+  return $false
+}
+
+# 依据 winget 包 id 判断是否已装（Chrome/LibreOffice/Tesseract 用安装路径判断更可靠）
 function Test-Pkg([string]$id) {
   switch ($id) {
     "Git.Git"                     { return (Test-Cmd "git") }
@@ -50,6 +61,7 @@ function Test-Pkg([string]$id) {
     "Python.Python.3.12"          { return (Test-Cmd "python") }
     "Google.Chrome"               { return (Test-Path "C:\Program Files\Google\Chrome\Application\chrome.exe") }
     "TheDocumentFoundation.LibreOffice" { return (Test-Soffice) }
+    "UB-Mannheim.TesseractOCR"    { return (Test-Tesseract) }
     default                       { return $false }
   }
 }
@@ -110,8 +122,8 @@ if (-not $SkipWinget) {
   } else {
     # 动态版本解析（独立模块 Get-DynamicVersions：npmmirror JSON 目录页 + 清华 HTML 目录页 + 兜底固定版）
     $dyn = Get-DynamicVersions
-    $gitVer = $dyn.git; $nodeVer = $dyn.node; $pyVer = $dyn.py; $loVer = $dyn.lo
-    Ok "动态版本解析：Git $gitVer / Node $nodeVer / Python $pyVer / LibreOffice $loVer"
+    $gitVer = $dyn.git; $nodeVer = $dyn.node; $pyVer = $dyn.py; $loVer = $dyn.lo; $tesVer = $dyn.tes
+    Ok "动态版本解析：Git $gitVer / Node $nodeVer / Python $pyVer / LibreOffice $loVer / Tesseract $tesVer"
     $pkgs = @(
       @{ id = "Git.Git";                         name = "Git for Windows"; required = $true;  check = { (Test-Cmd "git") -or (Test-Path "C:\Program Files\Git\cmd\git.exe") };
          mirrors = @("https://registry.npmmirror.com/-/binary/git-for-windows/v$gitVer/Git-$($gitVer -replace '\.windows\.1$', '')-64-bit.exe", "https://github.com/git-for-windows/git/releases/download/v$gitVer/Git-$($gitVer -replace '\.windows\.1$', '')-64-bit.exe"); silent = @("/VERYSILENT", "/NORESTART") },
@@ -122,7 +134,9 @@ if (-not $SkipWinget) {
       @{ id = "Google.Chrome";                   name = "Google Chrome";   required = $false; check = { (Test-Path "C:\Program Files\Google\Chrome\Application\chrome.exe") -or (Test-Path "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe") };
          mirrors = @("https://dl.google.com/chrome/install/latest/chrome_installer.exe", "https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi"); silent = @("/silent", "/install") },
       @{ id = "TheDocumentFoundation.LibreOffice"; name = "LibreOffice";    required = $false; check = { Test-Soffice };
-         mirrors = @("https://mirrors.tuna.tsinghua.edu.cn/libreoffice/libreoffice/stable/$loVer/win/x86_64/LibreOffice_${loVer}_Win_x86-64.msi", "https://download.documentfoundation.org/libreoffice/stable/$loVer/win/x86_64/LibreOffice_${loVer}_Win_x86-64.msi", "https://gh-proxy.com/https://download.documentfoundation.org/libreoffice/stable/$loVer/win/x86_64/LibreOffice_${loVer}_Win_x86-64.msi"); silent = @("/qn", "/norestart") }
+         mirrors = @("https://mirrors.tuna.tsinghua.edu.cn/libreoffice/libreoffice/stable/$loVer/win/x86_64/LibreOffice_${loVer}_Win_x86-64.msi", "https://download.documentfoundation.org/libreoffice/stable/$loVer/win/x86_64/LibreOffice_${loVer}_Win_x86-64.msi", "https://gh-proxy.com/https://download.documentfoundation.org/libreoffice/stable/$loVer/win/x86_64/LibreOffice_${loVer}_Win_x86-64.msi"); silent = @("/qn", "/norestart") },
+      @{ id = "UB-Mannheim.TesseractOCR";       name = "Tesseract OCR";  required = $false; check = { Test-Tesseract };
+         mirrors = @("https://gh-proxy.com/https://github.com/UB-Mannheim/tesseract/releases/download/v$tesVer/tesseract-ocr-w64-setup-$tesVer.exe", "https://github.com/UB-Mannheim/tesseract/releases/download/v$tesVer/tesseract-ocr-w64-setup-$tesVer.exe"); silent = @("/S") }
     )
     foreach ($p in $pkgs) {
       $tier = if ($p.required) { "必选" } else { "可选" }
@@ -284,7 +298,7 @@ if (-not $SkipNpm) {
 
 # ---------- 3. pip 包 ----------
 if (-not $SkipPip) {
-  Step "3. pip 包（pix2text / matplotlib / PyMuPDF / pillow）"
+  Step "3. pip 包（tools-manifest B 类常规包全集）"
   if (-not (Test-Cmd "python")) {
     Warn "python 不可用（未装或未刷新 PATH）。装好后重跑本脚本即可。"
   } else {
@@ -299,7 +313,9 @@ if (-not $SkipPip) {
       python -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
       Ok "pip 镜像源已持久化配置（清华源，后续 pip 命令自动走国内源）"
     }
-    foreach ($pkg in @("pix2text","matplotlib","PyMuPDF","pillow")) {
+    # 清单与 tools-manifest.md B 类保持一致（2026-08-31 全量补齐；新增常规包先更新总表，
+    # test_setup_ps1.py 的清单对齐检查会强制本脚本同步）
+    foreach ($pkg in @("pix2text","matplotlib","PyMuPDF","pillow","pypandoc-binary","python-docx","python-pptx","openpyxl","xlrd","pypdf","pdfplumber","chardet","pyzbar","opencv-python","imageio-ffmpeg","docxtpl","Jinja2","python-magic-bin","ocrmypdf")) {
       Write-Host "  pip install $pkg ..."
       python -m pip install --upgrade --user $pkg $pi
       if ($LASTEXITCODE -eq 0) { Ok "$pkg 安装完成" } else { Warn "$pkg 安装失败" }
@@ -312,6 +328,64 @@ if (-not $SkipPip) {
     if (-not (Test-Cmd "p2t")) { Warn "p2t 命令仍未在 PATH（可手动加：$scriptsDir）" }
   }
 } else { Warn "已跳过 pip 包（-SkipPip）" }
+
+# ---------- 3b. 可选大件（playwright / weasyprint；下载量大、依赖链长，失败仅警告不阻塞） ----------
+if (-not $SkipBigPkgs) {
+  Step "3b. 可选大件（playwright + chromium / weasyprint + MSYS2）"
+  if (-not (Test-Cmd "python")) {
+    Warn "python 不可用，跳过可选大件（装好后重跑本脚本补齐）"
+  } else {
+    $pi = if ($UseChinaMirror) { "-i https://pypi.tuna.tsinghua.edu.cn/simple" } else { "" }
+    # playwright：headless 渲染 HTML→PDF/截图；chromium 内核约 300MB，慢网用 npmmirror 镜像
+    try {
+      python -c "import playwright" 2>$null
+      $pwInstalled = ($LASTEXITCODE -eq 0)
+      if (-not $pwInstalled) {
+        Write-Host "  pip install playwright ..."
+        python -m pip install --upgrade --user playwright $pi
+        $pwInstalled = ($LASTEXITCODE -eq 0)
+      }
+      if ($pwInstalled) {
+        if ($UseChinaMirror) { $env:PLAYWRIGHT_DOWNLOAD_HOST = "https://npmmirror.com/mirrors/playwright" }
+        Write-Host "  python -m playwright install chromium（内核约 300MB，可在本脚本结束后后台补装）..."
+        python -m playwright install chromium
+        if ($LASTEXITCODE -eq 0) { Ok "playwright + chromium 安装完成" } else { Warn "playwright chromium 内核下载失败（可手动：python -m playwright install chromium）" }
+      } else { Warn "playwright 安装失败（可手动：pip install playwright）" }
+    } catch { Warn "playwright 安装异常（可手动安装）" }
+    # weasyprint：MSYS2（GTK3 DLL）+ 用户环境变量 WEASYPRINT_DLL_DIRECTORIES + pip 包
+    $msysRoot = "C:\msys64"
+    $msysBash = Join-Path $msysRoot "usr\bin\bash.exe"
+    $gtkDll = Join-Path $msysRoot "ucrt64\bin\libgtk-3-0.dll"
+    if (-not (Test-Path $gtkDll)) {
+      if (-not (Test-Path $msysBash)) {
+        Write-Host "  winget 安装 MSYS2（工作窗口，最长等待 10 分钟）..."
+        Start-WorkerCommand "winget install --id MSYS2.MSYS2 -e --silent --disable-interactivity --accept-source-agreements --accept-package-agreements"
+        $msysWait = 0
+        while (-not (Test-Path $msysBash) -and $msysWait -lt 120) { Start-Sleep -Seconds 5; $msysWait++ }
+      }
+      if (Test-Path $msysBash) {
+        Write-Host "  MSYS2 pacman 安装 GTK3（工作窗口，最长等待 10 分钟）..."
+        Start-WorkerCommand "& `"$msysBash`" -lc 'pacman -Syu --noconfirm; pacman -S --noconfirm mingw-w64-ucrt-x86_64-gtk3'"
+        $gtkWait = 0
+        while (-not (Test-Path $gtkDll) -and $gtkWait -lt 120) { Start-Sleep -Seconds 5; $gtkWait++ }
+      } else { Warn "MSYS2 未安装成功（可手动 winget install MSYS2.MSYS2 后重跑本脚本）" }
+    }
+    if (Test-Path $gtkDll) {
+      $msysBin = Join-Path $msysRoot "ucrt64\bin"
+      $curEnv = [Environment]::GetEnvironmentVariable("WEASYPRINT_DLL_DIRECTORIES", "User")
+      if (-not $curEnv -or ($curEnv -split ';' -notcontains $msysBin)) {
+        [Environment]::SetEnvironmentVariable("WEASYPRINT_DLL_DIRECTORIES", $msysBin, "User")
+        $env:WEASYPRINT_DLL_DIRECTORIES = $msysBin
+        Ok "WEASYPRINT_DLL_DIRECTORIES 已持久化配置：$msysBin"
+      }
+      Write-Host "  pip install weasyprint ..."
+      python -m pip install --upgrade --user weasyprint $pi
+      if ($LASTEXITCODE -eq 0) { Ok "weasyprint 安装完成" } else { Warn "weasyprint 安装失败（可手动：pip install weasyprint）" }
+    } else { Warn "MSYS2 GTK3 未就绪，weasyprint 跳过（见 REQUIREMENTS.md 手动安装）" }
+  }
+  # 大件段收尾：关闭工作窗口（若本段弹过）
+  Stop-WorkerWindow
+} else { Warn "已跳过可选大件（-SkipBigPkgs）" }
 
 # ---------- 4. WSL ----------
 if (-not $SkipWsl) {
@@ -573,6 +647,7 @@ $checks = @(
   @{ name = "p2t";             ok = (Test-Cmd "p2t") },
   @{ name = "git";             ok = (Test-Cmd "git") },
   @{ name = "soffice";         ok = (Test-Soffice) },
+  @{ name = "Tesseract";       ok = (Test-Tesseract) },
   @{ name = "Chrome";          ok = (Test-Path "C:\Program Files\Google\Chrome\Application\chrome.exe") -or (Test-Path "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe") },
   @{ name = "skills 部署";     ok = (Test-Path (Join-Path $ConfigDir "skills\3gpp_skill\SKILL.md")) },
   @{ name = "辅助脚本部署";    ok = (Test-Path (Join-Path $ToolDir "extract-docx.ps1")) }

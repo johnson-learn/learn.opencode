@@ -80,13 +80,13 @@ if mode == "仓库直读":
     try:
         r = subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", sim, "-FuncFile", funcs],
                            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300)
-        check("模拟测试 test_setup_sim.ps1 执行通过（mock 分支流转 + 窗口停止信号 + 单窗口复用 21/21）", r.returncode == 0 and "SIM_RESULT: pass=21 fail=0" in r.stdout)
+        check("模拟测试 test_setup_sim.ps1 执行通过（mock 分支流转 + 窗口停止信号 + 单窗口复用 + tesseract 动态版本 23/23）", r.returncode == 0 and "SIM_RESULT: pass=23 fail=0" in r.stdout)
     except Exception:
-        check("模拟测试 test_setup_sim.ps1 执行通过（mock 分支流转 + 窗口停止信号 + 单窗口复用 21/21）", False)
+        check("模拟测试 test_setup_sim.ps1 执行通过（mock 分支流转 + 窗口停止信号 + 单窗口复用 + tesseract 动态版本 23/23）", False)
 else:
     print("  （镜像回退模式：跳过模拟测试，函数文件不可得）")
 check("winget 命令发送到单一工作窗口 + 自动状态机", "Start-WorkerCommand \"winget" in c and "开始自动安装" in c)
-check("worker 全程只弹一次（方案一：非退出场景不杀 worker，Stop-WorkerWindow 仅 2 处=按键3退出+阶段收尾）", c.count("Stop-WorkerWindow") == 2)
+check("worker 全程只弹一次（方案一：非退出场景不杀 worker，Stop-WorkerWindow 仅 3 处=按键3退出+阶段收尾×2）", c.count("Stop-WorkerWindow") == 3)
 check("新包开始清理上包 done 残留（防 winget 阶段误判换源）", "Remove-Item $workerDoneFile -Force" in c)
 check("检测双通道（命令 OR 安装位置文件，防新装 PATH 未刷新误判）", "C:\\Program Files\\nodejs\\node.exe" in c and "C:\\Program Files\\Git\\cmd\\git.exe" in c)
 
@@ -95,6 +95,47 @@ check("安装后刷新当前会话 PATH（新装工具立即可用）", "GetEnvi
 check("npm 镜像源持久化配置（registry.npmmirror.com）", "npm config set registry" in c)
 check("pip 镜像源持久化配置（清华源）", "pip config set global.index-url" in c)
 check("填写类与自动类残留检测均排除 tests 目录（repo_face 镜像保留占位符是设计）", c.count("FullName -notmatch \"\\\\tests\\\\\"") >= 2)
+
+# 3.10 安装清单全量补齐（2026-08-31 用户要求：所有必要工具按安装要求纳入，LibreOffice 式优化推广到全工具）
+check("SkipBigPkgs 开关存在（可选大件 playwright/weasyprint）", "[switch]$SkipBigPkgs" in c)
+check("Tesseract 纳入 winget 安装清单（UB-Mannheim.TesseractOCR）", "UB-Mannheim.TesseractOCR" in c)
+check("Tesseract 双通道检测函数（Test-Tesseract：命令 OR 安装位置）", "Test-Tesseract" in c and "C:\\Program Files\\Tesseract-OCR\\tesseract.exe" in c)
+check("Tesseract 版本动态解析（gh-proxy 代理 GitHub API + 兜底固定版）", "api.github.com/repos/UB-Mannheim/tesseract" in c2 and "$tesVer" in c2)
+check("Tesseract 镜像双渠道（gh-proxy + GitHub 直连）", "tesseract-ocr-w64-setup-$tesVer.exe" in c)
+check("pip 常规包清单覆盖 19 个（B 类全集减大件）", all(x in c for x in ['"pix2text"','"pypandoc-binary"','"python-docx"','"python-pptx"','"openpyxl"','"xlrd"','"pypdf"','"pdfplumber"','"chardet"','"pyzbar"','"opencv-python"','"imageio-ffmpeg"','"docxtpl"','"Jinja2"','"python-magic-bin"','"ocrmypdf"']))
+check("可选大件段存在（playwright chromium 镜像 + weasyprint MSYS2 链）", "PLAYWRIGHT_DOWNLOAD_HOST" in c and "WEASYPRINT_DLL_DIRECTORIES" in c and "mingw-w64-ucrt-x86_64-gtk3" in c)
+check("weasyprint 环境变量持久化到用户级", "GetEnvironmentVariable(\"WEASYPRINT_DLL_DIRECTORIES\", \"User\")" in c)
+check("Tesseract 纳入验证汇总", 'name = "Tesseract"' in c)
+
+# 3.11 安装清单与 tools-manifest 总表自动对齐（2026-08-31 用户要求：后续新增必需工具自动纳入同方案）
+# 解析总表 B 类包名 → 必须出现在 setup 的 pip 清单或大件段；D 类 Tesseract → 安装清单；F 类 apt 包 → install-wsl.ps1
+tm_path = os.path.join(REPO, "copy", "opencode", "tools-manifest.md")
+if not os.path.exists(tm_path):
+    tm_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "repo_face", "tools-manifest.md")
+if os.path.exists(tm_path):
+    tm = open(tm_path, encoding="utf-8", errors="replace").read()
+    b_section = re.search(r"## B\. Python 环境与核心包.*?\n(.*?)(?=\n## )", tm, re.S)
+    b_pkgs = []
+    if b_section:
+        for line in b_section.group(1).splitlines():
+            m = re.match(r"^\|\s*([A-Za-z0-9][A-Za-z0-9\-\.]*)\s*\|", line)
+            if m:
+                b_pkgs.append(m.group(1).lower())
+    setup_lower = c.lower() + c2.lower()
+    b_missing = [p for p in b_pkgs if p.lower() not in setup_lower]
+    check("tools-manifest B 类包全部纳入 setup 安装清单（pip 19 + 大件 2；缺失: %s）" % ",".join(b_missing) if b_missing else "tools-manifest B 类包全部纳入 setup 安装清单（pip 19 + 大件 2）", len(b_missing) == 0)
+    check("tools-manifest D 类 Tesseract 纳入 setup（UB-Mannheim winget 条目）", "UB-Mannheim.TesseractOCR" in tm and "UB-Mannheim.TesseractOCR" in c)
+    apt_m = re.search(r"apt install ([^\n`\|]+)", tm)
+    wsl_path = os.path.join(REPO, "copy", "setup", "install-wsl.ps1")
+    if apt_m and os.path.exists(wsl_path):
+        wsl_c = open(wsl_path, encoding="utf-8", errors="replace").read()
+        apt_pkgs = [p for p in apt_m.group(1).split() if p not in ("apt", "install", "-y")]
+        apt_missing = [p for p in apt_pkgs if p not in wsl_c]
+        check("tools-manifest F 类 apt 包全部纳入 install-wsl.ps1（缺失: %s）" % ",".join(apt_missing) if apt_missing else "tools-manifest F 类 apt 包全部纳入 install-wsl.ps1", len(apt_missing) == 0)
+    else:
+        check("tools-manifest F 类 apt 包全部纳入 install-wsl.ps1", False)
+else:
+    check("tools-manifest B 类包全部纳入 setup 安装清单（总表不可得，跳过）", True)
 
 # 3.6 必备工具缺失醒目告警（用户 2026-08-27 要求：缺失/安装失败必须醒目提醒）
 check("必备工具缺失告警块存在（8.5）", "必备工具缺失" in c)

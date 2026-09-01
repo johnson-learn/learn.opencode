@@ -80,6 +80,9 @@ collaborates_with:
 | 创建/编辑幻灯片、布局、备注 | `davila7-claude-code-templates-pptx` |
 | 从大纲/数据生成 PPT，模板/图表/AI 图 | `openclaw-skills-pptx-creator` |
 
+> **python-pptx 表格 + LibreOffice 渲染双坑（本机实测 2026-08-31）**：
+> ① a:tbl 中**无任何文本的空 cell** 会导致 LibreOffice 渲染时其所在行被折叠、整行内容丢失——空 cell 必须写入空格占位文本；② a:tcPr 的 `rowSpan`+`vMerge` 垂直合并结构 LibreOffice 渲染错误（vMerge 之后的行被丢弃）——表格垂直合并改用「组首行写文字 + 其余行空格占位 + 连续同色填充」伪合并。生成后渲染校验：LibreOffice 转 PDF + PyMuPDF `get_text()` 比对关键字符串存在性（注意 PDF 提取会在中西文/数字间插空格，匹配需容错）；当前模型不支持看图时此法为 PPT 排版校验主通道。
+
 ### Excel / 电子表格
 | 任务 | 子技能（modules 下目录） |
 |---|---|
