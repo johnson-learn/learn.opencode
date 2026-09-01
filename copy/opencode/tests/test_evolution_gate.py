@@ -36,6 +36,8 @@ tmp_skill = os.path.join(CFG, "skills", "_gate_test_skill")
 os.makedirs(tmp_skill, exist_ok=True)
 tmp_md = os.path.join(tmp_skill, "SKILL.md")
 open(tmp_md, "w", encoding="utf-8").write("---\nname: _gate_test_skill\ndescription: gate test\n---\n# test\n")
+os.makedirs(os.path.join(tmp_skill, "tests"), exist_ok=True)
+open(os.path.join(tmp_skill, "tests", "test_skill_self.py"), "w", encoding="utf-8").write("# -*- coding: utf-8 -*-\nimport sys\nprint(\"gate L1 ok\")\nsys.exit(0)\n")
 # 重新快照（含临时文件）
 r = run("--snapshot", sid)
 # 修改文件
@@ -48,6 +50,8 @@ check("流水兜底自动追加", log_size1 > log_size0)
 check("自动测试已执行（含 evolution_consistency）", "test_evolution_consistency" in r.stdout)
 check("待模型补充清单输出", "待模型补充" in r.stdout)
 check("经验健康引擎输出（方案丁：待验证清单/deprecated 校验/老化扫描）", "[经验健康]" in r.stdout)
+check("L1 领域自测精准触发（改动 skill 时自动跑该 skill tests/test_skill_self.py）", "L1:_gate_test_skill" in r.stdout)
+check("经验健康归属分组输出（分域健康监控）", "按归属分组" in r.stdout)
 
 # 4. 快照文件清理
 import glob

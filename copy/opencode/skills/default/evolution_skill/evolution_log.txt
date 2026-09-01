@@ -1266,3 +1266,48 @@
 - 核心关键词：skill 框架优化、program_skill、templates 约定
 - 载体：3gpp_skill/SKILL.md（删重复"详细知识"块+引用改占位符）、program_skill（SKILL.md 重构收窄 C 为主 5.5K→6.7K 含 4 族路由表+核心铁律；新建 references/tools.md·compile-scripts.md·debugging.md·coding-standards.md·unit-test.md；新建 templates/c-project 工程骨架（main.c/Makefile/CMakeLists.txt/.gitignore/README）；移除 lang-go-concurrency 模块 14→13）、files_skill（scripts/ 归档 extract-docx/doc.ps1 + SKILL.md 引用改占位符）、evolution_skill（templates/ 两个固化模板）、find_skill（references×3 + 系列首选/备选标注 + 长细节下沉）、instructions.md（编写规范加 5b templates/ 目录约定 + 通用规则压缩）、regedit.md（测试层描述压缩 332B）、test_audit_references.py（modules/ 跨目录引用解析 + health_check.py 裸名特例）、test_evolution_gate.py（drain 用例抗真实快照竞态）
 - 内容：① 手册建议对照现状后逐项甄别：Johnson 残留仅存在于历史流水（无需修）、find_skill 已较完善（补 references 与首选标注而非重写）、update_skill 门限 15KB 内保持；② program_skill 定位收窄 C 为主（Go/Rust/Java/前端后端明确不做），C 基础模版待用户提供后放入 templates/；③ 坑【test_evolution_gate 环境竞态】：测试"无残留时 drain"断言全局无快照，真实会话插件快照残留致失败——修复为断言 rc=0+测试 sid 快照清理；④ 注入量超限 50.9KB（新增 5b 条目触发）→ 压缩 instructions 通用规则与 regedit 测试层描述回 50KB 内。验证：全量 17 套测试全绿（plugin 52/52、gate 42/42、health_check 9/9 OK 8 警告 2 失败 0、audit 3/3、charset 7/7 等）
+[2026-09-01] 会话自动门禁（gate-test-1788239645） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-09-01] 会话自动门禁（gate-test-1788239645） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools\_gate_new_tool_test.py
+
+[2026-09-01] 会话自动门禁（gate-test-1788243826） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-09-01] 会话自动门禁（gate-test-1788243826） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools\_gate_new_tool_test.py
+
+[2026-09-01] 会话自动门禁（gate-test-1788243872） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-09-01] 会话自动门禁（gate-test-1788243872） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools\_gate_new_tool_test.py
+
+[2026-09-01] 会话自动门禁（gate-test-1788243879） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-09-01] 会话自动门禁（gate-test-1788243879） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools\_gate_new_tool_test.py
+
+[2026-09-01] 会话自动门禁（gate-test-1788244105） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-09-01] 会话自动门禁（gate-test-1788244105） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools\_gate_new_tool_test.py
+
+[2026-09-01] 会话自动门禁（gate-test-1788244236） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-09-01] 会话自动门禁（gate-test-1788244236） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools\_gate_new_tool_test.py
+
+
+[2026-09-01] 框架进化.docx 评审反馈执行（L1 自测体系/经验索引/归属分组/精准触发/定位同步）
+- 状态：active
+- 场景数：1（用户点名按评审反馈执行）
+- 最后验证：2026-09-01
+- 核心关键词：L1领域自测、经验索引、归属分组、gate精准触发
+- 归属：evolution_skill
+- 载体：6 个 skill 的 tests/test_skill_self.py + program_skill 的 test_compile_template.py（c-project 骨架 WSL 实编译 3/3）、evolution_gate.py（L1 精准触发 + experience_health 归属分组统计 + 结构化解析加 owner 字段）、test_evolution_gate.py 42→44/44（L1 触发+归属分组断言+临时 skill 建 L1）、6 个 SKILL.md 经验索引节、evolution_skill 第四步结构化格式加归属行（SKILL.md+five-step-template.md）、program_skill references 补 3 个（embedded-build/deploy-remote/build-systems）、update_skill SKILL.md 补「## 铁律」章节（全局版缺失同步边界铁律）、instructions 5c L1 约定 + 引用占位符修复、regedit/tests README L1 登记、手册第 7 章 find_skill 定位同步
+- 内容：① 评审最大缺口=L1 子 skill 自测——建 7 个 L1 测试（入口规范/模块引用无悬空/references 无悬空/技能特定断言）+ program 行为自测（复制 c-project → WSL gcc make+cmake 双路径实编译运行 3/3）；② gate 精准触发（改动 skill 自动跑对应 L1）+ 经验健康按归属分组（流水新结构化字段"归属：xxx_skill"，SKILL.md+模板同步）；③ 6 个 SKILL.md 经验索引节；④ find_skill 定位同步 regedit/手册；⑤ 坑【审计引用 8 处】跨目录相对引用被 test_audit_references 拦截——修复为占位符/../ 形式（<opencode配置目录> 含 <> 自动 skip）。验证：全量 20 套测试全绿（L1 7 skill、gate 44/44、audit 3/3、plugin 52/52 等）

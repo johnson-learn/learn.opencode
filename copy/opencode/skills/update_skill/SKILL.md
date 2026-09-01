@@ -197,6 +197,13 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 ### 收尾报告
 输出：第一步 pull/吸收结果、修改清单、自测结果、第四步用户选择、推送结果（commit hash）、反向合入清单（若有）；若仓库内 README/INSTALL 提及的技能清单与现状不符，提醒用户是否一并更新
 
+## 铁律
+
+- **同步边界（最高优先级）**：只有用户显式调用 update_skill 才允许 git pull/commit/push；其它任何场景（需求/讨论/进化固化）都不得附 git 同步
+- **不得附 git 同步**：进化固化等本机编辑不伴随任何 git 动作
+- **弹窗确认不可跳过**：推送前必须 question 工具弹窗，用户选择后才执行
+- **差异合入模式**：仓库禁止 rm -rf 删除替换；多机同名文件以内容差异逐文件裁决
+
 
 
 ## 通用输出规则（全部任务遵守）
@@ -232,3 +239,7 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 
 - 详见 `references/tools.md`
 - 详见 `references/portable-paths.md`
+
+## 本 skill 经验索引（分域健康监控台账）
+
+> 本 skill 相关经验在 `<opencode配置目录>\skills\default\evolution_skill\evolution_log.txt` 中带「归属：update_skill」字段的条目；active 条目摘要：to_portable 安装约定位置 guard、msgfile_exists WSL 双通道、git 路径双轨（git show 相对仓库根 vs status 相对当前目录）、形态污染三踩坑。低活性/待验证条目由经验健康引擎（gate --check）按归属分组提示。

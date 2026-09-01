@@ -86,6 +86,7 @@
 4. **处理流程章节（必须）**：确认任务 → 路由 → 执行 → 联动其它 skill（find_skill/filer_skill 等）
 5. **子技能资源库规范**：聚合类 skill 的子技能放 `modules/<目录>/GUIDE.md`（SKILL.md 改名 GUIDE.md，不独立注册）；路由表用 `modules/<目录>` 引用
 5b. **templates/ 目录约定（2026-09-01 新增）**：固定格式产出（工程骨架/输出模板/固化模板）放 `templates/`，SKILL.md 用一句话索引；program_skill 的 C 工程骨架、evolution_skill 的五步固化模板即此用法——模板是"复制即用"的产出物，非知识条目，不随入口注入
+5c. **L1 领域自测约定（2026-09-01 框架进化评审落地）**：每个 skill 必须有 `<opencode配置目录>\skills\<skill名>\tests\test_skill_self.py`（入口规范/模块引用无悬空/references 无悬空/技能特定断言）+ SKILL.md 末尾「本 skill 经验索引」节；evolution_gate 精准触发（改哪个跑哪个）；涉及可执行骨架的 skill（如 program_skill）另配行为自测（实编译实运行）
 6. **环境注意章节（必须）**：本机已装工具、调用规范（全路径/特殊参数）、未装大件（需用户同意）
 7. **权威源规则**：领域有官方权威源（如 3GPP 官网）时，必须写"权威源声明"并规定"其它资料可参考，但以官网为准"
 8. **持续更新约定**：涉及外部资源（网站/FTP）的 skill 必须写"后续访问发现新变化时同步更新本 skill"
