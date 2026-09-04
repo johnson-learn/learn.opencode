@@ -20,11 +20,17 @@ core = ["AGENTS.md", "instructions.md", "regedit.md", "docs-sync.md", "tools-man
 missing = [f for f in core if not os.path.exists(os.path.join(CFG, f))]
 (missing and [add_fail("缺核心文件: " + f) for f in missing]) or add_ok("核心配置 %d 个文件全部存在" % len(core))
 
-# ② 6 个 skill frontmatter 合法 + 体积门限
+# ② 6 个 skill frontmatter 合法 + 体积门限（门限读 skill_validate_config.json 单一权威源，2026-09-04 改：此前硬编码 15KB 与配置不同步）
 skills_root = os.path.join(CFG, "skills")
 skill_dirs = [d for d in os.listdir(skills_root) if os.path.isdir(os.path.join(skills_root, d)) and d != "default"]
 skill_dirs += [d for d in os.listdir(os.path.join(skills_root, "default")) if os.path.isdir(os.path.join(skills_root, "default", d))]
-limit_kb = 15
+limit_kb = 8
+try:
+    _cfg = os.path.join(CFG, "tests", "skill_validate_config.json")
+    if os.path.exists(_cfg):
+        limit_kb = int(json.load(open(_cfg, encoding="utf-8")).get("size_limit_kb", 8))
+except Exception:
+    pass
 bad_skills = []
 for d in sorted(set(skill_dirs)):
     p = os.path.join(skills_root, d, "SKILL.md")

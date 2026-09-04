@@ -1383,3 +1383,18 @@
 - 归属：evolution_skill
 - 载体：AGENTS.md 铁律第 8 条（标题与内容扩展）
 - 内容：todowrite 创建任务后每完成一项立即同步状态（in_progress/completed），禁止创建后不管、禁止最后批量补标记；任务列表必须与事实进展一致
+[2026-09-04] 会话自动门禁（gate-test-1788512601） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-09-04] 会话自动门禁（gate-test-1788512601） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools\_gate_new_tool_test.py
+
+
+[2026-09-04] 用户要求 → 全局注记瘦身（删无关历史注记，59 处，用户逐文件弹窗确认）
+- 状态：active
+- 场景数：2（用户点名瑕疵 + 弹窗确认）
+- 最后验证：2026-09-04
+- 核心关键词：注记瘦身、文件膨胀
+- 归属：evolution_skill
+- 载体：instructions(21)/regedit(6)/tools-manifest(2)/docs-sync(1)/evolution.md(4)/evolution_skill SKILL(10)/update_skill SKILL(12)/AGENTS(3)
+- 内容：删除纯历史日期注记（新增/起/报告评审后）与版本修正链条（V2 30→50→70KB）与方案代号（V5 方案甲'）与交叉引用（见 X 条目）；保留用户定/用户点名（权威来源）、实测/教训（验证状态）、防过度进化等理由说明、回退注释格式示例、evolution.md 时间分组标题。过程教训：①批量替换脚本误删 update_skill 同步过滤规则标题判断标准（用户提醒"核对别误删"后恢复）②脚本 old 文本与实际不完全一致产生 MISS（空格/前缀差异），需逐项核对③批量文本清理必须生成删除清单逐条弹窗确认（六步第三步精神）。测试全绿后收尾

@@ -6,7 +6,7 @@
 
 ## 生效方式分类（保证等级量化 + 本质二元标注：平台 vs LLM）
 
-> **本质判据（用户 2026-08-26 定）**：执行归属按"谁决定"划分——平台执行代码/工具 → 属于平台；LLM 发起/决定 → 属于 LLM。本质只分两类，不模棱两可：
+> **本质判据（用户定）**：执行归属按"谁决定"划分——平台执行代码/工具 → 属于平台；LLM 发起/决定 → 属于 LLM。本质只分两类，不模棱两可：
 > **「100%：平台读 md 文件，并把内容注入 LLM」** 或 **「非100%（等级）：LLM 直接读 md 内容」**。
 > 触发与读取分离的类别（C/D）：触发环节归谁不确定，但**触发后读文件 100% 是平台**（skill 工具=平台内置工具，平台读 SKILL.md 全文注入）。
 
@@ -23,7 +23,7 @@
 
 ## 铁律层
 
-> **注入策略（2026-08-27 实测修正 + 回滚）**：opencode.jsonc 的 instructions 字段在本机 1.18 系列（1.18.18 实测）**解析但不消费**——1.18 系统提示构建只认 AGENTS.md/CLAUDE.md/CONTEXT.md（二进制证据），该字段是 0.x dev/beta 线功能（npm latest=1.18.23 为 1.18 线末版）；该字段已于 2026-08-27 按用户指令**回滚移除**（opencode.jsonc 现仅保留 $schema）。**平台注入通道 = 插件注册事件**：skill-banner.js 注册 `experimental.chat.system.transform`（平台每次请求构建系统提示时确定性触发），直读本层四文件 push 进 output.system——E 类 100% 平台执行、与 AGENTS.md 同级进入系统提示（mtime 缓存防重复读盘；环境变量 OPENCODE_DISABLE_MD_INJECT=1 禁用）。原 B/F/G/H 按需读取路径全部保留为双保险。**技术债务与回退预案**：该 hook 是实验性 API，opencode 升级可能变更/移除——由 test_platform_api.py（G 类，health_check 必跑）持续检测；若失效，回退方案按序：① 重启 opencode.jsonc instructions 字段（若新版已实现该字段，1.18 不实现的历史已核实）② 依赖铁律第 0 条强制 read + 插件提醒的 B 类路径。
+> **注入策略**：opencode.jsonc 的 instructions 字段在本机 1.18 系列（1.18.18 实测）**解析但不消费**——1.18 系统提示构建只认 AGENTS.md/CLAUDE.md/CONTEXT.md（二进制证据），该字段是 0.x dev/beta 线功能（npm latest=1.18.23 为 1.18 线末版）；该字段已按用户指令**回滚移除**（opencode.jsonc 现仅保留 $schema）。**平台注入通道 = 插件注册事件**：skill-banner.js 注册 `experimental.chat.system.transform`（平台每次请求构建系统提示时确定性触发），直读本层四文件 push 进 output.system——E 类 100% 平台执行、与 AGENTS.md 同级进入系统提示（mtime 缓存防重复读盘；环境变量 OPENCODE_DISABLE_MD_INJECT=1 禁用）。原 B/F/G/H 按需读取路径全部保留为双保险。**技术债务与回退预案**：该 hook 是实验性 API，opencode 升级可能变更/移除——由 test_platform_api.py（G 类，health_check 必跑）持续检测；若失效，回退方案按序：① 重启 opencode.jsonc instructions 字段（若新版已实现该字段，1.18 不实现的历史已核实）② 依赖铁律第 0 条强制 read + 插件提醒的 B 类路径。
 
 | 注册项 | 位置 | 生效 | 说明 |
 |---|---|---|---|
@@ -68,8 +68,8 @@
 | fetch_skills.py | `tools\fetch_skills.py` | F | 从技能目录网站获取 skill |
 | cross_move.py | `tools\cross_move.py` | F | 跨 skill 归位 |
 | generalize.py | `tools\generalize.py` | F | 经验通用化改写 |
-| evolution_gate.py | `tools\evolution_gate.py` | E | 进化门禁脚本：session.created 时插件调 --drain（异步后台自愈补跑残留快照，max_n=3 限流）+ --snapshot；session.idle 时 --check——机制步骤（流水兜底追加/自动测试/一致性校验/**配套漏更检测（docs-sync 映射反向校验）**/**新增与删除文件检测（全目录清单快照对比，输出【新增文件】待适配清单）**/**二次验证未闭环计数**/**经验健康引擎（结构化条目扫描：待验证清单/deprecated 定位/条目级老化）**）确定性执行；**--check-5step：六步检查点检测（参数名保留历史名，2026-09-04 五步升级六步：新增第三步·确认弹窗）+ 判定四条件声明检测 + 可追溯检测（场景数=1 须带依据）+ 三条件依据软提示** |
-| health_check.py | `tools\health_check.py` | F | 一键健康检查：①核心配置齐全 ②skill frontmatter+体积门限 ③插件最近执行 ④测试可解析 ⑤门禁 idle/drain 记录 ⑥evolution_log 待处理项 ⑦平台 API 依赖保障（实验性 hook 可用性）⑧字符边界规范（CRLF/BOM/编码扫描）⑨注入量管控（四注入文件合计 ≤70KB，2026-08-28 报告评审后新增、V2 修正上限、2026-09-04 用户弹窗决策 50→70）；--run 实跑全部测试 / --run-quick 实跑快子集（跑前提示预计耗时） |
+| evolution_gate.py | `tools\evolution_gate.py` | E | 进化门禁脚本：session.created 时插件调 --drain（异步后台自愈补跑残留快照，max_n=3 限流）+ --snapshot；session.idle 时 --check——机制步骤（流水兜底追加/自动测试/一致性校验/**配套漏更检测（docs-sync 映射反向校验）**/**新增与删除文件检测（全目录清单快照对比，输出【新增文件】待适配清单）**/**二次验证未闭环计数**/**经验健康引擎（结构化条目扫描：待验证清单/deprecated 定位/条目级老化）**）确定性执行；**--check-5step：六步检查点检测（参数名保留历史名）+ 判定四条件声明检测 + 可追溯检测（场景数=1 须带依据）+ 三条件依据软提示** |
+| health_check.py | `tools\health_check.py` | F | 一键健康检查：①核心配置齐全 ②skill frontmatter+体积门限 ③插件最近执行 ④测试可解析 ⑤门禁 idle/drain 记录 ⑥evolution_log 待处理项 ⑦平台 API 依赖保障（实验性 hook 可用性）⑧字符边界规范（CRLF/BOM/编码扫描）⑨注入量管控（四注入文件合计 ≤70KB）；--run 实跑全部测试 / --run-quick 实跑快子集（跑前提示预计耗时） |
 | sync_push.py | `tools\sync_push.py` | G | 推送门禁脚本化：强制校验用户弹窗确认标记（无标记/非 push 选择直接拒绝 commit/push）；**推送前自动 to_portable（流程漏步不再可能）+ 可移植性强制阻断（残留本机用户名特征即拒绝）**；推送成功后自动清除标记；**WSL 仓库（wsl.localhost 路径）自动走 WSL 内 git 推送（SSH 密钥与 commit author 与历史一致）** |
 | archive\（18 个） | `tools\archive\` | F | 历史一次性脚本存档，不执行 |
 
@@ -95,7 +95,7 @@
 | test_repo_face.py | `tests\test_repo_face.py` | G | 仓库门面一致性（门面对照+STATE_FILES 残留+本机路径扫描+**仓库内 repo_face 镜像=门面一致性 9 对**，27/27；WSL 不可达回退 repo_face 镜像） |
 | test_setup_ps1.py | `tests\test_setup_ps1.py` | G | setup-windows.ps1 自动化测试（检测模式：工具清单必须/可选分类、双通道检测、PATH 修复、未装提示跳过、无自动安装残留、共享模块 setup-check、install-tools 一键安装、tools-manifest 总表对齐、AST，78/78；WSL 不可达回退 repo_face 镜像） |
 | README.md（测试清单） | `tests\README.md` | F | 查测试入口与运行命令 |
-| L1 领域自测（7 个） | `skills\*\tests\test_skill_self.py`（+program_skill 的 test_compile_template.py） | G | 每个 skill 的领域自测（2026-09-01 框架进化评审落地）：入口规范/模块引用无悬空/references 无悬空/技能特定断言；evolution_gate 精准触发（改哪个 skill 自动跑哪个）；program_skill 另有 c-project 骨架 WSL 实编译行为自测（WSL 不可达自动跳过） |
+| L1 领域自测（7 个） | `skills\*\tests\test_skill_self.py`（+program_skill 的 test_compile_template.py） | G | 每个 skill 的领域自测：入口规范/模块引用无悬空/references 无悬空/技能特定断言；evolution_gate 精准触发（改哪个 skill 自动跑哪个）；program_skill 另有 c-project 骨架 WSL 实编译行为自测（WSL 不可达自动跳过） |
 
 ## 数据层
 
