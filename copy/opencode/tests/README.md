@@ -27,7 +27,7 @@
 | 仓库门面一致性（门面文件与框架现状对照 + STATE_FILES 残留 + 本机路径动态扫描 + 仓库内 repo_face 镜像=门面一致性 9 对，WSL 不可达时回退 repo_face 镜像） | `test_repo_face.py` | `python tests\test_repo_face.py` | ✓ 27/27 |
 | setup-windows.ps1（2026-09-01 检测模式：开关精简/工具清单必须可选分类/共享检测模块 setup-check/双通道检测/PATH 自动修复/未装提示跳过/无自动安装残留/npm-pip 缺失汇总/WSL 检测化/install-tools 一键安装脚本/AST 语法/部署范围/path_convert 体系/盘符动态探测/注册事件注入验证/必备工具缺失告警/tools-manifest 总表自动对齐） | `test_setup_ps1.py` | `python tests\test_setup_ps1.py` | ✓ 78/78 |
 
-> skill_validate 体积门限：默认 8KB，超限输出「待决清单」，用户选择（--set-limit 改门限 / --ignore 忽略指定 / --ignore-all 忽略全部）写入 `skill_validate_config.json` 持久化，后续一致性生效（当前本机门限 15KB，用户 2026-08-26 设定）。
+> skill_validate 体积门限：默认 8KB，超限输出「待决清单」，用户选择（--set-limit 改门限 / --ignore 忽略指定 / --ignore-all 忽略全部）写入 `skill_validate_config.json` 持久化，后续一致性生效（当前本机门限 30KB，用户 2026-08-26 设 15KB，2026-09-04 门限触顶弹窗决策改 30KB）。
 
 ## 新增测试用例规范
 

@@ -1,5 +1,5 @@
 {
-  "size_limit_kb": 15,
+  "size_limit_kb": 30,
   "ignored_skills": [],
   "ignore_all": false
 }
