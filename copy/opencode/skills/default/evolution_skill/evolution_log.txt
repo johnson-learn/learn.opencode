@@ -1374,3 +1374,12 @@
 - 归属：update_skill
 - 载体：update_skill SKILL.md（镜像刷新第 5 点补 cp 顺序、同步踩坑清单加第 4/5 条）
 - 内容：① repo_face 镜像必须从仓库内 to_portable 后占位符版拷（path_convert 跳过 tests 目录，从本机拷会泄漏本机路径被 6b 检出）② UNC 9p 读缓存延迟致测试误报（以 WSL 内验证为准）③ 诊断文件名一一对应防读旧输出空转
+
+[2026-09-04] 用户点名 → 任务列表实时同步纪律
+- 状态：active
+- 场景数：1（用户点名——todowrite 创建 8 任务后全程未更新状态，用户指出"任务列表与实际进展没配套同步"）
+- 最后验证：2026-09-04
+- 核心关键词：任务列表、todowrite
+- 归属：evolution_skill
+- 载体：AGENTS.md 铁律第 8 条（标题与内容扩展）
+- 内容：todowrite 创建任务后每完成一项立即同步状态（in_progress/completed），禁止创建后不管、禁止最后批量补标记；任务列表必须与事实进展一致
