@@ -136,7 +136,7 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 2. **更新方式**：直接在仓库工作树编辑门面文件，随本次 commit/push 一并上 GitHub（弹窗确认时展示门面变更清单）
 3. **无权限机器不受影响**：门面维护只在有权限机器的 update_skill 流程内；无权限机器 `git pull` 即得更新后的门面与 skill，不需执行 update_skill 修改
 4. **程序化核查**：`python <opencode配置目录>\tests\test_repo_face.py`（门面一致性测试：README 技能清单 vs skills 目录、INSTALL 关键步骤存在、REQUIREMENTS 权威引用）——挂入第三步自测
-5. **repo_face 镜像刷新（2026-09-04 实测教训后固化）**：门面文件/setup 脚本/tools-manifest 任一变更后，必须同步刷新仓库内镜像 `copy\opencode\tests\repo_face\`（9 个文件：COPY_README/INSTALL/REQUIREMENTS/ROOT_README + setup-windows/setup-check/install-tools/install-wsl + tools-manifest）为对应源文件最新内容，并同步拷回本机 `tests\repo_face\`——镜像是无 WSL 机器跑 test_repo_face/test_setup_ps1 的回退数据，漂移会致无 WSL 机器测试误判；test_repo_face.py 6d 用例（仓库内镜像=门面一致性）程序化拦截漂移，镜像文件与源文件内容必须一致（仅行尾/形态允许差异）
+5. **repo_face 镜像刷新（2026-09-04 实测教训后固化）**：门面文件/setup 脚本/tools-manifest 任一变更后，必须同步刷新仓库内镜像 `copy\opencode\tests\repo_face\`（9 个文件：COPY_README/INSTALL/REQUIREMENTS/ROOT_README + setup-windows/setup-check/install-tools/install-wsl + tools-manifest）为对应源文件最新内容，并同步拷回本机 `tests\repo_face\`——镜像是无 WSL 机器跑 test_repo_face/test_setup_ps1 的回退数据，漂移会致无 WSL 机器测试误判；test_repo_face.py 6d 用例（仓库内镜像=门面一致性）程序化拦截漂移，镜像文件与源文件内容必须一致（仅行尾/形态允许差异）。**镜像 cp 必须用仓库内 to_portable 后的占位符版源文件（2026-09-04 实测）**：path_convert 跳过 tests 目录（repo_face 在其下不会被转换），从本机 to_local 文件直接拷会泄漏本机路径被 6b 检出——正确顺序：cp 本机→仓库后先 to_portable 整个 opencode/，再 cp opencode/<源> → opencode/tests/repo_face/
 
 #### （第五步·推送分支）同步预览 + 弹窗确认脚本化（优化 5）
 
@@ -223,10 +223,12 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 - **风险规避**：同步前检查不包含任何密钥/token；`~/.lobehub-market/credentials.json` 等凭证一律不进入仓库
 - 本机配置类内容（绝对路径/版本）集中在各 skill 的工具依赖清单，新机器按清单重配即可
 - 新增 skill 后记得手动跑一次本技能，把新 skill 同步到 GitHub
-- **⚠ 同步三踩坑（2026-08-28 实测，执行时必须防）**：
+- **⚠ 同步踩坑清单（2026-08-28 起实测积累，执行时必须防）**：
   1. **形态污染**：本机全局文件是 to_local 形态（真实路径），`cp` 直接覆盖会破坏仓库占位符体系（对称回退 + 用户名泄漏）——正确做法：cp 后必须跑 `path_convert.py to_portable` 并做残留扫描（真实用户名路径必须为 0）；to_portable 转换不覆盖的模式（如字面 `<用户名>`、安装约定位置 `C:\Program Files`）需人工以占位符形态重做；cp 后逐个文件 diff 甄别"真实内容差异"与"形态差异"，只保留前者
   2. **git 路径双轨**：`git show HEAD:<path>`/`git log -- <path>` 的路径**相对仓库根**（本仓库根 = `learn.opencode`，框架文件路径带 `copy/` 前缀）；`git status`/`git checkout -- <path>`/`git add <path>` 的路径**相对当前目录**——混用前缀会导致 checkout 静默失效、diff 误判（git show 失败输出被 2>/dev/null 吞掉后 diff 呈现全 `+` 行假象）
   3. **精炼入口 + references 结构**：聚合类 skill 可能已被重构为"入口 SKILL.md（精炼）+ references/*.md（详版）"，大块知识（如 3gpp_skill 的 FTP 结构）的更新在 references 里而非入口文件——同步前先摸清目标 skill 的文件结构再定位改动位置
+  4. **UNC 9p 读缓存延迟（2026-09-04 实测）**：WSL 内文件修改后，Windows 侧 `\\wsl.localhost\` UNC 视图有读缓存延迟（TTL 内读到旧内容）——经 UNC 读仓库的测试（test_repo_face/test_setup_ps1 等）在文件刚改后可能误报，且 `wsl --shutdown` 也不一定立即刷新；处置：文件修改后稍候重跑测试（TTL 过期自愈），或全程用 WSL 内 `md5sum/grep` 验证真实状态——**别信 UNC 瞬时读到的内容**，与 WSL 内验证结果不一致时以 WSL 内为准
+  5. **诊断输出文件名一一对应**：临时诊断脚本写结果文件名必须与回读文件名严格一致（2026-09-04 实测：rf_result.txt 与 rf_result_out.txt 混淆致反复读旧失败结果、多轮排查空转）
 
 
 

@@ -1365,3 +1365,12 @@
 [2026-09-04] 会话自动门禁（gate-test-1788509559） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
 - <opencode配置目录>\tools\_gate_new_tool_test.py
 
+
+[2026-09-04] update_skill 同步流程两踩坑（d3d9e61 后追加）
+- 状态：active
+- 场景数：2（镜像泄漏 + UNC 幽灵失败，同一会话内）
+- 最后验证：2026-09-04
+- 核心关键词：镜像刷新、UNC 缓存
+- 归属：update_skill
+- 载体：update_skill SKILL.md（镜像刷新第 5 点补 cp 顺序、同步踩坑清单加第 4/5 条）
+- 内容：① repo_face 镜像必须从仓库内 to_portable 后占位符版拷（path_convert 跳过 tests 目录，从本机拷会泄漏本机路径被 6b 检出）② UNC 9p 读缓存延迟致测试误报（以 WSL 内验证为准）③ 诊断文件名一一对应防读旧输出空转
