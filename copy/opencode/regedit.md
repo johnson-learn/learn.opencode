@@ -6,7 +6,7 @@
 
 ## 生效方式分类（保证等级量化 + 本质二元标注：平台 vs LLM）
 
-> **本质判据（用户定）**：执行归属按"谁决定"划分——平台执行代码/工具 → 属于平台；LLM 发起/决定 → 属于 LLM。本质只分两类，不模棱两可：
+> **本质判据**：执行归属按"谁决定"划分——平台执行代码/工具 → 属于平台；LLM 发起/决定 → 属于 LLM。本质只分两类，不模棱两可：
 > **「100%：平台读 md 文件，并把内容注入 LLM」** 或 **「非100%（等级）：LLM 直接读 md 内容」**。
 > 触发与读取分离的类别（C/D）：触发环节归谁不确定，但**触发后读文件 100% 是平台**（skill 工具=平台内置工具，平台读 SKILL.md 全文注入）。
 
@@ -23,7 +23,7 @@
 
 ## 铁律层
 
-> **注入策略**：opencode.jsonc 的 instructions 字段在本机 1.18 系列（1.18.18 实测）**解析但不消费**——1.18 系统提示构建只认 AGENTS.md/CLAUDE.md/CONTEXT.md（二进制证据），该字段是 0.x dev/beta 线功能（npm latest=1.18.23 为 1.18 线末版）；该字段已按用户指令**回滚移除**（opencode.jsonc 现仅保留 $schema）。**平台注入通道 = 插件注册事件**：skill-banner.js 注册 `experimental.chat.system.transform`（平台每次请求构建系统提示时确定性触发），直读本层四文件 push 进 output.system——E 类 100% 平台执行、与 AGENTS.md 同级进入系统提示（mtime 缓存防重复读盘；环境变量 OPENCODE_DISABLE_MD_INJECT=1 禁用）。原 B/F/G/H 按需读取路径全部保留为双保险。**技术债务与回退预案**：该 hook 是实验性 API，opencode 升级可能变更/移除——由 test_platform_api.py（G 类，health_check 必跑）持续检测；若失效，回退方案按序：① 重启 opencode.jsonc instructions 字段（若新版已实现该字段，1.18 不实现的历史已核实）② 依赖铁律第 0 条强制 read + 插件提醒的 B 类路径。
+> **注入策略**：opencode.jsonc 的 instructions 字段在本机 1.18 系列（1.18.18 实测）**解析但不消费**——1.18 系统提示构建只认 AGENTS.md/CLAUDE.md/CONTEXT.md（二进制证据），该字段是 0.x dev/beta 线功能（npm latest=1.18.23 为 1.18 线末版）；该字段已**回滚移除**（opencode.jsonc 现仅保留 $schema）。**平台注入通道 = 插件注册事件**：skill-banner.js 注册 `experimental.chat.system.transform`（平台每次请求构建系统提示时确定性触发），直读本层四文件 push 进 output.system——E 类 100% 平台执行、与 AGENTS.md 同级进入系统提示（mtime 缓存防重复读盘；环境变量 OPENCODE_DISABLE_MD_INJECT=1 禁用）。原 B/F/G/H 按需读取路径全部保留为双保险。**技术债务与回退预案**：该 hook 是实验性 API，opencode 升级可能变更/移除——由 test_platform_api.py（G 类，health_check 必跑）持续检测；若失效，回退方案按序：① 重启 opencode.jsonc instructions 字段（若新版已实现该字段，1.18 不实现的历史已核实）② 依赖铁律第 0 条强制 read + 插件提醒的 B 类路径。
 
 | 注册项 | 位置 | 生效 | 说明 |
 |---|---|---|---|
