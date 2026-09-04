@@ -31,7 +31,9 @@ copy\
 │   └── tools\                   修炼工具（evolution_gate 进化门禁 / path_convert / inject_skills 等）
 ├── scripts\                   ← 部署到 %LOCALAPPDATA%\Temp\opencode\ 的辅助脚本
 ├── setup\
-│   ├── setup-windows.ps1         一键安装（主脚本）
+│   ├── setup-windows.ps1         一键配置（主脚本，检测模式：只检测+修复，不自动安装）
+│   ├── install-tools.ps1         工具一键自动安装（winget+npm/pip，失败跳过继续）
+│   ├── setup-check.ps1           工具检测共享模块（清单/检测函数，两脚本共用）
 │   ├── install-wsl.ps1           WSL2 + Ubuntu 22.04
 │   └── download-specs.ps1        下载 3GPP 文档
 └── （git 根另有） doc\            使用说明书（WSL/编译/GitHub，静态文档）

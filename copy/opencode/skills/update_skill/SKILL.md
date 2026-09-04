@@ -136,6 +136,7 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 2. **更新方式**：直接在仓库工作树编辑门面文件，随本次 commit/push 一并上 GitHub（弹窗确认时展示门面变更清单）
 3. **无权限机器不受影响**：门面维护只在有权限机器的 update_skill 流程内；无权限机器 `git pull` 即得更新后的门面与 skill，不需执行 update_skill 修改
 4. **程序化核查**：`python <opencode配置目录>\tests\test_repo_face.py`（门面一致性测试：README 技能清单 vs skills 目录、INSTALL 关键步骤存在、REQUIREMENTS 权威引用）——挂入第三步自测
+5. **repo_face 镜像刷新（2026-09-04 实测教训后固化）**：门面文件/setup 脚本/tools-manifest 任一变更后，必须同步刷新仓库内镜像 `copy\opencode\tests\repo_face\`（9 个文件：COPY_README/INSTALL/REQUIREMENTS/ROOT_README + setup-windows/setup-check/install-tools/install-wsl + tools-manifest）为对应源文件最新内容，并同步拷回本机 `tests\repo_face\`——镜像是无 WSL 机器跑 test_repo_face/test_setup_ps1 的回退数据，漂移会致无 WSL 机器测试误判；test_repo_face.py 6d 用例（仓库内镜像=门面一致性）程序化拦截漂移，镜像文件与源文件内容必须一致（仅行尾/形态允许差异）
 
 #### （第五步·推送分支）同步预览 + 弹窗确认脚本化（优化 5）
 

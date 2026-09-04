@@ -98,5 +98,24 @@ if mode == "仓库直读":
             pc_hashes.add(_hl.md5(open(fp, "rb").read()).hexdigest())
     check("仓库内多份 path_convert.py 内容一致", len(pc_hashes) == 1, "不一致：" + str(len(pc_hashes)) + " 个版本")
 
+    # 6d. 仓库内 repo_face 镜像与门面一致（2026-09-04 发现：仓库内镜像 4/5 漂移且缺 4 个文件，
+    # 门面更新后未刷新镜像导致无 WSL 机器回退数据过时；仓库直读模式下强制镜像=门面，漂移即失败）
+    mirror_pairs = [
+        ("copy\\opencode\\tests\\repo_face\\COPY_README.md", "copy\\README.md"),
+        ("copy\\opencode\\tests\\repo_face\\INSTALL.md", "copy\\INSTALL.md"),
+        ("copy\\opencode\\tests\\repo_face\\REQUIREMENTS.md", "copy\\REQUIREMENTS.md"),
+        ("copy\\opencode\\tests\\repo_face\\ROOT_README.md", "README.md"),
+        ("copy\\opencode\\tests\\repo_face\\setup-windows.ps1", "copy\\setup\\setup-windows.ps1"),
+        ("copy\\opencode\\tests\\repo_face\\setup-check.ps1", "copy\\setup\\setup-check.ps1"),
+        ("copy\\opencode\\tests\\repo_face\\install-tools.ps1", "copy\\setup\\install-tools.ps1"),
+        ("copy\\opencode\\tests\\repo_face\\install-wsl.ps1", "copy\\setup\\install-wsl.ps1"),
+        ("copy\\opencode\\tests\\repo_face\\tools-manifest.md", "copy\\opencode\\tools-manifest.md"),
+    ]
+    for mf, rf in mirror_pairs:
+        mc = rd(mf)
+        rc = rd(rf)
+        norm = lambda s: s.replace("\r\n", "\n").replace("\r", "\n")
+        check("仓库内镜像与门面一致: " + os.path.basename(mf), bool(mc) and norm(mc) == norm(rc), "" if norm(mc) == norm(rc) else "漂移")
+
 print("\n结果：通过 %d 项，失败 %d 项" % (pass_n, fail_n))
 sys.exit(1 if fail_n else 0)

@@ -16,4 +16,4 @@
 | **数据/状态文件变更** | regedit.md 数据层登记说明 | test_regedit |
 | **插件变更** | regedit.md 插件层、tests\README.md | test_plugin、test_regedit |
 | **opencode.jsonc 配置变更**（配置项增减等） | regedit.md 铁律层生效方式登记更新 + 重启 opencode 验证变更生效 | test_regedit |
-| **仓库门面文档变更**（根 README、copy\README/INSTALL/REQUIREMENTS） | 仓库工作树直接编辑（不在本机全局目录）；update_skill 第五步「门面文档同步」环节核查+推送 | test_repo_face |
+| **仓库门面文档变更**（根 README、copy\README/INSTALL/REQUIREMENTS、copy\setup 脚本、tools-manifest） | 仓库工作树直接编辑（不在本机全局目录）；update_skill 第五步「门面文档同步」环节核查+推送；**同步刷新仓库内与本机 repo_face 镜像（9 文件）** | test_repo_face（含 6d 镜像一致性） |

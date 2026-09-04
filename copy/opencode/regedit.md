@@ -92,7 +92,7 @@
 | test_sync_push.py | `tests\test_sync_push.py` | G | sync_push 改动后强制（无标记拒绝/非push拒绝/有效推送/标记清除/重推需重确认/WSL 路径判定与转换/自动 to_portable/可移植性阻断/msgfile_exists 双通道，19/19） |
 | test_docs_sync.py | `tests\test_docs_sync.py` | G | docs-sync.md 改动后强制（变更类型/校验测试存在/被 regedit+AGENTS 引用，19/19） |
 | test_audit_references.py | `tests\test_audit_references.py` | G | 框架引用审计（引用存在性/旧术语残留/README 双向一致，3/3） |
-| test_repo_face.py | `tests\test_repo_face.py` | G | 仓库门面一致性（门面对照+STATE_FILES 残留+本机路径扫描，18/18；WSL 不可达回退 repo_face 镜像） |
+| test_repo_face.py | `tests\test_repo_face.py` | G | 仓库门面一致性（门面对照+STATE_FILES 残留+本机路径扫描+**仓库内 repo_face 镜像=门面一致性 9 对**，27/27；WSL 不可达回退 repo_face 镜像） |
 | test_setup_ps1.py | `tests\test_setup_ps1.py` | G | setup-windows.ps1 自动化测试（检测模式：工具清单必须/可选分类、双通道检测、PATH 修复、未装提示跳过、无自动安装残留、共享模块 setup-check、install-tools 一键安装、tools-manifest 总表对齐、AST，78/78；WSL 不可达回退 repo_face 镜像） |
 | README.md（测试清单） | `tests\README.md` | F | 查测试入口与运行命令 |
 | L1 领域自测（7 个） | `skills\*\tests\test_skill_self.py`（+program_skill 的 test_compile_template.py） | G | 每个 skill 的领域自测（2026-09-01 框架进化评审落地）：入口规范/模块引用无悬空/references 无悬空/技能特定断言；evolution_gate 精准触发（改哪个 skill 自动跑哪个）；program_skill 另有 c-project 骨架 WSL 实编译行为自测（WSL 不可达自动跳过） |
@@ -107,6 +107,7 @@
 | sync_target.txt | `skills\update_skill\` | G | 同步目标记忆；STATE_FILES 保护对象 |
 | evolution_trace.jsonl | `<opencode配置目录>\skills\default\evolution_skill\` | E | 插件写（供合并/拆分分析） |
 | plugin-evolution.log | `<opencode配置目录>\plugins\` | E | 插件日志（验证兜底机制实跑） |
+| repo_face 镜像 | `tests\repo_face\`（9 文件：4 门面 md + 4 setup ps1 + tools-manifest.md） | G | test_repo_face/test_setup_ps1 无 WSL 机器的回退数据；门面/setup 脚本/tools-manifest 变更后必须刷新（update_skill 第五步门面同步环节），test_repo_face 6d 用例拦截漂移 |
 | skill_validate_config.json | `tests\` | G | skill_validate 体积门限用户选择持久化（--set-limit/--ignore/--ignore-all 写入，后续一致性生效，随同步跨机器） |
 
 ## 同步层
