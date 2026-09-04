@@ -20,7 +20,7 @@ collaborates_with:
 
 - 不处理 3GPP 标准内容的语义分析（推荐 3gpp_skill）
 - 不写业务代码（推荐 program_skill）
-- 付费 API 子技能（Nutrient/LandingAI/translate-image 等）须先经用户确认
+- 付费 API 子技能（Nutrient/LandingAI/translate-image 等）须先经用户确认——**question 工具弹窗征得同意后才使用**
 
 
 ## 通用输出规则（全部任务遵守）
@@ -174,7 +174,7 @@ collaborates_with:
   - stderr 的 "Could not find platform independent libraries" 为无害噪音，看输出目录是否生成文件即可
 - 多模态视觉读取（read 工具看图）依赖当前模型能力：不支持图片的模型直接跳到 p2t/Windows OCR 流程。
 - 需安装新工具时，先告知用户再安装。
-- 任何需要 API Key / 付费服务的子技能（Nutrient、LandingAI），使用前必须征得用户确认。
+- 任何需要 API Key / 付费服务的子技能（Nutrient、LandingAI），使用前必须**question 工具弹窗**征得用户确认。
 
 
 

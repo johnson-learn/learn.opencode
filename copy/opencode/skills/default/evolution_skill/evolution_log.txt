@@ -1311,3 +1311,57 @@
 - 归属：evolution_skill
 - 载体：6 个 skill 的 tests/test_skill_self.py + program_skill 的 test_compile_template.py（c-project 骨架 WSL 实编译 3/3）、evolution_gate.py（L1 精准触发 + experience_health 归属分组统计 + 结构化解析加 owner 字段）、test_evolution_gate.py 42→44/44（L1 触发+归属分组断言+临时 skill 建 L1）、6 个 SKILL.md 经验索引节、evolution_skill 第四步结构化格式加归属行（SKILL.md+five-step-template.md）、program_skill references 补 3 个（embedded-build/deploy-remote/build-systems）、update_skill SKILL.md 补「## 铁律」章节（全局版缺失同步边界铁律）、instructions 5c L1 约定 + 引用占位符修复、regedit/tests README L1 登记、手册第 7 章 find_skill 定位同步
 - 内容：① 评审最大缺口=L1 子 skill 自测——建 7 个 L1 测试（入口规范/模块引用无悬空/references 无悬空/技能特定断言）+ program 行为自测（复制 c-project → WSL gcc make+cmake 双路径实编译运行 3/3）；② gate 精准触发（改动 skill 自动跑对应 L1）+ 经验健康按归属分组（流水新结构化字段"归属：xxx_skill"，SKILL.md+模板同步）；③ 6 个 SKILL.md 经验索引节；④ find_skill 定位同步 regedit/手册；⑤ 坑【审计引用 8 处】跨目录相对引用被 test_audit_references 拦截——修复为占位符/../ 形式（<opencode配置目录> 含 <> 自动 skip）。验证：全量 20 套测试全绿（L1 7 skill、gate 44/44、audit 3/3、plugin 52/52 等）
+
+[2026-09-04] update_skill 双向更新（c60b64e/49857b3）
+- repo_face 镜像机制修复：仓库内镜像 4/5 漂移+缺 4 文件，全刷新为门面一致；规则已固化进 update_skill SKILL.md 门面同步节第 5 点、test_repo_face.py 6d 用例（18→27）、regedit/docs-sync/tests README（归属：规则类已进可执行载体）
+- sync_push 消息文件路径经验：WSL 仓库 msgfile 必须传 WSL 内路径，Windows 路径被 git -F 拒绝；已固化进 SKILL.md 同步预览节第 4 点
+- 仓库门面 copy/README 落后于 09-01 检测模式改造，已补 3 处描述
+- 自测全绿：test_repo_face 27/27、test_setup_ps1 78/78、test_regedit 48/48、test_docs_sync 19/19、test_instructions 31/31、test_audit_references 3/3、test_update_skill 40/40、skill_validate 通过
+
+[2026-09-04] 用户规则 → 进化机制两大升级（六步流程 + 弹窗决策统一）
+- 状态：active
+- 场景数：2（用户指令 + 弹窗实测）
+- 最后验证：2026-09-04
+- 核心关键词：六步固化、弹窗决策
+- 归属：evolution_skill
+- 载体：instructions.md、AGENTS.md 铁律第 2 条、evolution_skill SKILL.md、evolution.md、evolution_gate.py（EVOLUTION_STEPS 六步）、skill-banner.js（六步标记与注入任务文案）、templates/five-step-template.md→six-step-template.md、test_evolution_gate.py（六步用例+缺确认步检出，42→43）、test_plugin.js 3c/3d、test_instructions.py、test_skill_self.py、regedit.md、tools-manifest.md、tests/README.md、update_skill/files_skill/find_skill/program_skill 弹窗化表述
+- 内容：① 五步固化升级六步——新增第三步·确认：经验写入进化相关文件前必须 question 工具弹窗让用户逐条选择（同意/填写内容/跳过），未确认禁 edit；四条件不满足纯流水追加不弹窗；gate --check-5step 参数名保留历史名检测六步标记。② 弹窗决策统一铁律：凡需用户决策的环节一律 question 弹窗（合并/拆分/迁移、冲突裁决、付费 API、update_skill 冲突/资产提取/网络失败询问），禁止文字规则代替。过程：用户两轮反馈（先要求加确认步→再要求合并拆分迁移与冲突裁决也弹窗+统一所有规则文件的用户决策表述）
+[2026-09-04] 会话自动门禁（gate-test-1788508939） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-09-04] 会话自动门禁（gate-test-1788508939） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools\_gate_new_tool_test.py
+
+[2026-09-04] 会话自动门禁（gate-test-1788508952） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-09-04] 会话自动门禁（gate-test-1788508952） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools\_gate_new_tool_test.py
+
+[2026-09-04] 会话自动门禁（gate-test-1788508968） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-09-04] 会话自动门禁（gate-test-1788508968） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools\_gate_new_tool_test.py
+
+[2026-09-04] 会话自动门禁（gate-test-1788509012） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-09-04] 会话自动门禁（gate-test-1788509012） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools\_gate_new_tool_test.py
+
+
+[2026-09-04] 用户规则 → 门限触顶弹窗决策（第三条）
+- 状态：active
+- 场景数：2（注入量门限触顶 + 用户指令）
+- 最后验证：2026-09-04
+- 核心关键词：门限弹窗、注入量
+- 归属：evolution_skill
+- 载体：evolution.md 2026-09-04 第 3 条、instructions.md 注入量管控条目、health_check.py（INJECT_LIMIT_KB=70 + 告警文案加弹窗指引）、test_health_check.py（50KB→70KB 断言）、tools-manifest.md、regedit.md、evolution_gate.py（30KB→70KB 文案）、evolution.md 17 条修订
+- 内容：任何门限值到门限值时必须 question 弹窗让用户选「修改门限（填新值，同步所有引用文件与测试）」或「沿用原门限（继续精简）」，禁止模型擅自改门限或突破；本次注入量 53.4KB 触顶 50KB → 弹窗 → 用户填 70KB → 全部引用位置同步更新
+[2026-09-04] 会话自动门禁（gate-test-1788509559） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\skills\_gate_test_skill\SKILL.md
+
+[2026-09-04] 会话自动门禁（gate-test-1788509559） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 1 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tools\_gate_new_tool_test.py
+

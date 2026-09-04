@@ -3,7 +3,7 @@
 # 检查项：①核心配置齐全 ②skill frontmatter 合法+体积门限 ③插件最近执行 ④测试全部可运行
 #        ⑤门禁最近会话 idle/drain 记录 ⑥evolution_log 待处理项 ⑦平台 API 依赖保障（实验性 hook 可用性）
 #        ⑧字符边界规范（框架文件 CRLF/BOM/编码一致性，铁律第 9 条防线）
-#        ⑨注入量管控（四注入文件合计 ≤30KB，2026-08-28 报告评审后新增）
+#        ⑨注入量管控（四注入文件合计 ≤70KB，2026-08-28 报告评审后新增；2026-09-04 用户弹窗决策 50→70）
 import os, sys, json, re, subprocess, glob, datetime
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
@@ -139,9 +139,9 @@ try:
 except Exception as e:
     add_fail("字符边界扫描无法执行：" + str(e)[:80])
 
-# ⑨ 注入量管控（四注入文件合计 ≤50KB，超限告警触发精简；2026-08-28 报告评审后新增，V2 报告修正上限 30→50KB）
+# ⑨ 注入量管控（四注入文件合计 ≤70KB，超限告警；2026-08-28 报告评审后新增，V2 修正 30→50KB，2026-09-04 用户弹窗决策改 50→70KB）
 INJECT_FILES = ["instructions.md", "regedit.md", "tools-manifest.md", "docs-sync.md"]
-INJECT_LIMIT_KB = 50
+INJECT_LIMIT_KB = 70
 total_bytes = 0
 missing_inj = []
 for f in INJECT_FILES:
@@ -155,7 +155,7 @@ if missing_inj:
 total_kb = total_bytes / 1024.0
 if total_kb > INJECT_LIMIT_KB:
     detail = "、".join("%s %.1fKB" % (f, os.path.getsize(os.path.join(CFG, f)) / 1024.0) for f in INJECT_FILES if os.path.exists(os.path.join(CFG, f)))
-    add_warn("注入总量 %.1fKB 超过 %dKB 上限（精简行动指引：%s）——优先压缩与 AGENTS.md 重复的细则（instructions 通用回答规则）、regedit 各层冗长描述、示例段落；大表保留速览头行；逐项精简后重跑本检查" % (total_kb, INJECT_LIMIT_KB, detail))
+    add_warn("注入总量 %.1fKB 超过 %dKB 上限（%s）——按门限决策规则：question 弹窗让用户选择「修改门限」或「沿用门限继续精简」；沿用则优先压缩与 AGENTS.md 重复的细则（instructions 通用回答规则）、regedit 各层冗长描述、示例段落；大表保留速览头行；逐项精简后重跑本检查" % (total_kb, INJECT_LIMIT_KB, detail))
 else:
     add_ok("注入总量 %.1fKB 在上限 %dKB 内（instructions/regedit/tools-manifest/docs-sync）" % (total_kb, INJECT_LIMIT_KB))
 

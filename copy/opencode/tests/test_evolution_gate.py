@@ -99,29 +99,32 @@ w2 = _gm.check_docs_sync([os.path.join(CFG, r"skills\3gpp_skill\SKILL.md"),
                           os.path.join(CFG, r"tests\README.md")])
 check("配套齐改时漏更检测通过", len(w2) == 0)
 
-# 8. 五步检查点（--check-5step，用户高优先级未完成项落地）
+# 8. 六步检查点（--check-5step，参数名保留历史名；2026-09-04 五步升级六步：新增第三步·确认）
 def run5(text):
     return subprocess.run([sys.executable, GATE, "--check-5step"], input=text,
                           capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60)
 r = run5("本会话无固化。")
-check("无固化动作时五步检查不适用（rc=0）", r.returncode == 0 and "不适用" in r.stdout)
-full = "进化：已固化 xxx\n【第一步·归纳】a\n【判定四条件】场景数：2 / 可移植：是 / 无重复：是 / 边界：明确\n【第二步·归属】b\n【第三步·edit】c\n【第四步·流水】d\n【第五步·校验】e\n"
+check("无固化动作时检查点不适用（rc=0）", r.returncode == 0 and "不适用" in r.stdout)
+full = "进化：已固化 xxx\n【第一步·归纳】a\n【判定四条件】场景数：2 / 可移植：是 / 无重复：是 / 边界：明确\n【第二步·归属】b\n【第三步·确认】c\n【第四步·edit】d\n【第五步·流水】e\n【第六步·校验】f\n"
 r = run5(full)
-check("五步标记齐全时通过（rc=0）", r.returncode == 0 and "齐全" in r.stdout)
-full_no_cond = "进化：已固化 xxx\n【第一步·归纳】a\n【第二步·归属】b\n【第三步·edit】c\n【第四步·流水】d\n【第五步·校验】e\n"
+check("六步标记齐全时通过（rc=0）", r.returncode == 0 and "齐全" in r.stdout)
+full_no_cond = "进化：已固化 xxx\n【第一步·归纳】a\n【第二步·归属】b\n【第三步·确认】c\n【第四步·edit】d\n【第五步·流水】e\n【第六步·校验】f\n"
 r = run5(full_no_cond)
-check("五步齐全但缺四条件声明时检出（rc=1）", r.returncode == 1 and "判定四条件声明缺失" in r.stdout)
-single_scene = "进化：已固化 yyy\n【第一步·归纳】a\n【判定四条件】场景数：1 / 可移植：是 / 无重复：是 / 边界：明确\n【第二步·归属】b\n【第三步·edit】c\n【第四步·流水】d\n【第五步·校验】e\n"
+check("六步齐全但缺四条件声明时检出（rc=1）", r.returncode == 1 and "判定四条件声明缺失" in r.stdout)
+no_confirm = "进化：已固化 zzz\n【第一步·归纳】a\n【判定四条件】场景数：2 / 可移植：是 / 无重复：是 / 边界：明确\n【第二步·归属】b\n【第四步·edit】d\n【第五步·流水】e\n【第六步·校验】f\n"
+r = run5(no_confirm)
+check("缺第三步·确认（弹窗确认步）时检出（rc=1）", r.returncode == 1 and "第三步·确认" in r.stdout)
+single_scene = "进化：已固化 yyy\n【第一步·归纳】a\n【判定四条件】场景数：1 / 可移植：是 / 无重复：是 / 边界：明确\n【第二步·归属】b\n【第三步·确认】c\n【第四步·edit】d\n【第五步·流水】e\n【第六步·校验】f\n"
 r = run5(single_scene)
 check("场景数=1 且无高代价/用户点名依据时四条件可追溯告警（rc=1）", r.returncode == 1 and "可追溯告警" in r.stdout)
-single_ok = "进化：已固化 yyy\n【第一步·归纳】a\n【判定四条件】场景数：1（踩坑代价高，用户点名）/ 可移植：是 / 无重复：是 / 边界：明确\n【第二步·归属】b\n【第三步·edit】c\n【第四步·流水】d\n【第五步·校验】e\n"
+single_ok = "进化：已固化 yyy\n【第一步·归纳】a\n【判定四条件】场景数：1（踩坑代价高，用户点名）/ 可移植：是 / 无重复：是 / 边界：明确\n【第二步·归属】b\n【第三步·确认】c\n【第四步·edit】d\n【第五步·流水】e\n【第六步·校验】f\n"
 r = run5(single_ok)
 check("场景数=1 但带依据时通过（rc=0）", r.returncode == 0 and "齐全" in r.stdout)
 check("裸『可移植：是』『无重复：是』触发依据软提示", "依据软提示" in r.stdout)
-cond_with_basis = "进化：已固化 yyy\n【第一步·归纳】a\n【判定四条件】场景数：2 / 可移植：是（不含本机路径）/ 无重复：是（已比对）/ 边界：明确（触发条件与适用边界）\n【第二步·归属】b\n【第三步·edit】c\n【第四步·流水】d\n【第五步·校验】e\n"
+cond_with_basis = "进化：已固化 yyy\n【第一步·归纳】a\n【判定四条件】场景数：2 / 可移植：是（不含本机路径）/ 无重复：是（已比对）/ 边界：明确（触发条件与适用边界）\n【第二步·归属】b\n【第三步·确认】c\n【第四步·edit】d\n【第五步·流水】e\n【第六步·校验】f\n"
 r = run5(cond_with_basis)
 check("三条件附括号依据时无软提示", "依据软提示" not in r.stdout)
-bare_boundary = "进化：已固化 yyy\n【第一步·归纳】a\n【判定四条件】场景数：2 / 可移植：是（不含本机路径）/ 无重复：是（已比对）/ 边界：明确\n【第二步·归属】b\n【第三步·edit】c\n【第四步·流水】d\n【第五步·校验】e\n"
+bare_boundary = "进化：已固化 yyy\n【第一步·归纳】a\n【判定四条件】场景数：2 / 可移植：是（不含本机路径）/ 无重复：是（已比对）/ 边界：明确\n【第二步·归属】b\n【第三步·确认】c\n【第四步·edit】d\n【第五步·流水】e\n【第六步·校验】f\n"
 # 重置计数状态文件（防与前序用例计数累积）
 _bare = os.path.join(tempfile.gettempdir(), "opencode_gate", "gate_bare_declare.json")
 if os.path.exists(_bare):
@@ -141,15 +144,15 @@ import importlib.util as _ilu8
 _gate2 = _ilu8.spec_from_file_location("gate2", GATE)
 _gm2 = _ilu8.module_from_spec(_gate2); _gate2.loader.exec_module(_gm2)
 check("经验健康阈值配置化（常量可调）", hasattr(_gm2, "LOW_USE_DAYS") and hasattr(_gm2, "AGED_DAYS") and hasattr(_gm2, "BARE_DECLARE_LIMIT") and _gm2.BARE_DECLARE_LIMIT == 3)
-partial = "进化：已固化 xxx\n【第一步·归纳】a\n【第三步·edit】c\n"
+partial = "进化：已固化 xxx\n【第一步·归纳】a\n【第四步·edit】c\n"
 r = run5(partial)
 check("缺步检出（rc=1）", r.returncode == 1 and "缺失" in r.stdout)
-check("缺步清单点名缺失步骤", ("第二步·归属" in r.stdout) and ("第四步·流水" in r.stdout) and ("第五步·校验" in r.stdout))
+check("缺步清单点名缺失步骤", ("第二步·归属" in r.stdout) and ("第三步·确认" in r.stdout) and ("第五步·流水" in r.stdout) and ("第六步·校验" in r.stdout))
 none = "本次响应无任何固化声明。"
 r = run5(none)
 check("无固化声明不适用（rc=0）", r.returncode == 0 and "不适用" in r.stdout)
 r = run5("进化检查完成：本次无固化项")
-check("『无固化项』声明不适用五步（rc=0）", r.returncode == 0 and "不适用" in r.stdout)
+check("『无固化项』声明不适用六步（rc=0）", r.returncode == 0 and "不适用" in r.stdout)
 
 # 9. 新增/删除文件检测（A+C 方案 2026-08-28：新增文件适配决策的前置检测）
 r = run("--snapshot", sid)

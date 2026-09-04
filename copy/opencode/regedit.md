@@ -29,7 +29,7 @@
 |---|---|---|---|
 | AGENTS.md（9 条铁律） | `<opencode配置目录>\AGENTS.md` | A | 每会话系统提示必达，最高优先级；0=读注册表、1=每次响应复盘进化、2=同步边界、3=语言、4=输出HTML、5=输出位置、6=注入、7=工具登记、8=测试先行、9=字符边界规范 |
 | regedit.md（本注册表） | `<opencode配置目录>\regedit.md` | E（原 B） | 插件 system.transform 直读注入系统提示；原铁律第 0 条强制 read + 插件提醒保留为双保险；全体系组件加载方式登记 |
-| instructions.md（详版协议） | `<opencode配置目录>\instructions.md` | E（原 F） | 插件 system.transform 直读注入系统提示；五步进化流程/五大进化能力/skill 编写规范/通用回答规则详版 |
+| instructions.md（详版协议） | `<opencode配置目录>\instructions.md` | E（原 F） | 插件 system.transform 直读注入系统提示；六步进化流程（含第三步·确认弹窗）/五大进化能力/skill 编写规范/通用回答规则详版 |
 | docs-sync.md（配套同步映射表） | `<opencode配置目录>\docs-sync.md` | E（原 G） | 插件 system.transform 直读注入系统提示；变更类型→必须同步更新文件清单的权威映射 |
 | tools-manifest.md（工具总表） | `<opencode配置目录>\tools-manifest.md` | E（原 H） | 插件 system.transform 直读注入系统提示；工具登记铁律（第 7 条）；唯一权威工具表 |
 | evolution.md（进化规则文件） | `<opencode配置目录>\skills\default\evolution_skill\evolution.md` | H | 规则类经验可执行载体；更新前须结合 evolution_log.txt 核对 + 弹窗确认 |
@@ -56,7 +56,7 @@
 
 | 注册项 | 位置 | 生效 | 说明 |
 |---|---|---|---|
-| skill-banner.js | `plugins\skill-banner.js` | E | session.created：toast 技能清单 + 注入"读 regedit.md"提醒（noReply）+ **异步平台 API 保障检查（失败即 toast 告警）** + **读上一会话进化待办（模块级内存传递，idle 写入→created 静默注入任务）**；session.idle：机器步骤（gate --check）+ 五步检查点（--check-5step）+ **使用率追踪（V5 方案甲'：核心关键词会话级匹配写 evolution_trace.jsonl）** + **写进化待办到内存**；message.part.updated：平台语言检测；**experimental.chat.system.transform：平台直读 4 铁律/协议文件注入系统提示 + 语言指令（mtime 缓存）**；写 evolution_trace.jsonl / plugin-evolution.log |
+| skill-banner.js | `plugins\skill-banner.js` | E | session.created：toast 技能清单 + 注入"读 regedit.md"提醒（noReply）+ **异步平台 API 保障检查（失败 toast 告警）** + **读上一会话进化待办（模块级内存传递，idle 写入→created 静默注入）**；session.idle：机器步骤（gate --check）+ 固化检查点（--check-5step 参数名保留历史名，检测六步标记）+ 使用率追踪（写 evolution_trace.jsonl）+ 写进化待办；message.part.updated：平台语言检测；**experimental.chat.system.transform：直读 4 铁律/协议文件注入系统提示 + 语言指令（mtime 缓存）**；写 evolution_trace.jsonl / plugin-evolution.log |
 
 ## 工具层（修炼工具）
 
@@ -68,8 +68,8 @@
 | fetch_skills.py | `tools\fetch_skills.py` | F | 从技能目录网站获取 skill |
 | cross_move.py | `tools\cross_move.py` | F | 跨 skill 归位 |
 | generalize.py | `tools\generalize.py` | F | 经验通用化改写 |
-| evolution_gate.py | `tools\evolution_gate.py` | E | 进化门禁脚本：session.created 时插件调 --drain（**异步后台**自愈补跑残留快照，max_n=3 限流）+ --snapshot；session.idle 时 --check——机制步骤（流水兜底追加/自动测试/一致性校验/**配套漏更检测（docs-sync 映射反向校验）**/**新增与删除文件检测（A+C 方案：全目录清单快照对比，输出【新增文件】待适配清单与分类提示）**/**二次验证未闭环计数**/**经验健康引擎（方案丁+V4 方案甲'：结构化条目扫描——待验证清单/deprecated 定位/条目级老化）**）确定性执行；**--check-5step：五步检查点检测 + 判定四条件声明检测 + 可追溯检测（场景数=1 须带依据）+ 三条件依据软提示** |
-| health_check.py | `tools\health_check.py` | F | 一键健康检查：①核心配置齐全 ②skill frontmatter+体积门限 ③插件最近执行 ④测试可解析 ⑤门禁 idle/drain 记录 ⑥evolution_log 待处理项 ⑦平台 API 依赖保障（实验性 hook 可用性）⑧字符边界规范（CRLF/BOM/编码扫描）⑨注入量管控（四注入文件合计 ≤50KB，2026-08-28 报告评审后新增、V2 修正上限）；--run 实跑全部测试 / --run-quick 实跑快子集（跑前提示预计耗时） |
+| evolution_gate.py | `tools\evolution_gate.py` | E | 进化门禁脚本：session.created 时插件调 --drain（异步后台自愈补跑残留快照，max_n=3 限流）+ --snapshot；session.idle 时 --check——机制步骤（流水兜底追加/自动测试/一致性校验/**配套漏更检测（docs-sync 映射反向校验）**/**新增与删除文件检测（全目录清单快照对比，输出【新增文件】待适配清单）**/**二次验证未闭环计数**/**经验健康引擎（结构化条目扫描：待验证清单/deprecated 定位/条目级老化）**）确定性执行；**--check-5step：六步检查点检测（参数名保留历史名，2026-09-04 五步升级六步：新增第三步·确认弹窗）+ 判定四条件声明检测 + 可追溯检测（场景数=1 须带依据）+ 三条件依据软提示** |
+| health_check.py | `tools\health_check.py` | F | 一键健康检查：①核心配置齐全 ②skill frontmatter+体积门限 ③插件最近执行 ④测试可解析 ⑤门禁 idle/drain 记录 ⑥evolution_log 待处理项 ⑦平台 API 依赖保障（实验性 hook 可用性）⑧字符边界规范（CRLF/BOM/编码扫描）⑨注入量管控（四注入文件合计 ≤70KB，2026-08-28 报告评审后新增、V2 修正上限、2026-09-04 用户弹窗决策 50→70）；--run 实跑全部测试 / --run-quick 实跑快子集（跑前提示预计耗时） |
 | sync_push.py | `tools\sync_push.py` | G | 推送门禁脚本化：强制校验用户弹窗确认标记（无标记/非 push 选择直接拒绝 commit/push）；**推送前自动 to_portable（流程漏步不再可能）+ 可移植性强制阻断（残留本机用户名特征即拒绝）**；推送成功后自动清除标记；**WSL 仓库（wsl.localhost 路径）自动走 WSL 内 git 推送（SSH 密钥与 commit author 与历史一致）** |
 | archive\（18 个） | `tools\archive\` | F | 历史一次性脚本存档，不执行 |
 
@@ -79,7 +79,7 @@
 |---|---|---|---|
 | skill_validate.py | `tests\skill_validate.py` | G | 每次 skill 改动后强制（铁律第 8 条）；体积门限可配置（--set-limit/--ignore/--ignore-all） |
 | test_skill_validate_config.py | `tests\test_skill_validate_config.py` | G | skill_validate 配置机制改动后强制（7/7） |
-| test_plugin.js | `tests\test_plugin.js` | G | 插件改动后强制（52/52：事件分支/注册事件注入/五步检查点/语言检测/使用率追踪） |
+| test_plugin.js | `tests\test_plugin.js` | G | 插件改动后强制（52/52：事件分支/注册事件注入/六步检查点/语言检测/使用率追踪） |
 | test_charset.py | `tests\test_charset.py` | G | 字符边界规范防线：框架文件 CRLF/BOM/UTF-8 解码扫描 + 铁律第 9 条存在性（7/7）；health_check 第⑧项必跑；扫描失败立即归一修复再交付 |
 | test_platform_api.py | `tests\test_platform_api.py` | G | **平台 API 依赖保障**：opencode 二进制仍实现 experimental.chat.system.transform hook / jsonc 通道 / 插件注册 / 4 注入文件就绪（11/11）——opencode 升级或移除该实验性 API 时此测试失败告警；每次 health_check --run 必跑 |
 | test_path_convert.py | `tests\test_path_convert.py` | G | path_convert 改动后强制（23/23：往返转换/STATE_FILES/残留扫描白名单化/tests 与 archive 目录跳过转换/空值映射过滤/工具类全集检出） |
@@ -87,7 +87,7 @@
 | test_regedit.py | `tests\test_regedit.py` | G | 注册表改动后强制（本表与实际文件系统一致性） |
 | test_tools_manifest.py | `tests\test_tools_manifest.py` | G | 工具总表改动后强制（分类计数吻合/待补充无重复/包可导入/表结构，19/19） |
 | test_instructions.py | `tests\test_instructions.py` | G | instructions.md 改动后强制（章节/铁律互查/引用存在/技能清单与目录一致/编写规范，31/31） |
-| test_evolution_gate.py | `tests\test_evolution_gate.py` | G | evolution_gate 改动后强制（快照/改动检测/流水兜底/自动测试/配套漏更/五步检查点/判定四条件/软提示硬告警/阈值配置/经验健康引擎/新增删除文件检测，42/42） |
+| test_evolution_gate.py | `tests\test_evolution_gate.py` | G | evolution_gate 改动后强制（快照/改动检测/流水兜底/自动测试/配套漏更/六步检查点/判定四条件/软提示硬告警/阈值配置/经验健康引擎/新增删除文件检测，45/45） |
 | test_health_check.py | `tests\test_health_check.py` | G | health_check 改动后强制（可运行/报告结构/九检查项/无失败项/regedit 登记/--run-quick 实跑/注入量管控，9/9） |
 | test_sync_push.py | `tests\test_sync_push.py` | G | sync_push 改动后强制（无标记拒绝/非push拒绝/有效推送/标记清除/重推需重确认/WSL 路径判定与转换/自动 to_portable/可移植性阻断/msgfile_exists 双通道，19/19） |
 | test_docs_sync.py | `tests\test_docs_sync.py` | G | docs-sync.md 改动后强制（变更类型/校验测试存在/被 regedit+AGENTS 引用，19/19） |
@@ -126,18 +126,18 @@
 
 | 注册项 | 位置 | 生效 | 说明 |
 |---|---|---|---|
-| evolution_skill（进化执行器） | `skills\default\evolution_skill\SKILL.md` | C | 铁律第 2 条复盘进化发现需固化时自动调用；五步固化（**每步强制输出【第X步·XX】标记行，gate --check-5step 程序化检测**）/ 注册表更新 / 工具登记 / 配套文档 / 校验自测全流程封装 |
-| 进化协议详版 | `instructions.md` 智能进化协议章节 | F | 五步流程 / 五能力 / 校验标准 / 风险规避 / 质量与可持续性机制详版 |
+| evolution_skill（进化执行器） | `skills\default\evolution_skill\SKILL.md` | C | 铁律第 2 条复盘进化发现需固化时自动调用；六步固化（**每步强制输出【第X步·XX】标记行，gate --check-5step 程序化检测**；第三步·确认=question 弹窗让用户选择同意/填写/跳过）/ 注册表更新 / 工具登记 / 配套文档 / 校验自测全流程封装 |
+| 进化协议详版 | `instructions.md` 智能进化协议章节 | F | 六步流程（含第三步·确认弹窗）/ 五能力 / 校验标准 / 风险规避 / 质量与可持续性机制详版 |
 | 进化规则 | `evolution.md`（在 skills\default\evolution_skill\ 下） | H | 规则类经验可执行载体（更新前核对 evolution_log.txt + 弹窗确认，见铁律层登记） |
 | 会话轨迹 | `evolution_trace.jsonl`（在 skills\default\evolution_skill\ 下） | E | 插件写，供合并/拆分分析 |
 | 进化检查注入 | skill-banner.js session.idle | E | 会话结束兜底注入强制清单（幂等去重，含新增文件适配第 7 项） |
-| 注册表自我进化 | `regedit.md` 本身 | B+G | 本表条目/生效分类变更按五步固化 + test_regedit.py 校验；**生效方式分类可新增**（保证等级机制自身可进化） |
+| 注册表自我进化 | `regedit.md` 本身 | B+G | 本表条目/生效分类变更按六步固化 + test_regedit.py 校验；**生效方式分类可新增**（保证等级机制自身可进化） |
 
 ### 进化层闭环（保证智能自我进化）
 
 ```
 铁律第2条（A类·每响应必查）→ 发现需固化 → evolution_skill（C类·自动调用）
-  → 五步固化 → evolution.md / instructions.md / skill / tools-manifest.md / regedit.md
+  → 六步固化（含第三步·确认弹窗） → evolution.md / instructions.md / skill / tools-manifest.md / regedit.md
   → 校验自测（skill_validate + test_regedit + 行为实测）
   → 回应末尾附"进化：…"行（可审计）
 兜底：插件 session.idle 注入进化检查（E类）→ 幂等去重防堆积

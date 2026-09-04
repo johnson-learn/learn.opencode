@@ -114,7 +114,7 @@ function runApiCheckAsync(client) {
 }
 
 async function fetchAssistantText(client, sid) {
-  // 拉取会话 assistant 文本（五步检查与使用率追踪共用；最近 40 条消息）
+  // 拉取会话 assistant 文本（固化检查点与使用率追踪共用；最近 40 条消息）
   let text = ""
   try {
     const resp = await client.session.messages({ path: { id: sid } })
@@ -133,18 +133,18 @@ async function fetchAssistantText(client, sid) {
 }
 
 async function runGate5step(client, sid) {
-  // 五步检查点程序化强制：拉取会话消息 → gate --check-5step 检测五步标记 → 返回缺步警告文本
+  // 固化检查点程序化强制（2026-09-04 五步升级六步：新增第三步·确认）：拉取会话消息 → gate --check-5step 检测六步标记 → 返回缺步警告文本
   const text = await fetchAssistantText(client, sid)
   if (!text) return ""
   try {
     execSync(`python "${GATE}" --check-5step`, {
       timeout: 60000, encoding: "utf8", windowsHide: true, input: text,
     })
-    return "" // rc=0：五步齐全或不适用，无需附加警告
+    return "" // rc=0：六步齐全或不适用，无需附加警告
   } catch (e) {
     // rc=1（缺步）时 execSync 抛异常但 stdout 含缺步清单，取出用于附加警告
     const out = e && e.stdout ? String(e.stdout).trim() : ""
-    if (out && out.includes("五步检查点")) return out
+    if (out && out.includes("固化检查点")) return out
     log("gate --check-5step 执行失败：" + (e && e.message ? String(e.message).slice(0, 150) : ""))
     return ""
   }
@@ -223,12 +223,12 @@ function clearPending() {
 }
 
 function buildTaskText(gateOut, fiveOut) {
-  // 进化检查任务文本（6 项强制清单 + 门禁结果 + 五步补做 + 执行时机）
+  // 进化检查任务文本（6 项强制清单 + 门禁结果 + 固化检查点补做 + 执行时机）
   return (
     "【进化检查·程序化强制·不可跳过】本任务由插件在上一会话结束时生成、本会话创建时注入，必须完整执行，不得以任何理由跳过或精简。**执行时机：本会话你第一次回复时，先输出进化检查结论一行（「进化检查完成：本次无固化项」或固化项清单），再回答用户问题。**逐项执行：\n" +
-    (gateOut ? "【进化门禁·机器已完成】机制步骤已由 evolution_gate 脚本确定性执行，结果：\n" + gateOut.slice(0, 2000) + "\n你只需补充智能部分（经验归纳/归属/edit 固化）：\n" : "") +
-    (fiveOut ? "【五步检查点·程序化强制】" + fiveOut.slice(0, 600) + "\n补做任务：按五步流程逐步输出【第一步·归纳】【第二步·归属】【第三步·edit】【第四步·流水】【第五步·校验】结构化中间结果（格式见 evolution_skill SKILL.md）后再执行固化。\n" : "") +
-    "1. 经验固化：回顾上一会话，按 instructions.md 智能进化协议五步流程，把可复用经验（新方法/工具/踩坑/风险规避）固化到对应 skill（自动执行）\n" +
+    (gateOut ? "【进化门禁·机器已完成】机制步骤已由 evolution_gate 脚本确定性执行，结果：\n" + gateOut.slice(0, 2000) + "\n你只需补充智能部分（经验归纳/归属/弹窗确认/edit 固化）：\n" : "") +
+    (fiveOut ? "【固化检查点·程序化强制】" + fiveOut.slice(0, 600) + "\n补做任务：按六步流程逐步输出【第一步·归纳】【第二步·归属】【第三步·确认】【第四步·edit】【第五步·流水】【第六步·校验】结构化中间结果（格式见 evolution_skill SKILL.md）后再执行固化。\n" : "") +
+    "1. 经验固化：回顾上一会话，按 instructions.md 智能进化协议六步流程，把可复用经验（新方法/工具/踩坑/风险规避）固化到对应 skill（写入规则文件前必须弹窗让用户确认——question 工具逐条选择：同意/填写内容/跳过）\n" +
     "2. 工具登记：上一会话中用到/发现/提及的任何新工具、脚本、库——无论是否已写进具体 skill——必须登记到 tools-manifest.md（已在分类中的更新条目；新的先入「待补充」清单）\n" +
     "3. 总表同步：若上一会话新增了 skill 依赖工具或本机配置变更，同步更新 tools-manifest.md\n" +
     "4. 校验自测：对本次所有 skill 文件改动，跑 python <项目目录>\\temp\\skill_validate.py <opencode配置目录>\\skills；涉及可执行内容的行为自测\n" +
@@ -366,10 +366,10 @@ export const SkillBanner = async ({ client }) => {
           if (gateOut) {
             log("evolution_gate 门禁输出：\n" + gateOut.slice(0, 600))
           }
-          // 五步检查点：检测本会话固化响应是否含五步标记
+          // 固化检查点：检测本会话固化响应是否含六步标记
           const fiveOut = await runGate5step(client, sid)
           if (fiveOut) {
-            log("五步检查点输出：\n" + fiveOut.slice(0, 500))
+            log("固化检查点输出：\n" + fiveOut.slice(0, 500))
           }
           // 使用率追踪（V5 方案甲'）：会话级关键词匹配 → evolution_trace.jsonl
           trackExperienceUsage(client, sid)

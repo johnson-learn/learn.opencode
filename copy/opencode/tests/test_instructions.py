@@ -62,9 +62,9 @@ for d in sorted(skill_dirs):
     ok = ("工具依赖清单" in c) or ("references" in c)
     check(d + " 遵守编写规范（工具清单/references）", ok)
 
-# 7. 五步进化流程关键要素
-for kw in ["归纳", "归属", "evolution_log.txt", "校验与自测", "行为自测"]:
-    check("五步流程要素: " + kw, kw in ins)
+# 7. 六步进化流程关键要素（2026-09-04 五步升级六步：新增第三步·确认弹窗）
+for kw in ["归纳", "归属", "evolution_log.txt", "校验与自测", "行为自测", "第三步·确认", "弹窗"]:
+    check("六步流程要素: " + kw, kw in ins)
 
 print("\n结果：通过 %d 项，失败 %d 项" % (pass_n, fail_n))
 sys.exit(1 if fail_n else 0)
