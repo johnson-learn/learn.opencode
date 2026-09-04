@@ -64,29 +64,29 @@ await handler({ event: { type: "session.idle", properties: { sessionID: "sess-ma
 check("同会话二次 idle 无副作用（prompt 不增加）", calls.prompt.length === 1)
 check("幂等日志已记录", existsSync(LOG) && readFileSync(LOG, "utf8").includes("已写过进化待办"))
 
-// === 测试 3c：五步缺步 → 待办含警告 → 新会话创建时静默注入 ===
-console.log("[测试3c] 五步缺步 → 新会话静默注入")
-mockMessages = [{ info: { role: "assistant" }, parts: [{ type: "text", text: "进化：已固化 xxx\n但没有输出五步标记" }] }]
+// === 测试 3c：六步缺步 → 待办含警告 → 新会话创建时静默注入 ===
+console.log("[测试3c] 六步缺步 → 新会话静默注入")
+mockMessages = [{ info: { role: "assistant" }, parts: [{ type: "text", text: "进化：已固化 xxx\n但没有输出六步标记" }] }]
 await handler({ event: { type: "session.idle", properties: { sessionID: "sess-five-001" } } })
 await handler({ event: { type: "session.created", properties: { sessionID: "sess-five-created" } } })
 const lastPrompt = calls.prompt[calls.prompt.length - 1]
 const fiveTask = lastPrompt && lastPrompt.body && lastPrompt.body.parts[0].text || ""
 check("新会话收到进化检查任务（静默 noReply）", lastPrompt && lastPrompt.body.noReply === true && fiveTask.includes("进化检查"))
 check("任务含执行时机指令（首次回复先输出进化检查结论）", fiveTask.includes("执行时机") && fiveTask.includes("进化检查完成：本次无固化项"))
-check("任务附【五步检查点·程序化强制】警告", fiveTask.includes("五步检查点·程序化强制"))
+check("任务附【固化检查点·程序化强制】警告", fiveTask.includes("固化检查点·程序化强制"))
 check("警告点名缺失步骤（第二步·归属）", fiveTask.includes("第二步·归属"))
-check("补做任务要求五步标记格式", fiveTask.includes("【第一步·归纳】"))
+check("补做任务要求六步标记格式", fiveTask.includes("【第一步·归纳】") && fiveTask.includes("【第三步·确认】"))
 const promptCountAfter3c = calls.prompt.length
 await handler({ event: { type: "session.created", properties: { sessionID: "sess-five-created-again" } } })
 check("注入后待办已消费（再次创建不再注入进化任务）", calls.prompt.length === promptCountAfter3c + 1)
 
-// === 测试 3d：五步齐全 → 新会话任务不含缺步警告 ===
-console.log("[测试3d] 五步齐全")
-mockMessages = [{ info: { role: "assistant" }, parts: [{ type: "text", text: "进化：已固化 xxx\n【第一步·归纳】a\n【判定四条件】场景数：2 / 可移植：是（不含本机路径）/ 无重复：是（已比对）/ 边界：明确\n【第二步·归属】b\n【第三步·edit】c\n【第四步·流水】d\n【第五步·校验】e" }] }]
+// === 测试 3d：六步齐全 → 新会话任务不含缺步警告 ===
+console.log("[测试3d] 六步齐全")
+mockMessages = [{ info: { role: "assistant" }, parts: [{ type: "text", text: "进化：已固化 xxx\n【第一步·归纳】a\n【判定四条件】场景数：2 / 可移植：是（不含本机路径）/ 无重复：是（已比对）/ 边界：明确\n【第二步·归属】b\n【第三步·确认】c\n【第四步·edit】d\n【第五步·流水】e\n【第六步·校验】f" }] }]
 await handler({ event: { type: "session.idle", properties: { sessionID: "sess-five-002" } } })
 await handler({ event: { type: "session.created", properties: { sessionID: "sess-five-created2" } } })
 const okTask = calls.prompt[calls.prompt.length - 1].body.parts[0].text || ""
-check("五步齐全时任务不含缺步警告", !okTask.includes("五步检查点·程序化强制"))
+check("六步齐全时任务不含缺步警告", !okTask.includes("固化检查点·程序化强制"))
 
 // === 测试 3f：使用率追踪（V5 方案甲'：会话级关键词匹配写 evolution_trace.jsonl） ===
 console.log("[测试3f] 使用率追踪")
@@ -95,7 +95,7 @@ check("源码含使用率追踪函数与调用点", src.includes("trackExperienc
 check("关键词解析含泛词过滤（防误报）", src.includes("generic") && src.includes("length >= 4"))
 check("会话级匹配写 evolution_trace.jsonl", src.includes("TRACE_FILE") && src.includes("JSON.stringify({ t:"))
 
-// === 测试 3g：messages 拉取异常 → 五步检查静默跳过，待办与注入不受影响 ===
+// === 测试 3g：messages 拉取异常 → 固化检查静默跳过，待办与注入不受影响 ===
 console.log("[测试3g] messages 异常容错")
 const origMessages = client.session.messages
 client.session.messages = async () => { throw new Error("messages api down") }

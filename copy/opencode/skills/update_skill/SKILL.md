@@ -53,9 +53,9 @@ collaborates_with:
 ```
 wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --rebase origin main"
 ```
-- pull 成功 → 继续；**pull 冲突** → 停止同步并报告冲突文件，由用户裁决，不得强行 push；冲突文件逐个 diff 对比，按"信息完整性优先"合并两边有效内容
+- pull 成功 → 继续；**pull 冲突** → 停止同步并**question 工具弹窗让用户裁决**冲突文件（选项：逐文件 diff 后按信息完整性优先合并/保留本机/保留远端），不得强行 push
 - 工作树非干净（有未提交改动）→ 先 stash（`git stash`），pull 后 `git stash pop`；冲突同上处理
-- 网络失败（无法连 GitHub）→ 报告"无法 pull"，询问是否仅本地 commit（不 push）
+- 网络失败（无法连 GitHub）→ 报告"无法 pull"，**question 工具弹窗询问**是否仅本地 commit（不 push）
 
 #### （第一步内）对端修改评审（pull 到对端新提交后必做，用户 2026-08-26 定）
 
@@ -90,17 +90,17 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 
 1. **盘点范围**（按序执行）：
    - 当前工作目录所在项目
-   - 状态文件 `C:\Users\job_p\.config\opencode\skills\update_skill\project_list.txt`（首次盘点时创建）记录的其它项目目录；update_skill 首次遇到新项目目录时追加记录
-   - 用户显式指定：`update_skill：E:\openCodeDefault` = 盘点该项目 + 双向同步
+   - 状态文件 `<opencode配置目录>\skills\update_skill\project_list.txt`（首次盘点时创建）记录的其它项目目录；update_skill 首次遇到新项目目录时追加记录
+   - 用户显式指定：`update_skill：<项目目录>` = 盘点该项目 + 双向同步
 2. **每项目扫描三类资产**：
    - 项目级 skill（`.opencode\skills\*/`）：与全局同名（注入副本）→ 跳过；全局没有的全新 skill → 通用性判定
    - 项目脚本（项目根 *.ps1/*.py/*.js 及 tools 目录）：通用工具 → 提取；业务逻辑/任务产物（如 temp 下的）→ 跳过
 3. **通用性判定（跨层迁移标准）**：可复用 + 职责独立 + 非项目特定 + 其它机器使用框架功能时需要 → 提取；不满足 → 留在项目
 4. **提取动作（自动执行）**：
-   - skill → 复制到 `C:\Users\job_p\.config\opencode\skills\<name>\`，按编写规范补 frontmatter（全局显式触发 description），regedit.md 技能层注册，提醒用户重启 opencode
-   - 脚本 → 复制到 `C:\Users\job_p\.config\opencode\tools\`，tools-manifest.md 登记，regedit.md 工具层注册
-   - 提取后强制：`python C:\Users\job_p\.config\opencode\tests\skill_validate.py` + `test_regedit.py`
-5. **拿不准的资产** → 不自动提取，报告「提取建议清单」待用户确认（与进化协议分级铁律一致）
+   - skill → 复制到 `<opencode配置目录>\skills\<name>\`，按编写规范补 frontmatter（全局显式触发 description），regedit.md 技能层注册，提醒用户重启 opencode
+   - 脚本 → 复制到 `<opencode配置目录>\tools\`，tools-manifest.md 登记，regedit.md 工具层注册
+   - 提取后强制：`python <opencode配置目录>\tests\skill_validate.py` + `test_regedit.py`
+5. **拿不准的资产** → 不自动提取，**question 工具弹窗让用户逐项决策**（提取/不提取），按选择执行（与进化协议分级铁律一致）
 6. **提取完成的资产随本次同步上 GitHub**（正常进入同步三环节）
 
 ### 第三步：自测（测试先行铁律，缺用例先补写）
@@ -125,8 +125,8 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 #### （第五步·推送分支）可移植性校验（推送前强制，用户 2026-08-26 定）
 
 > 修改提交到远端前，必须校验**具备不同电脑可移植性**——待提交内容不得含本机特征。
-1. **自动扫描**：`python C:\Users\job_p\.config\opencode\tests\test_update_skill.py` 用例 8（提交前可移植性校验）——扫描待提交目录，检出"本机 home 真实路径 / 本机用户名路径"即违规；此用例已进入提交前自测用例库
-2. **人工核查**：硬编码盘符绝对路径（`C:\`、`E:\` 等）只允许"安装约定位置"（`C:\msys64`、`C:\Program Files`、`C:\Windows`、`C:\Temp` 等任何机器安装后相同的位置）；本机特有目录（`E:\openCodeDefault` 等）必须占位符化
+1. **自动扫描**：`python <opencode配置目录>\tests\test_update_skill.py` 用例 8（提交前可移植性校验）——扫描待提交目录，检出"本机 home 真实路径 / 本机用户名路径"即违规；此用例已进入提交前自测用例库
+2. **人工核查**：硬编码盘符绝对路径（`<工具目录>`、`E:\` 等）只允许"安装约定位置"（`C:\msys64`、`C:\Program Files`、`C:\Windows`、`C:\Temp` 等任何机器安装后相同的位置）；本机特有目录（`<项目目录>` 等）必须占位符化
 3. 校验不通过 → 修复为占位符/动态推导 → 重跑用例 8 → 通过后才可进入 git 三步骤
 
 #### （第五步·推送分支）门面文档同步（仓库门面，用户 2026-08-26 定）
@@ -135,15 +135,15 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 1. **核查时机**：每次推送前对照框架现状核查门面一致性：技能清单（6 个）与目录结构（skills\ + skills\default\）、安装步骤（部署内容含 tests/tools/plugins）、依赖（tools-manifest 对齐）、机制说明（进化门禁/五步同步/多机说明）
 2. **更新方式**：直接在仓库工作树编辑门面文件，随本次 commit/push 一并上 GitHub（弹窗确认时展示门面变更清单）
 3. **无权限机器不受影响**：门面维护只在有权限机器的 update_skill 流程内；无权限机器 `git pull` 即得更新后的门面与 skill，不需执行 update_skill 修改
-4. **程序化核查**：`python C:\Users\job_p\.config\opencode\tests\test_repo_face.py`（门面一致性测试：README 技能清单 vs skills 目录、INSTALL 关键步骤存在、REQUIREMENTS 权威引用）——挂入第三步自测
+4. **程序化核查**：`python <opencode配置目录>\tests\test_repo_face.py`（门面一致性测试：README 技能清单 vs skills 目录、INSTALL 关键步骤存在、REQUIREMENTS 权威引用）——挂入第三步自测
 5. **repo_face 镜像刷新（2026-09-04 实测教训后固化）**：门面文件/setup 脚本/tools-manifest 任一变更后，必须同步刷新仓库内镜像 `copy\opencode\tests\repo_face\`（9 个文件：COPY_README/INSTALL/REQUIREMENTS/ROOT_README + setup-windows/setup-check/install-tools/install-wsl + tools-manifest）为对应源文件最新内容，并同步拷回本机 `tests\repo_face\`——镜像是无 WSL 机器跑 test_repo_face/test_setup_ps1 的回退数据，漂移会致无 WSL 机器测试误判；test_repo_face.py 6d 用例（仓库内镜像=门面一致性）程序化拦截漂移，镜像文件与源文件内容必须一致（仅行尾/形态允许差异）
 
 #### （第五步·推送分支）同步预览 + 弹窗确认脚本化（优化 5）
 
 1. **同步预览（弹窗前自动生成）**：`git status --short` + `git diff --stat` + `git diff --numstat` 生成 diff 摘要（改了哪些文件 / 增删行数 / 关键改动点）——用户在弹窗确认时有依据可看
-2. **弹窗确认**（question 工具弹窗，禁止文字代替）：用户选"推送" → 模型写确认标记文件 `C:\Users\job_p\.config\opencode\skills\update_skill\.push_confirm.json`（`{"choice":"push","user":"user","time":"<ISO时间>"}`）
-3. **推送脚本化（不依赖 LLM 自觉）**：`python C:\Users\job_p\.config\opencode\tools\sync_push.py <确认标记文件> <git仓库目录> <commit消息文件>`——脚本强制校验确认标记（无标记/非 push 选择 → **直接拒绝** commit/push）；推送成功后自动清除标记（一次确认只允许一次推送，再次推送需重新弹窗）
-4. commit 消息：先写 `/tmp/cmsg.txt`（Python subprocess 写入，防 shell 层中文丢失），再交 sync_push.py 执行；**WSL 仓库的 msgfile 参数必须传 WSL 内路径（`/tmp/cmsg.txt`）——传 Windows 路径会被 WSL git 拒绝（2026-09-04 实测：`copy/C:\Users\...\cmsg.txt: No such file or directory`），Windows 侧写好文件后先 `cp` 进 WSL 再传 `/tmp/...` 路径**
+2. **弹窗确认**（question 工具弹窗，禁止文字代替）：用户选"推送" → 模型写确认标记文件 `<opencode配置目录>\skills\update_skill\.push_confirm.json`（`{"choice":"push","user":"user","time":"<ISO时间>"}`）
+3. **推送脚本化（不依赖 LLM 自觉）**：`python <opencode配置目录>\tools\sync_push.py <确认标记文件> <git仓库目录> <commit消息文件>`——脚本强制校验确认标记（无标记/非 push 选择 → **直接拒绝** commit/push）；推送成功后自动清除标记（一次确认只允许一次推送，再次推送需重新弹窗）
+4. commit 消息：先写 `/tmp/cmsg.txt`（Python subprocess 写入，防 shell 层中文丢失），再交 sync_push.py 执行；**WSL 仓库的 msgfile 参数必须传 WSL 内路径（`/tmp/cmsg.txt`）——传 Windows 路径会被 WSL git 拒绝（2026-09-04 实测：`copy/<工具目录>Users\...\cmsg.txt: No such file or directory`），Windows 侧写好文件后先 `cp` 进 WSL 再传 `/tmp/...` 路径**
 
 #### （第五步·推送分支）同步三环节（差异合入模式，禁止简单删除替换）
 
@@ -153,14 +153,14 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
    ```
    wsl -d Ubuntu -e bash -c "cp -r /mnt/c/Users/<用户名>/.config/opencode/skills/* /home/github/learn.opencode/copy/opencode/skills/ && cp /mnt/c/Users/<用户名>/.config/opencode/{instructions.md,evolution.md,opencode.jsonc} /home/github/learn.opencode/copy/opencode/ && mkdir -p /home/github/learn.opencode/copy/opencode/plugins && cp -r /mnt/c/Users/<用户名>/.config/opencode/plugins/* /home/github/learn.opencode/copy/opencode/plugins/"
    ```
-   **cp 后立即清理 STATE_FILES 与隐私防线（2026-08-27 隐私事故后固化）**：① 删除工作树残留的本机状态文件（`copy/opencode/skills/update_skill/path_map.txt`、`sync_target.txt`——gitignore 只挡 git add，挡不住 cp 带入工作树）；② 隐私扫描：工作树 grep 检查本机用户名路径（`C:\Users\<用户名>`）归零——**禁止在框架文件里硬编码任何具体隐私词**（硬编码等于二次泄漏，2026-08-27 教训）；③ 程序化防线：`python C:\Users\job_p\.config\opencode\tests\test_repo_face.py`（含 STATE_FILES 与动态本机路径检查用例）。
+   **cp 后立即清理 STATE_FILES 与隐私防线（2026-08-27 隐私事故后固化）**：① 删除工作树残留的本机状态文件（`copy/opencode/skills/update_skill/path_map.txt`、`sync_target.txt`——gitignore 只挡 git add，挡不住 cp 带入工作树）；② 隐私扫描：工作树 grep 检查本机用户名路径（`C:\Users\<用户名>`）归零——**禁止在框架文件里硬编码任何具体隐私词**（硬编码等于二次泄漏，2026-08-27 教训）；③ 程序化防线：`python <opencode配置目录>\tests\test_repo_face.py`（含 STATE_FILES 与动态本机路径检查用例）。
 2. **合入本机脚本** → 仓库 `scripts/`（同样覆盖式合入）：
    ```
-   cp C:\Users\<用户名>\AppData\Local\Temp\opencode\*.ps1、*.py 与 C:\Users\job_p\.config\opencode\tools\inject_skills.py、fetch_skills.py → copy/scripts/
+   cp C:\Users\<用户名>\AppData\Local\Temp\opencode\*.ps1、*.py 与 <opencode配置目录>\tools\inject_skills.py、fetch_skills.py → copy/scripts/
    ```
 3. **差异对比与裁决**：
    - `git status --short` 列出全部差异：`A`（本机新增→直接接受）、`M`（同文件两边可能都改）、`D`（仓库有本机无→**不删除，恢复保留**，除非确认已废弃）
-   - 对 `M` 文件逐个 `git diff <文件> | head` 查看变化，确认本机内容合理即接受；**同文件两边都改过**（git pull 后与 HEAD 差异 + 远端新提交）时，逐文件对比内容并按"信息完整性优先"合并（保留两边独有的有效内容，冲突点报告用户裁决）
+   - 对 `M` 文件逐个 `git diff <文件> | head` 查看变化，确认本机内容合理即接受；**同文件两边都改过**（git pull 后与 HEAD 差异 + 远端新提交）时，逐文件对比内容并按"信息完整性优先"合并（保留两边独有的有效内容，冲突点 **question 工具弹窗让用户裁决**）
    - **敏感信息扫描**：检查变更中无密钥/token/凭证；`.gitignore` 覆盖凭证类
    - 一致性校验：skill 数量 ≥ 源数量（合入后只增不减）、关键文件非空
    - 无任何差异 → 报告"无新改动"并结束
@@ -192,7 +192,7 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
    - `opencode/instructions.md、evolution.md、opencode.jsonc` → `C:\Users\<用户名>\.config\opencode\`
    - `opencode/plugins/...` → `C:\Users\<用户名>\.config\opencode\plugins\`
    - `scripts/...` → `C:\Users\<用户名>\AppData\Local\Temp\opencode\`
-4. 反向合入的冲突处理：同名文件本机与远端都改过时，按"信息完整性优先"合并（本机当前内容为主、远端新增有效内容并入），无法自动合并的报告用户裁决
+4. 反向合入的冲突处理：同名文件本机与远端都改过时，按"信息完整性优先"合并（本机当前内容为主、远端新增有效内容并入），无法自动合并的 **question 工具弹窗让用户裁决**
 5. 无远端新提交 → 报告"远端无新变化"，流程结束
 
 ### 收尾报告

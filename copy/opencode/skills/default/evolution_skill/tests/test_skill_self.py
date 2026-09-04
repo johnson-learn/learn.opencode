@@ -37,11 +37,11 @@ have = set(os.listdir(ref_dir)) if os.path.isdir(ref_dir) else set()
 missing = sorted(f for f in ref_files if f not in have)
 check("references 索引无悬空（缺失: %s）" % ",".join(missing) if missing else "references 索引无悬空", len(missing) == 0)
 
-# 4. 技能特定：五步固化 + 新增文件适配 + templates
-check("五步固化流程存在", "第一步" in c and "第五步" in c and "判定四条件" in c)
+# 4. 技能特定：六步固化 + 新增文件适配 + templates
+check("六步固化流程存在", "第一步" in c and "第六步" in c and "判定四条件" in c and "第三步·确认" in c)
 check("新增文件四问适配流程存在", "四问" in c)
 tpl_dir = os.path.join(SKILL, "templates")
-check("templates 两个固化模板", os.path.isdir(tpl_dir) and all(os.path.isfile(os.path.join(tpl_dir, f)) for f in ["five-step-template.md", "new-file-adapt-template.md"]))
+check("templates 两个固化模板", os.path.isdir(tpl_dir) and all(os.path.isfile(os.path.join(tpl_dir, f)) for f in ["six-step-template.md", "new-file-adapt-template.md"]))
 check("无 modules（本 skill 非聚合型）", len(mods) == 0)
 
 print("\n结果：通过 %d 项，失败 %d 项" % (pass_n, fail_n))

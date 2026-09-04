@@ -3,12 +3,12 @@
 # 用法：
 #   python evolution_gate.py --snapshot <会话ID>   会话开始时：记录规则文件状态快照
 #   python evolution_gate.py --check <会话ID>      会话结束时：检测改动→自动补流水→自动跑测试
-#   python evolution_gate.py --check-5step         从 stdin 读会话消息文本，检测五步检查点标记齐全性
+#   python evolution_gate.py --check-5step         从 stdin 读会话消息文本，检测固化六步检查点标记齐全性（参数名保留历史名）
 #   python evolution_gate.py --drain [max_n]       自愈补跑残留快照
 # 设计（用户 2026-08-26 定）：机制步骤（流水落盘/测试执行/一致性校验）由本脚本 100% 确定性执行，
 #   不依赖模型自觉；智能步骤（经验归纳/归属判断）仍由模型完成，脚本输出待补充清单。
-# 2026-08-27 新增 --check-5step：五步检查点程序化强制（用户高优先级未完成项落地）——
-#   模型执行固化的响应必须含【第一步·归纳】~【第五步·校验】五个标记，缺步由本脚本检出，
+# 2026-08-27 新增 --check-5step：固化检查点程序化强制（用户高优先级未完成项落地）——
+#   模型执行固化的响应必须含六步标记（2026-09-04 起五步升级六步：新增第三步·确认弹窗），缺步由本脚本检出，
 #   插件 session.idle 调用本模式并把缺步警告附加到进化检查任务文本。
 import os, sys, json, re, subprocess, hashlib, datetime, tempfile
 
@@ -22,8 +22,10 @@ WATCH_EXT = (".md", ".txt", ".py", ".js", ".jsonc")
 IGNORE_DIRS = ("__pycache__", "node_modules", ".git", "archive")
 STATE_FILES = ("path_map.txt", "sync_target.txt")
 
-# 五步检查点标记（与 evolution_skill SKILL.md 五步输出格式一致；改格式需同步 SKILL.md）
-FIVE_STEPS = ["第一步·归纳", "第二步·归属", "第三步·edit", "第四步·流水", "第五步·校验"]
+# 固化六步检查点标记（与 evolution_skill SKILL.md 六步输出格式一致；改格式需同步 SKILL.md）
+# 2026-09-04 五步升级六步：新增【第三步·确认】弹窗让用户选择（同意/填写内容/跳过）——经验写入规则文件前必须用户确认
+EVOLUTION_STEPS = ["第一步·归纳", "第二步·归属", "第三步·确认", "第四步·edit", "第五步·流水", "第六步·校验"]
+FIVE_STEPS = EVOLUTION_STEPS  # 历史变量名兼容（部分测试/插件引用）
 
 # 固化判定四条件显式声明（2026-08-28 V2 报告采纳：把四条件从 LLM 内心判断变成必须显式输出可检测）
 FOUR_COND = ["场景数", "可移植", "无重复", "边界"]
@@ -167,7 +169,7 @@ def classify_new(fp):
         return "插件文件（需登记 regedit 插件层 + test_plugin 用例）"
     base = os.path.basename(fp)
     if base.endswith(".md") or base.endswith(".jsonc"):
-        return "规则/配置文档（判定 E 类注入还是 F 类按需 + 30KB 注入量管控）"
+        return "规则/配置文档（判定 E 类注入还是 F 类按需 + 70KB 注入量管控）"
     return "其它新增（判定一次性任务产物则建议存档 tools\\archive 或忽略）"
 
 
@@ -431,7 +433,7 @@ def do_check(sid):
     for name, (rc, tail) in results.items():
         print("  %s: rc=%s | %s" % (name, rc, tail))
     # 3. 待模型补充清单
-    print("[gate] 待模型补充（智能部分）：五步流程第 1-3 步（归纳经验/归属判定/edit 固化到可执行载体）")
+    print("[gate] 待模型补充（智能部分）：固化流程第 1-4 步（归纳经验/归属判定/弹窗确认/edit 固化到可执行载体）")
     print("[gate] 机器完成：流水兜底追加=%s、对应测试已自动执行" % ("是" if appended else "否(模型已记录)"))
     # 4. 二次验证状态计数（2026-08-28 V2 报告采纳：程序化统计"待二次验证"未闭环条目，主动提示）
     if os.path.exists(LOG):
@@ -474,15 +476,15 @@ def do_drain(max_n=3):
 
 
 def do_check_5step():
-    """五步检查点检测：stdin 读会话消息文本，检测固化响应是否含五步标记。
+    """固化六步检查点检测：stdin 读会话消息文本，检测固化响应是否含六步标记（参数名 --check-5step 保留历史名）。
     返回 0=齐全/不适用，1=缺步（插件把缺步警告附加到进化检查任务）。
     stdin 字节流按 utf-8 解码（与插件 execSync input / python subprocess encoding=utf-8 配对）。"""
     text = sys.stdin.buffer.read().decode("utf-8", errors="replace")
     has_cure = ("已固化" in text) and ("无固化项" not in text)
     if not has_cure:
-        print("[gate] 本会话无固化动作（无『已固化』声明），五步检查点不适用")
+        print("[gate] 本会话无固化动作（无『已固化』声明），固化检查点不适用")
         return 0
-    missing = [s for s in FIVE_STEPS if ("【" + s + "】") not in text]
+    missing = [s for s in EVOLUTION_STEPS if ("【" + s + "】") not in text]
     cond_missing = [k for k in FOUR_COND if ("判定四条件" not in text) or (k + "：" not in text and k + ":" not in text)]
     # 可追溯性检测（2026-08-28 V3 报告采纳）：场景数=1 时必须给出"踩坑代价高/用户点名"依据
     trace_warn = ""
@@ -523,15 +525,15 @@ def do_check_5step():
                 print("[gate] 四条件硬告警：连续 %d 次裸声明『%s』（软提示已升级为硬告警 rc=1，计数已清零）——请为每个『是/明确』条件附括号依据（可移植：是（不含本机路径）/ 无重复：是（已比对 XX）/ 边界：明确（触发条件与适用边界））" % (count, "、".join(soft)))
                 return 1
             print("[gate] 四条件依据软提示（第 %d/%d 次）：%s 声明为『是/明确』但未附括号依据；连续 %d 次将升级硬告警" % (count, BARE_DECLARE_LIMIT, "、".join(soft), BARE_DECLARE_LIMIT))
-        print("[gate] 五步检查点齐全（第一步·归纳~第五步·校验标记全部出现）且判定四条件已显式声明")
+        print("[gate] 固化六步检查点齐全（第一步·归纳~第六步·校验标记全部出现）且判定四条件已显式声明")
         return 0
     if missing:
-        print("[gate] 五步检查点缺失：%s" % "、".join(missing))
+        print("[gate] 固化检查点缺失：%s" % "、".join(missing))
     if cond_missing:
         print("[gate] 判定四条件声明缺失：%s（固化响应第一步必须显式输出【判定四条件】场景数：X / 可移植：是 / 无重复：是 / 边界：明确——四条件是把判定从 LLM 内心判断变为可检测输出的程序化要求）" % "、".join(cond_missing))
     if trace_warn:
         print(trace_warn)
-    print("[gate] 五步检查点强制要求：执行固化必须按五步流程逐步输出【第一步·归纳】~【第五步·校验】"
+    print("[gate] 固化检查点强制要求：执行固化必须按六步流程逐步输出【第一步·归纳】~【第六步·校验】"
           "结构化中间结果（格式见 evolution_skill SKILL.md），缺失步骤请在补做任务中补齐并重新声明")
     return 1
 

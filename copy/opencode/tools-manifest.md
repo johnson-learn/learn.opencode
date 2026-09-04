@@ -87,8 +87,8 @@
 | 本机 PS 脚本集 | 文档提取/OCR/页面校验 | 随仓库 scripts/ 部署到 `%LOCALAPPDATA%\Temp\opencode\` | `Test-Path %LOCALAPPDATA%\Temp\opencode\extract-docx.ps1` |
 | opencode debug 子命令（`debug config`/`debug info`/`debug paths` 等） | 查看平台**解析后**的合并配置，判断某配置字段是否真的被平台消费（如 instructions 字段 1.18 解析但不消费） | opencode 内置，零安装 | `cmd /c "opencode debug config"`（本机 1.18.18 实测；PowerShell 直调会因执行策略 SecurityError，需 `cmd /c` 包装） |
 | npm view `<pkg>` dist-tags | 查 npm 包版本线（latest 停产版 vs dev/beta 新架构线），判断某特性归属哪条版本线 | Node/npm 自带 | `cmd /c "npm view opencode-ai dist-tags --json"` |
-| evolution_gate.py（进化门禁） | 机制步骤确定性执行：--snapshot/--check/--drain/--check-5step（五步检查点检测） | 随仓库 `copy/opencode/tools/`（框架脚本） | `python <opencode配置目录>\tools\evolution_gate.py --help`（改动用例 test_evolution_gate.py 25/25） |
-| health_check.py（健康检查） | 一键健康检查九项：核心配置/skill frontmatter/插件执行/测试可解析/门禁记录/evolution_log 待处理/**平台 API 保障**/字符边界/**注入量管控（≤50KB）**；--run 全量 / --run-quick 快子集 | 随仓库 `copy/opencode/tools/`（框架脚本） | `python <opencode配置目录>\tools\health_check.py`（改动用例 test_health_check.py 9/9） |
+| evolution_gate.py（进化门禁） | 机制步骤确定性执行：--snapshot/--check/--drain/--check-5step（六步检查点检测，参数名保留历史名） | 随仓库 `copy/opencode/tools/`（框架脚本） | `python <opencode配置目录>\tools\evolution_gate.py --help`（改动用例 test_evolution_gate.py） |
+| health_check.py（健康检查） | 一键健康检查九项：核心配置/skill frontmatter/插件执行/测试可解析/门禁记录/evolution_log 待处理/**平台 API 保障**/字符边界/**注入量管控（≤70KB，2026-09-04 用户弹窗决策 50→70）**；--run 全量 / --run-quick 快子集 | 随仓库 `copy/opencode/tools/`（框架脚本） | `python <opencode配置目录>\tools\health_check.py`（改动用例 test_health_check.py 9/9） |
 | sync_push.py（推送门禁） | update_skill 第五步脚本化推送：强制校验弹窗确认标记，无标记/非 push 直接拒绝 commit/push；成功后自动清除标记 | 随仓库 `copy/opencode/tools/`（框架脚本） | `python <opencode配置目录>\tools\sync_push.py`（改动用例 test_sync_push.py 7/7） |
 
 ---

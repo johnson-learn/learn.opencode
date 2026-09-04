@@ -77,7 +77,7 @@ skill 目录下的 `config.json` 包含环境级配置，首次使用前确认 `
 1. 读取 `config.json`，确认 `cmake_exe` 路径有效
 2. 未提供有效子命令时默认执行 `scan`
 3. 未提供工程路径时先执行 `scan` 搜索工程
-4. 发现多个工程或多个 preset 时列出选项让用户选择，绝不自动猜测
+4. 发现多个工程或多个 preset 时 **question 工具弹窗**列出选项让用户选择，绝不自动猜测
 5. `configure/build/rebuild/clean` 按 `operation_mode` 决定是否需要确认
 6. `build` 前自动检测是否已 configure，未配置时提示先执行 configure
 7. `build/rebuild` 成功后返回 `elf_file`，供 `jlink/openocd` 继续使用

@@ -14,13 +14,13 @@
 ## 2. 每次响应后强制复盘进化（执行点：每次回答结束前，不是会话结束时）
 每次回答用户之前，必须自查本响应过程：
 - 是否踩了坑 / 发现更优路径 / 用到新工具或脚本 / 暴露机制缺陷 / 违反本协议？
-- 有 → 加载 `evolution_skill`（进化执行器），按其流程五步固化（归纳→归属→edit 更新→追加进化流水→校验自测）+ 注册表更新（regedit.md + test_regedit.py）+ 配套文档同步，并在回答末尾附一行：`进化：已固化 …`
+- 有 → 加载 `evolution_skill`（进化执行器），按其流程六步固化（归纳→归属→弹窗确认→edit 写入→追加进化流水→校验自测）+ 注册表更新（regedit.md + test_regedit.py）+ 配套文档同步，并在回答末尾附一行：`进化：已固化 …`（用户确认环节用 question 工具弹窗：同意/填写内容/跳过；跳过时附 `进化：用户跳过 N 条`）
 - 无 → 回答末尾附一行：`进化：无新固化`
 固化位置：`<opencode配置目录>\instructions.md` / `<opencode配置目录>\skills\default\evolution_skill\evolution.md`（进化规则，更新需弹窗确认）/ `<opencode配置目录>\skills\default\evolution_skill\evolution_log.txt`（历史流水，只增不改）/ 对应 skill 的 SKILL.md 或 references\ / `tools-manifest.md` / `regedit.md`。
 **归属二分铁律**：规则/流程/机制类经验必须写入可执行载体（SKILL.md/instructions.md/regedit.md/AGENTS.md/evolution.md 规则文件），只写 evolution_log.txt = 归属失败；记录/事实类才仅写 evolution_log.txt。
 任何结构/机制/工具变更后，README/INSTALL/REQUIREMENTS/tests\README.md 等配套文档必须同步更新——不许等用户提醒；**流程类变更必须同步 SKILL.md 与 regedit.md**；**配套更新清单以 `<opencode配置目录>\docs-sync.md` 映射表为权威**（按变更类型逐项更新对应文件并跑校验测试）。
 校验自测（每条固化强制）：内容核查（命令可执行/无本机硬编码路径/标注验证状态）+ `python <opencode配置目录>\tests\skill_validate.py` + 行为实测（涉及命令必须实跑）。
-详版五步流程与五大进化能力见 `<opencode配置目录>\instructions.md` 与 `evolution_skill`。
+详版六步流程与五大进化能力见 `<opencode配置目录>\instructions.md` 与 `evolution_skill`。
 
 ## 3. 语言跟随提问（回答语言硬约束，任何会话、任何模型都必须遵守）
 用户以何种语言提问，思考、回答、输出就必须用该语言：**中文提问必须用中文回答（含思考过程），英文提问必须用英文回答**；任何情况下不得因模型偏好/文档语言/任务习惯改用其它语言；协议原文、配置名、代码、命令、报错等必要原文保持原样不翻译。
