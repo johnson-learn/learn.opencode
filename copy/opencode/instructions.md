@@ -8,7 +8,7 @@
 
 ### 进化触发时机（双机制，主机制=全局 AGENTS.md 每次响应可见）
 
-- **主机制：全局 AGENTS.md 铁律注入**。`~\.config\opencode\AGENTS.md` 会被 opencode 作为全局规则加载进**每个会话的系统提示**（已验证：会话上下文可见其全文）。铁律第 2 条即"每次响应后强制复盘进化"，执行点=**每次回答结束前自查**（踩坑/更优路径/新工具/机制缺陷/违反协议 → 加载 `evolution_skill`（进化执行器）按六步流程固化（含弹窗确认）并在回答末尾附"进化：已固化…/无新固化"）。这是唯一每次都必然对模型可见的机制。
+- **主机制：全局 AGENTS.md 铁律注入**。`~\.config\opencode\AGENTS.md` 会被 opencode 作为全局规则加载进**每个会话的系统提示**（已验证：会话上下文可见其全文）。铁律第 2 条即"每次响应后强制复盘进化"，执行点=**每次回答结束前自查**（14 类触发详见 evolution_skill「触发确认」：踩坑/错误失败/新发现/更优路径/机制缺陷/违反协议/规则未生效/用户指正/外部变化等 → 加载 `evolution_skill`（进化执行器）按六步流程固化（含弹窗确认）并在回答末尾附"进化：已固化…/无新固化"）。这是唯一每次都必然对模型可见的机制。
 - **兜底机制：skill-banner 插件 `session.idle`（会话结束）注入「进化检查任务」**（client.session.prompt 程序化发送）——弥补模型在会话中被中断、未及固化的情况；但它发生在会话结束时，**不能作为主执行点**（教训：把执行点绑在会话外=模型上下文不可见=全靠用户推动）
 - **注入任务为强制清单，不可跳过、不可精简**：① 经验固化（六步流程，写入规则文件前必须弹窗确认）；② 工具登记（本会话用到的任何新工具/脚本/库必须登记 tools-manifest.md）；③ 总表同步（skill 依赖或本机配置变更）；④ 校验自测（skill_validate.py + 行为自测）；⑤ 合并/拆分/迁移只出建议；⑥ 完成后回复固化项清单或"无固化项"
 - **机制缺陷教训**：协议写在不加载进上下文的文件（instructions.md 的 opencode.jsonc instructions 字段引用无效）= 模型看不见 = 框架从不执行。任何规则若要模型执行，必须先确认它在每次会话的系统提示中可见（可靠通道：① 全局/项目 AGENTS.md（A 类原生注入）；② skill-banner 插件 `experimental.chat.system.transform` 注册事件注入（E 类：平台每次请求构建系统提示时直读 instructions/regedit/docs-sync/tools-manifest 四文件 push 进 output.system）；③ skill description 进入 skill 列表）。**版本事实与回退预案**：opencode.jsonc instructions 字段在 1.18 系列（1.18.18 实测）解析但不消费（1.18 系统提示构建只认 AGENTS.md/CLAUDE.md/CONTEXT.md），是 0.x dev/beta 线功能——该字段已回滚移除，系统提示注入由注册事件承担；experimental.chat.system.transform 是实验性 API，其可用性由 test_platform_api.py 持续检测，失效时回退：① 重启 instructions 字段（若新版已实现）② 铁律第 0 条强制 read 的 B 类路径

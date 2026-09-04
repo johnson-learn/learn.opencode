@@ -13,7 +13,7 @@
 
 ## 2. 每次响应后强制复盘进化（执行点：每次回答结束前，不是会话结束时）
 每次回答用户之前，必须自查本响应过程：
-- 是否踩了坑 / 发现更优路径 / 用到新工具或脚本 / 暴露机制缺陷 / 违反本协议？
+- 是否踩坑出错 / 新发现（工具/方法/经验/边界）/ 更优路径 / 机制缺陷 / 违反协议 / 规则未生效 / 用户指正 / 外部变化？（14 类触发详见 evolution_skill「触发确认」）
 - 有 → 加载 `evolution_skill`（进化执行器），按其流程六步固化（归纳→归属→弹窗确认→edit 写入→追加进化流水→校验自测）+ 注册表更新（regedit.md + test_regedit.py）+ 配套文档同步，并在回答末尾附一行：`进化：已固化 …`（用户确认环节用 question 工具弹窗：同意/填写内容/跳过；跳过时附 `进化：用户跳过 N 条`）
 - 无 → 回答末尾附一行：`进化：无新固化`
 固化位置：`<opencode配置目录>\instructions.md` / `<opencode配置目录>\skills\default\evolution_skill\evolution.md`（进化规则，更新需弹窗确认）/ `<opencode配置目录>\skills\default\evolution_skill\evolution_log.txt`（历史流水，只增不改）/ 对应 skill 的 SKILL.md 或 references\ / `tools-manifest.md` / `regedit.md`。
