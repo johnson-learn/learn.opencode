@@ -9,26 +9,37 @@
 git clone <仓库地址> copy
 cd copy
 
-# 一键安装：软件 + npm/pip 源 + WSL + 部署 skill/配置/脚本 + 路径自动改写
+# 一键安装：工具清单检测（不自动安装）+ 部署 skill/配置/脚本 + 路径自动改写
 powershell -NoProfile -ExecutionPolicy Bypass -File setup\setup-windows.ps1 -UseChinaMirror
 ```
 
-脚本各阶段说明（均可单独跳过）：
+> **脚本模式（2026-09-01 改造）**：只检测+修复配置，**不自动安装任何工具**，永不被安装失败阻塞——
+> ① 先展示全部工具清单（必须/可选分类）；② 逐项检测是否已安装；③ 已装但 PATH 未配置 → 自动修复；
+> ④ 未安装 → 提示（含建议命令，可手动或请大模型安装）后跳过继续；⑤ 后续相关配置跳过并在收尾提示"装好后重跑本脚本自动补齐"。
+>
+> **一键自动安装**（可选）：检测后想自动装缺失工具，运行：
+> ```powershell
+> powershell -NoProfile -ExecutionPolicy Bypass -File setup\install-tools.ps1 -UseChinaMirror
+> ```
+> winget 渠道装基础软件（每工具独立、失败跳过继续）+ npm/pip 渠道装包，收尾汇总失败清单；装完重跑 setup-windows.ps1 补齐配置。二者共用 `setup\setup-check.ps1` 检测清单（tools-manifest 总表自动对齐）。
+
+脚本各阶段说明：
 
 | 阶段 | 开关 | 内容 |
 |---|---|---|
-| 1 基础软件 | `-SkipWinget` | Git / Node.js LTS / Python 3.12 / Chrome / LibreOffice（winget 静默安装，已装的自动跳过） |
-| 2 npm 源 | `-SkipNpm` | opencode-ai、@mermaid-js/mermaid-cli（`-UseChinaMirror` 走 npmmirror） |
-| 3 pip 源 | `-SkipPip` | pix2text、matplotlib、PyMuPDF、pillow（`-UseChinaMirror` 走清华源） |
-| 4 WSL | `-SkipWsl` | 调起 `install-wsl.ps1`（管理员窗口；可能需要重启一次） |
+| 1 工具清单与检测 | — | 展示清单：**[必须]**（缺失不影响基本使用，update_skill 双向同步除外）Git / Node.js / Python 3.12 / opencode CLI / pip 常规包集 / WSL2+Ubuntu；**[可选]**（使用过程中可随时安装）Chrome / LibreOffice / Tesseract OCR / mermaid-cli / playwright / weasyprint。逐项双通道检测（命令 OR 安装位置），已装但 PATH 未配置自动修复，未装提示建议命令后跳过 |
+| 2 npm 检测 | — | opencode-ai、@mermaid-js/mermaid-cli 缺失汇总提示（`-UseChinaMirror` 提示走 npmmirror 并持久化镜像源） |
+| 3 pip 检测 | — | tools-manifest B 类 19 包逐包 import 检测，缺失一次性汇总提示补装命令（`-UseChinaMirror` 走清华源并持久化）；已装 Python 时自动把 pip Scripts 目录加入用户 PATH |
+| 4 WSL | `-SkipWsl` | 检测 Ubuntu 发行版；未装提示手动右键管理员运行 `setup\install-wsl.ps1`（含 WSL 内 Linux 工具链，可能需重启） |
 | 5~6 部署 | `-SkipDeploy` | 复制 skill/配置/tests/tools 到 `~\.config\opencode\`；辅助脚本到 `%LOCALAPPDATA%\Temp\opencode\` |
-| 6.5~7 路径配置 | `-NoPathRewrite` | 自动探测工具类目录（LibreOffice/Chrome/Node/WSL）+ 数据类目录交互选择（默认/定制）+ path_convert.py 占位符转本机真实路径 |
+| 6.5~7 路径配置 | `-NoPathRewrite` | 自动探测工具类目录（未装工具跳过并提示重跑）+ 数据类目录交互选择 + path_convert.py 占位符转本机真实路径 |
 
 安装完成后：
 1. 重启终端 / opencode
 2. 首次使用 p2t 会下载模型（约 1~2 GB），慢网先设 `$env:HF_ENDPOINT = "https://hf-mirror.com"`
 3. mmdc 渲染前设 `$env:PUPPETEER_EXECUTABLE_PATH` 指向系统 Chrome（skill 中有记载）
-4. WeasyPrint 需设用户环境变量 `WEASYPRINT_DLL_DIRECTORIES=<工具目录>msys64\ucrt64\bin`（MSYS2 已装 GTK 后）
+4. WeasyPrint 需用户环境变量 `WEASYPRINT_DLL_DIRECTORIES=<工具目录>msys64\ucrt64\bin`（未装时脚本已提示手动安装步骤）
+5. 有工具未装被提示时：按提示命令安装（可请大模型协助）后重跑本脚本自动补齐配置（已装项自动跳过）
 
 ## 方式 B：手动安装（脚本不可用时按此操作）
 

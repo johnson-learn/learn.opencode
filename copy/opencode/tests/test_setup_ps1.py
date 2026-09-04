@@ -122,6 +122,8 @@ if os.path.exists(tm_path):
     check("tools-manifest D 类 Tesseract 纳入检测（UB-Mannheim 提示）", "UB-Mannheim.TesseractOCR" in tm and "UB-Mannheim.TesseractOCR" in c_cc)
     apt_m = re.search(r"apt install ([^\n`\|]+)", tm)
     wsl_path = os.path.join(REPO, "copy", "setup", "install-wsl.ps1")
+    if not os.path.exists(wsl_path):
+        wsl_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "repo_face", "install-wsl.ps1")
     if apt_m and os.path.exists(wsl_path):
         wsl_c = open(wsl_path, encoding="utf-8", errors="replace").read()
         apt_pkgs = [p for p in apt_m.group(1).split() if p not in ("apt", "install", "-y")]
