@@ -16,7 +16,7 @@ collaborates_with:
 
 ## 处理流程（五步：吸收远端 → 修改 → 自测 → 用户确认 → 按选择执行）
 
-> 五步框架（用户 2026-08-26 定，防"发现问题→擅自改→直接推送"的失控链路）：
+> 五步框架（用户定，防"发现问题→擅自改→直接推送"的失控链路）：
 > **第一步**：同步目录 git pull 把远端更新到同步目录 → 对比同步目录与本机 → 把更新合入本机（先吸收后动手）
 > **第二步**：发现问题则修改（含项目资产盘点提取）
 > **第三步**：自测——跑对应测试用例；**若无用例，先写用例再跑**（涉及双向更新的改动，用例必须模拟远端操作）
@@ -57,7 +57,7 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 - 工作树非干净（有未提交改动）→ 先 stash（`git stash`），pull 后 `git stash pop`；冲突同上处理
 - 网络失败（无法连 GitHub）→ 报告"无法 pull"，**question 工具弹窗询问**是否仅本地 commit（不 push）
 
-#### （第一步内）对端修改评审（pull 到对端新提交后必做，用户 2026-08-26 定）
+#### （第一步内）对端修改评审（pull 到对端新提交后必做，用户定）
 
 > 对端（另一台机器）推送的每个新提交，**必须逐 diff 评审合理性**，不得无条件吸收：
 1. `git log --oneline <旧HEAD>..HEAD` 列出对端提交；逐个 `git show <commit>` 评审改动
@@ -122,28 +122,28 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 
 ### 第五步：按用户选择执行
 
-#### （第五步·推送分支）可移植性校验（推送前强制，用户 2026-08-26 定）
+#### （第五步·推送分支）可移植性校验（推送前强制，用户定）
 
 > 修改提交到远端前，必须校验**具备不同电脑可移植性**——待提交内容不得含本机特征。
 1. **自动扫描**：`python <opencode配置目录>\tests\test_update_skill.py` 用例 8（提交前可移植性校验）——扫描待提交目录，检出"本机 home 真实路径 / 本机用户名路径"即违规；此用例已进入提交前自测用例库
 2. **人工核查**：硬编码盘符绝对路径（`<工具目录>`、`E:\` 等）只允许"安装约定位置"（`C:\msys64`、`C:\Program Files`、`C:\Windows`、`C:\Temp` 等任何机器安装后相同的位置）；本机特有目录（`<项目目录>` 等）必须占位符化
 3. 校验不通过 → 修复为占位符/动态推导 → 重跑用例 8 → 通过后才可进入 git 三步骤
 
-#### （第五步·推送分支）门面文档同步（仓库门面，用户 2026-08-26 定）
+#### （第五步·推送分支）门面文档同步（仓库门面，用户定）
 
 > 仓库根与 copy\ 下除 opencode\ 的门面文件（根 README.md、copy\README.md、copy\INSTALL.md、copy\REQUIREMENTS.md）是 GitHub 上显示的仓库门面——它们**不在本机全局目录**，只在仓库工作树维护。
 1. **核查时机**：每次推送前对照框架现状核查门面一致性：技能清单（6 个）与目录结构（skills\ + skills\default\）、安装步骤（部署内容含 tests/tools/plugins）、依赖（tools-manifest 对齐）、机制说明（进化门禁/五步同步/多机说明）
 2. **更新方式**：直接在仓库工作树编辑门面文件，随本次 commit/push 一并上 GitHub（弹窗确认时展示门面变更清单）
 3. **无权限机器不受影响**：门面维护只在有权限机器的 update_skill 流程内；无权限机器 `git pull` 即得更新后的门面与 skill，不需执行 update_skill 修改
 4. **程序化核查**：`python <opencode配置目录>\tests\test_repo_face.py`（门面一致性测试：README 技能清单 vs skills 目录、INSTALL 关键步骤存在、REQUIREMENTS 权威引用）——挂入第三步自测
-5. **repo_face 镜像刷新（2026-09-04 实测教训后固化）**：门面文件/setup 脚本/tools-manifest 任一变更后，必须同步刷新仓库内镜像 `copy\opencode\tests\repo_face\`（9 个文件：COPY_README/INSTALL/REQUIREMENTS/ROOT_README + setup-windows/setup-check/install-tools/install-wsl + tools-manifest）为对应源文件最新内容，并同步拷回本机 `tests\repo_face\`——镜像是无 WSL 机器跑 test_repo_face/test_setup_ps1 的回退数据，漂移会致无 WSL 机器测试误判；test_repo_face.py 6d 用例（仓库内镜像=门面一致性）程序化拦截漂移，镜像文件与源文件内容必须一致（仅行尾/形态允许差异）。**镜像 cp 必须用仓库内 to_portable 后的占位符版源文件（2026-09-04 实测）**：path_convert 跳过 tests 目录（repo_face 在其下不会被转换），从本机 to_local 文件直接拷会泄漏本机路径被 6b 检出——正确顺序：cp 本机→仓库后先 to_portable 整个 opencode/，再 cp opencode/<源> → opencode/tests/repo_face/
+5. **repo_face 镜像刷新（实测教训后固化）**：门面文件/setup 脚本/tools-manifest 任一变更后，必须同步刷新仓库内镜像 `copy\opencode\tests\repo_face\`（9 个文件：COPY_README/INSTALL/REQUIREMENTS/ROOT_README + setup-windows/setup-check/install-tools/install-wsl + tools-manifest）为对应源文件最新内容，并同步拷回本机 `tests\repo_face\`——镜像是无 WSL 机器跑 test_repo_face/test_setup_ps1 的回退数据，漂移会致无 WSL 机器测试误判；test_repo_face.py 6d 用例（仓库内镜像=门面一致性）程序化拦截漂移，镜像文件与源文件内容必须一致（仅行尾/形态允许差异）。**镜像 cp 必须用仓库内 to_portable 后的占位符版源文件（实测）**：path_convert 跳过 tests 目录（repo_face 在其下不会被转换），从本机 to_local 文件直接拷会泄漏本机路径被 6b 检出——正确顺序：cp 本机→仓库后先 to_portable 整个 opencode/，再 cp opencode/<源> → opencode/tests/repo_face/
 
 #### （第五步·推送分支）同步预览 + 弹窗确认脚本化（优化 5）
 
 1. **同步预览（弹窗前自动生成）**：`git status --short` + `git diff --stat` + `git diff --numstat` 生成 diff 摘要（改了哪些文件 / 增删行数 / 关键改动点）——用户在弹窗确认时有依据可看
 2. **弹窗确认**（question 工具弹窗，禁止文字代替）：用户选"推送" → 模型写确认标记文件 `<opencode配置目录>\skills\update_skill\.push_confirm.json`（`{"choice":"push","user":"user","time":"<ISO时间>"}`）
 3. **推送脚本化（不依赖 LLM 自觉）**：`python <opencode配置目录>\tools\sync_push.py <确认标记文件> <git仓库目录> <commit消息文件>`——脚本强制校验确认标记（无标记/非 push 选择 → **直接拒绝** commit/push）；推送成功后自动清除标记（一次确认只允许一次推送，再次推送需重新弹窗）
-4. commit 消息：先写 `/tmp/cmsg.txt`（Python subprocess 写入，防 shell 层中文丢失），再交 sync_push.py 执行；**WSL 仓库的 msgfile 参数必须传 WSL 内路径（`/tmp/cmsg.txt`）——传 Windows 路径会被 WSL git 拒绝（2026-09-04 实测：`copy/<工具目录>Users\...\cmsg.txt: No such file or directory`），Windows 侧写好文件后先 `cp` 进 WSL 再传 `/tmp/...` 路径**
+4. commit 消息：先写 `/tmp/cmsg.txt`（Python subprocess 写入，防 shell 层中文丢失），再交 sync_push.py 执行；**WSL 仓库的 msgfile 参数必须传 WSL 内路径（`/tmp/cmsg.txt`）——传 Windows 路径会被 WSL git 拒绝（实测：`copy/<工具目录>Users\...\cmsg.txt: No such file or directory`），Windows 侧写好文件后先 `cp` 进 WSL 再传 `/tmp/...` 路径**
 
 #### （第五步·推送分支）同步三环节（差异合入模式，禁止简单删除替换）
 
@@ -153,7 +153,7 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
    ```
    wsl -d Ubuntu -e bash -c "cp -r /mnt/c/Users/<用户名>/.config/opencode/skills/* /home/github/learn.opencode/copy/opencode/skills/ && cp /mnt/c/Users/<用户名>/.config/opencode/{instructions.md,evolution.md,opencode.jsonc} /home/github/learn.opencode/copy/opencode/ && mkdir -p /home/github/learn.opencode/copy/opencode/plugins && cp -r /mnt/c/Users/<用户名>/.config/opencode/plugins/* /home/github/learn.opencode/copy/opencode/plugins/"
    ```
-   **cp 后立即清理 STATE_FILES 与隐私防线（2026-08-27 隐私事故后固化）**：① 删除工作树残留的本机状态文件（`copy/opencode/skills/update_skill/path_map.txt`、`sync_target.txt`——gitignore 只挡 git add，挡不住 cp 带入工作树）；② 隐私扫描：工作树 grep 检查本机用户名路径（`C:\Users\<用户名>`）归零——**禁止在框架文件里硬编码任何具体隐私词**（硬编码等于二次泄漏，2026-08-27 教训）；③ 程序化防线：`python <opencode配置目录>\tests\test_repo_face.py`（含 STATE_FILES 与动态本机路径检查用例）。
+   **cp 后立即清理 STATE_FILES 与隐私防线（隐私事故后固化）**：① 删除工作树残留的本机状态文件（`copy/opencode/skills/update_skill/path_map.txt`、`sync_target.txt`——gitignore 只挡 git add，挡不住 cp 带入工作树）；② 隐私扫描：工作树 grep 检查本机用户名路径（`C:\Users\<用户名>`）归零——**禁止在框架文件里硬编码任何具体隐私词**（硬编码等于二次泄漏，教训）；③ 程序化防线：`python <opencode配置目录>\tests\test_repo_face.py`（含 STATE_FILES 与动态本机路径检查用例）。
 2. **合入本机脚本** → 仓库 `scripts/`（同样覆盖式合入）：
    ```
    cp C:\Users\<用户名>\AppData\Local\Temp\opencode\*.ps1、*.py 与 <opencode配置目录>\tools\inject_skills.py、fetch_skills.py → copy/scripts/
@@ -167,7 +167,7 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 
 ### （第五步内）同步过滤规则（判断标准：其它机器使用框架/skill/功能时需要的才同步）
 
-- **判断标准（用户 2026-08-26 定）**：其它机器使用该框架、该框架 skill 以及该框架功能时需要的 → 同步；不需要 → 不同步
+- **判断标准（用户定）**：其它机器使用该框架、该框架 skill 以及该框架功能时需要的 → 同步；不需要 → 不同步
 - **不同步（临时/本机专属/测试数据）**：
   - 编译临时文件：`__pycache__`、`*.pyc`、`**/bin/`、`**/obj/`、`node_modules`、`.dll`、`.exe`
   - 测试样本与结果：`**/modules/*/tests/`（参考模块 baselines 等）、测试输出文件
@@ -223,12 +223,12 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 - **风险规避**：同步前检查不包含任何密钥/token；`~/.lobehub-market/credentials.json` 等凭证一律不进入仓库
 - 本机配置类内容（绝对路径/版本）集中在各 skill 的工具依赖清单，新机器按清单重配即可
 - 新增 skill 后记得手动跑一次本技能，把新 skill 同步到 GitHub
-- **⚠ 同步踩坑清单（2026-08-28 起实测积累，执行时必须防）**：
+- **⚠ 同步踩坑清单（执行时必须防）**：
   1. **形态污染**：本机全局文件是 to_local 形态（真实路径），`cp` 直接覆盖会破坏仓库占位符体系（对称回退 + 用户名泄漏）——正确做法：cp 后必须跑 `path_convert.py to_portable` 并做残留扫描（真实用户名路径必须为 0）；to_portable 转换不覆盖的模式（如字面 `<用户名>`、安装约定位置 `C:\Program Files`）需人工以占位符形态重做；cp 后逐个文件 diff 甄别"真实内容差异"与"形态差异"，只保留前者
   2. **git 路径双轨**：`git show HEAD:<path>`/`git log -- <path>` 的路径**相对仓库根**（本仓库根 = `learn.opencode`，框架文件路径带 `copy/` 前缀）；`git status`/`git checkout -- <path>`/`git add <path>` 的路径**相对当前目录**——混用前缀会导致 checkout 静默失效、diff 误判（git show 失败输出被 2>/dev/null 吞掉后 diff 呈现全 `+` 行假象）
   3. **精炼入口 + references 结构**：聚合类 skill 可能已被重构为"入口 SKILL.md（精炼）+ references/*.md（详版）"，大块知识（如 3gpp_skill 的 FTP 结构）的更新在 references 里而非入口文件——同步前先摸清目标 skill 的文件结构再定位改动位置
-  4. **UNC 9p 读缓存延迟（2026-09-04 实测）**：WSL 内文件修改后，Windows 侧 `\\wsl.localhost\` UNC 视图有读缓存延迟（TTL 内读到旧内容）——经 UNC 读仓库的测试（test_repo_face/test_setup_ps1 等）在文件刚改后可能误报，且 `wsl --shutdown` 也不一定立即刷新；处置：文件修改后稍候重跑测试（TTL 过期自愈），或全程用 WSL 内 `md5sum/grep` 验证真实状态——**别信 UNC 瞬时读到的内容**，与 WSL 内验证结果不一致时以 WSL 内为准
-  5. **诊断输出文件名一一对应**：临时诊断脚本写结果文件名必须与回读文件名严格一致（2026-09-04 实测：rf_result.txt 与 rf_result_out.txt 混淆致反复读旧失败结果、多轮排查空转）
+  4. **UNC 9p 读缓存延迟（实测）**：WSL 内文件修改后，Windows 侧 `\\wsl.localhost\` UNC 视图有读缓存延迟（TTL 内读到旧内容）——经 UNC 读仓库的测试（test_repo_face/test_setup_ps1 等）在文件刚改后可能误报，且 `wsl --shutdown` 也不一定立即刷新；处置：文件修改后稍候重跑测试（TTL 过期自愈），或全程用 WSL 内 `md5sum/grep` 验证真实状态——**别信 UNC 瞬时读到的内容**，与 WSL 内验证结果不一致时以 WSL 内为准
+  5. **诊断输出文件名一一对应**：临时诊断脚本写结果文件名必须与回读文件名严格一致（实测：rf_result.txt 与 rf_result_out.txt 混淆致反复读旧失败结果、多轮排查空转）
 
 
 
