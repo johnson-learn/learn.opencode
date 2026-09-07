@@ -1451,3 +1451,8 @@
 - 更新点：① files_skill「### HTML 格式」补 4 条：框架与主线（讲次大章+小节子目录+主线三件套串全文，PDCCH 平铺 65 节重构教训）、公式标准显示（head 模板+正文公式一律标准 LaTeX 禁止伪公式+同一句不得有的包有的裸写）、批量 HTML 修改安全（从 3gpp_skill 第 14 条移入，补 $ 偶数校验与遍历脚本动多文件前确认目标清单）、引用修正（通用输出规则的公式标准显示指向 HTML 条目）；② 3gpp_skill 铁律归类：第 12 条（HTML 输出要求）与第 14 条（批量修改安全）精简为一句引用 files_skill（不再重复登记），第 11 条（配置链呈现）第 13 条（原文核实）保留——HTML/文件类要求统一归 files_skill、协议讲解类留在 3gpp_skill
 - 来源：用户指令（内容归类，输出格式要求按格式统一放对应子节）
 - 状态：active
+
+[2026-09-07] update_skill 消息文件写入双坑固化（用户弹窗同意）
+- 更新点：update_skill SKILL.md 第五步 commit 消息段补双坑：①Windows python 写 '/tmp/xxx' 落盘 <工具目录>tmp\xxx（cp 源路径须用 Windows 真实路径）；②wsl cp 静默失败致 /tmp/cmsg.txt 残留旧文件、commit 消息误用旧文案（commit 18f8e4d 教训）——commit 前必须 WSL 内验证消息首行与本次同步摘要一致
+- 来源：本次 update_skill 推送（commit 18f8e4d 内容正确但消息误用 09-04 旧文案）
+- 状态：active

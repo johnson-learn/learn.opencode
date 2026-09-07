@@ -143,7 +143,8 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 1. **同步预览（弹窗前自动生成）**：`git status --short` + `git diff --stat` + `git diff --numstat` 生成 diff 摘要（改了哪些文件 / 增删行数 / 关键改动点）——用户在弹窗确认时有依据可看
 2. **弹窗确认**（question 工具弹窗，禁止文字代替）：用户选"推送" → 模型写确认标记文件 `<opencode配置目录>\skills\update_skill\.push_confirm.json`（`{"choice":"push","user":"user","time":"<ISO时间>"}`）
 3. **推送脚本化（不依赖 LLM 自觉）**：`python <opencode配置目录>\tools\sync_push.py <确认标记文件> <git仓库目录> <commit消息文件>`——脚本强制校验确认标记（无标记/非 push 选择 → **直接拒绝** commit/push）；推送成功后自动清除标记（一次确认只允许一次推送，再次推送需重新弹窗）
-4. commit 消息：先写 `/tmp/cmsg.txt`（Python subprocess 写入，防 shell 层中文丢失），再交 sync_push.py 执行；**WSL 仓库的 msgfile 参数必须传 WSL 内路径（`/tmp/cmsg.txt`）——传 Windows 路径会被 WSL git 拒绝（实测：`copy/<工具目录>Users\...\cmsg.txt: No such file or directory`），Windows 侧写好文件后先 `cp` 进 WSL 再传 `/tmp/...` 路径**
+4. commit 消息：先写 `/tmp/cmsg.txt`（Python subprocess 写入，防 shell 层中文丢失），再交 sync_push.py 执行；**WSL 仓库的 msgfile 参数必须传 WSL 内路径（`/tmp/cmsg.txt`）——传 Windows 路径会被 WSL git 拒绝（实测：`copy/C:\Users\...\cmsg.txt: No such file or directory`），Windows 侧写好文件后先 `cp` 进 WSL 再传 `/tmp/...` 路径
+   - **⚠ 消息文件写入双坑（2026-09-07 实测：commit 18f8e4d 内容正确但消息误用 09-04 旧文案）**：① Windows 侧 python `open('/tmp/xxx','w')` 实际落盘 `<工具目录>tmp\xxx`（非 WSL /tmp）——cp 进 WSL 用的源路径必须用 Windows 真实路径（或直接用 WSL 内 python 写 /tmp）；② `wsl cp` 源路径不存在时静默失败（2>/dev/null 吞错），WSL 内 /tmp/msgfile 残留上次同步旧文件 → commit -F 读到旧文案——**commit 前必须 WSL 内 `head -1 /tmp/cmsg.txt` 验证消息首行与本次同步摘要一致**，不一致则重写后再提交**
 
 #### （第五步·推送分支）同步三环节（差异合入模式，禁止简单删除替换）
 
