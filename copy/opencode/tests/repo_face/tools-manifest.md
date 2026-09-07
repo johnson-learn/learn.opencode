@@ -88,7 +88,7 @@
 | opencode debug 子命令（`debug config`/`debug info`/`debug paths` 等） | 查看平台**解析后**的合并配置，判断某配置字段是否真的被平台消费（如 instructions 字段 1.18 解析但不消费） | opencode 内置，零安装 | `cmd /c "opencode debug config"`（本机 1.18.18 实测；PowerShell 直调会因执行策略 SecurityError，需 `cmd /c` 包装） |
 | npm view `<pkg>` dist-tags | 查 npm 包版本线（latest 停产版 vs dev/beta 新架构线），判断某特性归属哪条版本线 | Node/npm 自带 | `cmd /c "npm view opencode-ai dist-tags --json"` |
 | evolution_gate.py（进化门禁） | 机制步骤确定性执行：--snapshot/--check/--drain/--check-5step（六步检查点检测，参数名保留历史名） | 随仓库 `copy/opencode/tools/`（框架脚本） | `python <opencode配置目录>\tools\evolution_gate.py --help`（改动用例 test_evolution_gate.py） |
-| health_check.py（健康检查） | 一键健康检查九项：核心配置/skill frontmatter/插件执行/测试可解析/门禁记录/evolution_log 待处理/**平台 API 保障**/字符边界/**注入量管控（≤70KB，2026-09-04 用户弹窗决策 50→70）**；--run 全量 / --run-quick 快子集 | 随仓库 `copy/opencode/tools/`（框架脚本） | `python <opencode配置目录>\tools\health_check.py`（改动用例 test_health_check.py 9/9） |
+| health_check.py（健康检查） | 一键健康检查九项：核心配置/skill frontmatter/插件执行/测试可解析/门禁记录/evolution_log 待处理/**平台 API 保障**/字符边界/**注入量管控（≤70KB）**；--run 全量 / --run-quick 快子集 | 随仓库 `copy/opencode/tools/`（框架脚本） | `python <opencode配置目录>\tools\health_check.py`（改动用例 test_health_check.py 9/9） |
 | sync_push.py（推送门禁） | update_skill 第五步脚本化推送：强制校验弹窗确认标记，无标记/非 push 直接拒绝 commit/push；成功后自动清除标记 | 随仓库 `copy/opencode/tools/`（框架脚本） | `python <opencode配置目录>\tools\sync_push.py`（改动用例 test_sync_push.py 7/7） |
 
 ---
@@ -103,7 +103,7 @@
 | pip 清华源 | 命令行参数 | 见 B 类安装命令 |
 | WSL 开机自启任务 | 计划任务 WSL-AutoStart | 保持实例运行防 60s idle 停止 |
 | WEASYPRINT_DLL_DIRECTORIES | 用户环境变量 = `C:\msys64\ucrt64\bin` | WeasyPrint 加载 MSYS2 GTK DLL 必需（已永久设置） |
-| PowerShell profile UTF-8 初始化 | `%USERPROFILE%\Documents\WindowsPowerShell\profile.ps1`（CurrentUserAllHosts） | 铁律第 9 条字符边界规范：chcp 65001 + OutputEncoding/Console 编码 UTF8 + PSDefaultParameterValues（2026-08-27 设置） |
+| PowerShell profile UTF-8 初始化 | `%USERPROFILE%\Documents\WindowsPowerShell\profile.ps1`（CurrentUserAllHosts） | 铁律第 9 条字符边界规范：chcp 65001 + OutputEncoding/Console 编码 UTF8 + PSDefaultParameterValues |
 
 ## 待补充（本机已分析未安装，装时更新本表）
 
