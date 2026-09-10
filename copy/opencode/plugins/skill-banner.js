@@ -5,9 +5,11 @@ import { execSync, spawn } from "child_process"
 
 const HOME = homedir()
 const SKILLS_DIR = join(HOME, ".config", "opencode", "skills")
-const TRACE_FILE = join(HOME, ".config", "opencode", "skills", "default", "evolution_skill", "evolution_trace.jsonl")
-const LOG_FILE = join(HOME, ".config", "opencode", "plugins", "plugin-evolution.log")
-const ELOG = join(HOME, ".config", "opencode", "skills", "default", "evolution_skill", "evolution_log.txt")
+// 测试隔离（统一开关）：OPENCODE_TEST_HOME 设置时所有运行时数据路径指向该临时目录（与 gate 同一开关）
+const TEST_HOME = process.env.OPENCODE_TEST_HOME
+const TRACE_FILE = TEST_HOME ? join(TEST_HOME, "trace.jsonl") : join(HOME, ".config", "opencode", "skills", "default", "evolution_skill", "evolution_trace.jsonl")
+const LOG_FILE = TEST_HOME ? join(TEST_HOME, "plugin-evolution.log") : join(HOME, ".config", "opencode", "plugins", "plugin-evolution.log")
+const ELOG = TEST_HOME ? join(TEST_HOME, "evolution_log.txt") : join(HOME, ".config", "opencode", "skills", "default", "evolution_skill", "evolution_log.txt")
 const GATE = join(HOME, ".config", "opencode", "tools", "evolution_gate.py")
 const API_TEST = join(HOME, ".config", "opencode", "tests", "test_platform_api.py")
 const INJECT = join(HOME, ".config", "opencode", "tools", "inject_skills.py")
@@ -253,7 +255,7 @@ function buildTaskText(gateOut, fiveOut) {
     "【进化检查·程序化强制·不可跳过】本任务由插件在上一会话结束时生成、本会话创建时注入，必须完整执行，不得以任何理由跳过或精简。**执行时机：本会话你第一次回复时，先输出进化检查结论一行（「进化检查完成：本次无固化项」或固化项清单），再回答用户问题。**逐项执行：\n" +
     (gateOut ? "【进化门禁·机器已完成】机制步骤已由 evolution_gate 脚本确定性执行，结果：\n" + gateOut.slice(0, 2000) + "\n你只需补充智能部分（经验归纳/归属/弹窗确认/edit 固化）：\n" : "") +
     (fiveOut ? "【固化检查点·程序化强制】" + fiveOut.slice(0, 600) + "\n补做任务：按六步流程逐步输出【第一步·归纳】【第二步·归属】【第三步·确认】【第四步·edit】【第五步·流水】【第六步·校验】结构化中间结果（格式见 evolution_skill SKILL.md）后再执行固化。\n" : "") +
-    "1. 经验固化：回顾上一会话，按 instructions.md 智能进化协议六步流程，把可复用经验（新方法/工具/踩坑/风险规避）固化到对应 skill（写入规则文件前必须弹窗让用户确认——question 工具逐条选择：同意/填写内容/跳过）\n" +
+    "1. 经验固化：回顾上一会话，按 instructions.md 智能进化协议六步流程，把可复用经验（新方法/工具/踩坑/风险规避）固化到对应 skill（**任何非用户明确要求的文件修改——含规则文件与进化流水追加——必须先弹窗让用户确认**；question 工具逐条选择：同意/填写内容/跳过）\n" +
     "2. 工具登记：上一会话中用到/发现/提及的任何新工具、脚本、库——无论是否已写进具体 skill——必须登记到 tools-manifest.md（已在分类中的更新条目；新的先入「待补充」清单）\n" +
     "3. 总表同步：若上一会话新增了 skill 依赖工具或本机配置变更，同步更新 tools-manifest.md\n" +
     "4. 校验自测：对本次所有 skill 文件改动，跑 python <项目目录>\\temp\\skill_validate.py <opencode配置目录>\\skills；涉及可执行内容的行为自测\n" +

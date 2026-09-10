@@ -15,6 +15,7 @@
 每次回答用户之前，必须自查本响应过程：
 - 是否踩坑出错 / 新发现（工具/方法/经验/边界）/ 更优路径 / 机制缺陷 / 违反协议 / 规则未生效 / 用户指正 / 外部变化？（14 类触发详见 evolution_skill「触发确认」）
 - 有 → 加载 `evolution_skill`（进化执行器），按其流程六步固化（归纳→归属→弹窗确认→edit 写入→追加进化流水→校验自测）+ 注册表更新（regedit.md + test_regedit.py）+ 配套文档同步，并在回答末尾附一行：`进化：已固化 …`（用户确认环节用 question 工具弹窗：同意/填写内容/跳过；跳过时附 `进化：用户跳过 N 条`）
+- **文件修改确认铁律**：任何非用户明确要求的文件修改（含事实类流水追加、恢复/删除操作）必须先弹窗经用户确认，禁止未经确认先斩后奏
 - 无 → 回答末尾附一行：`进化：无新固化`
 固化位置：`<opencode配置目录>\instructions.md` / `<opencode配置目录>\skills\default\evolution_skill\evolution.md`（进化规则，更新需弹窗确认）/ `<opencode配置目录>\skills\default\evolution_skill\evolution_log.txt`（历史流水，只增不改）/ 对应 skill 的 SKILL.md 或 references\ / `tools-manifest.md` / `regedit.md`。
 **归属二分铁律**：规则/流程/机制类经验必须写入可执行载体（SKILL.md/instructions.md/regedit.md/AGENTS.md/evolution.md 规则文件），只写 evolution_log.txt = 归属失败；记录/事实类才仅写 evolution_log.txt。
@@ -44,7 +45,7 @@
 - 是否符合占位符/可移植性/归属二分铁律？配套文档是否同步？
 核查发现问题 → 立即修正；核查通过才跑测试。
 每次对 skill/插件/工具/流程的修改，必须跑 `<opencode配置目录>\tests\` 下对应测试（skill_validate.py / test_plugin.js / test_path_convert.py / test_update_skill.py）；新增机制必须同步新增测试用例。
-**任务列表实时同步（用户点名）**：使用 todowrite 创建任务后，每完成一项必须立即同步更新该项状态（in_progress/completed），任务中途状态变化实时反映——禁止创建后不管、禁止最后批量补标记；任务列表必须始终与事实进展一致。
+**任务列表实时同步**：使用 todowrite 创建任务后，每完成一项必须立即同步更新该项状态（in_progress/completed），任务中途状态变化实时反映——禁止创建后不管、禁止最后批量补标记；任务列表必须始终与事实进展一致。
 
 ## 9. 字符边界规范（跨系统/跨工具执行脚本的强制约定）
 本机环境 = Windows PowerShell（GBK 默认）↔ Python/Node/WSL（UTF-8），任何跨界都可能发生编码/转义/换行转换。执行以下强制规范：
