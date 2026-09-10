@@ -4,6 +4,10 @@
 > 本表登记整个 opencode 体系的**全部组件**及其**生效/加载方式**。任何组件（技能/插件/工具/测试/数据/同步/规则）加入或变更时，必须同步更新本表，并跑 `python <opencode配置目录>\tests\test_regedit.py` 校验一致性。
 > 读取约定：本表由 AGENTS.md 铁律第 0 条强制——**每次会话开始必须读取**；插件 session.created 程序化提醒兜底。
 
+> **自动/人工维护责任表**（哪些环节自动、哪些需人工，防止误以为全自动）：
+> - **自动（平台/脚本确定性执行）**：skill-banner 动态扫描 skills 目录自动展示新 skill；evolution_gate --check 新增/删除文件检测；L1 领域自测精准触发（改哪个 skill 自动跑哪个）；项目副本自动同步（已注入项目随全局进化自动更新）；test_regedit/test_instructions 等一致性门禁。
+> - **人工（模型按六步流程执行，测试门禁兜底）**：本表登记条目更新、instructions 技能清单表更新、tests/README 用例数同步、tools-manifest 分类表更新——漏更会被对应测试检出（检测自动、更新人工）。
+
 ## 生效方式分类（保证等级量化 + 本质二元标注：平台 vs LLM）
 
 > **本质判据**：执行归属按"谁决定"划分——平台执行代码/工具 → 属于平台；LLM 发起/决定 → 属于 LLM。本质只分两类，不模棱两可：
@@ -23,7 +27,7 @@
 
 ## 铁律层
 
-> **注入策略**：opencode.jsonc 的 instructions 字段在本机 1.18 系列（1.18.18 实测）**解析但不消费**——1.18 系统提示构建只认 AGENTS.md/CLAUDE.md/CONTEXT.md（二进制证据），该字段是 0.x dev/beta 线功能（npm latest=1.18.23 为 1.18 线末版）；该字段已**回滚移除**（opencode.jsonc 现仅保留 $schema）。**平台注入通道 = 插件注册事件**：skill-banner.js 注册 `experimental.chat.system.transform`（平台每次请求构建系统提示时确定性触发），直读本层四文件 push 进 output.system——E 类 100% 平台执行、与 AGENTS.md 同级进入系统提示（mtime 缓存防重复读盘；环境变量 OPENCODE_DISABLE_MD_INJECT=1 禁用）。原 B/F/G/H 按需读取路径全部保留为双保险。**技术债务与回退预案**：该 hook 是实验性 API，opencode 升级可能变更/移除——由 test_platform_api.py（G 类，health_check 必跑）持续检测；若失效，回退方案按序：① 重启 opencode.jsonc instructions 字段（若新版已实现该字段，1.18 不实现的历史已核实）② 依赖铁律第 0 条强制 read + 插件提醒的 B 类路径。
+> **注入策略**：opencode.jsonc 的 instructions 字段在本机 1.18 系列（1.18.18 实测）**解析但不消费**——1.18 系统提示构建只认 AGENTS.md/CLAUDE.md/CONTEXT.md（二进制证据），该字段是 0.x dev/beta 线功能（npm latest=1.18.23 为 1.18 线末版）；该字段已**回滚移除**（opencode.jsonc 现仅保留 $schema）。**平台注入通道 = 插件注册事件**：skill-banner.js 注册 `experimental.chat.system.transform`（平台每次请求构建系统提示时确定性触发），直读本层四文件注入 output.system——E 类 100% 平台执行、与 AGENTS.md 同级进入系统提示（mtime 缓存防重复读盘；环境变量 OPENCODE_DISABLE_MD_INJECT=1 禁用）。**单条 system 合并模式（Qwen vLLM 严格校验适配）**：默认把 output.system 全部元素合并为单条（平台内置 → 注入文件 → 语言指令顺序拼接），Qwen 等「system 必须恰好一条且位于开头」的严格后端兼容，DeepSeek 等宽松后端同样正常；OPENCODE_SYSTEM_MERGE=0 回退旧 push 模式。原 B/F/G/H 按需读取路径全部保留为双保险。**技术债务与回退预案**：该 hook 是实验性 API，opencode 升级可能变更/移除——由 test_platform_api.py（G 类，health_check 必跑）持续检测；若失效，回退方案按序：① 重启 opencode.jsonc instructions 字段（若新版已实现该字段，1.18 不实现的历史已核实）② 依赖铁律第 0 条强制 read + 插件提醒的 B 类路径。
 
 | 注册项 | 位置 | 生效 | 说明 |
 |---|---|---|---|
@@ -50,19 +54,19 @@
 
 | 注册项 | 位置 | 生效 | 说明 |
 |---|---|---|---|
-| 项目级副本（4 个，无 update_skill） | `<项目目录>\.opencode\skills\` | C | inject_skills.py 生成（description 改默认触发）；全局源进化后需重新注入 |
+| 项目级副本（6 个，含 update_skill） | `<项目目录>\.opencode\skills\` | C | inject_skills.py 生成（description 改默认触发）；**已注入项目随全局进化自动同步**（插件 session.created 检测全局源 SKILL.md 更新→自动重注入；未注入项目无操作，首次注入仍由铁律第 6 条显式调用触发） |
 
 ## 插件层
 
 | 注册项 | 位置 | 生效 | 说明 |
 |---|---|---|---|
-| skill-banner.js | `plugins\skill-banner.js` | E | session.created：toast 技能清单 + 注入"读 regedit.md"提醒（noReply）+ **异步平台 API 保障检查（失败 toast 告警）** + **读上一会话进化待办（模块级内存传递，idle 写入→created 静默注入）**；session.idle：机器步骤（gate --check）+ 固化检查点（--check-5step 参数名保留历史名，检测六步标记）+ 使用率追踪（写 evolution_trace.jsonl）+ 写进化待办；message.part.updated：平台语言检测；**experimental.chat.system.transform：直读 4 铁律/协议文件注入系统提示 + 语言指令（mtime 缓存）**；写 evolution_trace.jsonl / plugin-evolution.log |
+| skill-banner.js | `plugins\skill-banner.js` | E | session.created：toast 技能清单 + 注入"读 regedit.md"提醒（noReply）+ **异步平台 API 保障检查（失败 toast 告警）** + **读上一会话进化待办（模块级内存传递，idle 写入→created 静默注入）** + **项目副本自动同步（已注入项目且全局源更新→自动重注入）**；session.idle：机器步骤（gate --check）+ 固化检查点（--check-5step 参数名保留历史名，检测六步标记）+ 使用率追踪（写 evolution_trace.jsonl）+ 写进化待办；message.part.updated：平台语言检测；**experimental.chat.system.transform：直读 4 铁律/协议文件注入系统提示 + 语言指令（mtime 缓存；默认合并为单条 system——Qwen 等 vLLM 严格校验 system 唯一，OPENCODE_SYSTEM_MERGE=0 回退 push 模式，OPENCODE_DISABLE_MD_INJECT=1 禁用）**；写 evolution_trace.jsonl / plugin-evolution.log |
 
 ## 工具层（修炼工具）
 
 | 注册项 | 位置 | 生效 | 说明 |
 |---|---|---|---|
-| inject_skills.py | `tools\inject_skills.py` | H | 新项目首次显式调用全局 skill 时执行（铁律第 6 条） |
+| inject_skills.py | `tools\inject_skills.py` | H | 新项目首次显式调用全局 skill 时执行（铁律第 6 条）；含 default 容器平铺（skills/default/<name> → 项目 skills/<name>）；已注入项目自动同步的执行器（插件检测到全局源更新时调用） |
 | path_convert.py | `tools\path_convert.py` | G | update_skill 流程强制：to_portable/to_local 双向转换 |
 | slim_skills.py | `tools\slim_skills.py` | F | SKILL.md 瘦身（超 8KB 时） |
 | fetch_skills.py | `tools\fetch_skills.py` | F | 从技能目录网站获取 skill |
@@ -79,22 +83,23 @@
 |---|---|---|---|
 | skill_validate.py | `tests\skill_validate.py` | G | 每次 skill 改动后强制（铁律第 8 条）；体积门限可配置（--set-limit/--ignore/--ignore-all） |
 | test_skill_validate_config.py | `tests\test_skill_validate_config.py` | G | skill_validate 配置机制改动后强制（7/7） |
-| test_plugin.js | `tests\test_plugin.js` | G | 插件改动后强制（52/52：事件分支/注册事件注入/六步检查点/语言检测/使用率追踪） |
-| test_charset.py | `tests\test_charset.py` | G | 字符边界规范防线：框架文件 CRLF/BOM/UTF-8 解码扫描 + 铁律第 9 条存在性（7/7）；health_check 第⑧项必跑；扫描失败立即归一修复再交付 |
-| test_platform_api.py | `tests\test_platform_api.py` | G | **平台 API 依赖保障**：opencode 二进制仍实现 experimental.chat.system.transform hook / jsonc 通道 / 插件注册 / 4 注入文件就绪（11/11）——opencode 升级或移除该实验性 API 时此测试失败告警；每次 health_check --run 必跑 |
-| test_path_convert.py | `tests\test_path_convert.py` | G | path_convert 改动后强制（23/23：往返转换/STATE_FILES/残留扫描白名单化/tests 与 archive 目录跳过转换/空值映射过滤/工具类全集检出） |
-| test_update_skill.py | `tests\test_update_skill.py` | G | 同步机制改动后强制（40/40，隔离临时仓库） |
+| test_plugin.js | `tests\test_plugin.js` | G | 插件改动后强制（✓ 全绿：事件分支/注册事件注入/六步检查点/语言检测/使用率追踪/项目副本自动同步；用例数以 tests\README 为唯一权威） |
+| test_charset.py | `tests\test_charset.py` | G | 字符边界规范防线：框架文件 CRLF/BOM/UTF-8 解码扫描 + 铁律第 9 条存在性（✓）；health_check 第⑧项必跑；扫描失败立即归一修复再交付 |
+| test_platform_api.py | `tests\test_platform_api.py` | G | **平台 API 依赖保障**：opencode 二进制仍实现 experimental.chat.system.transform hook / jsonc 通道 / 插件注册 / 4 注入文件就绪（✓）——opencode 升级或移除该实验性 API 时此测试失败告警；每次 health_check --run 必跑 |
+| test_path_convert.py | `tests\test_path_convert.py` | G | path_convert 改动后强制（✓：往返转换/STATE_FILES/残留扫描白名单化/tests 与 archive 目录跳过转换/空值映射过滤/工具类全集检出） |
+| test_update_skill.py | `tests\test_update_skill.py` | G | 同步机制改动后强制（✓，隔离临时仓库） |
 | test_regedit.py | `tests\test_regedit.py` | G | 注册表改动后强制（本表与实际文件系统一致性） |
-| test_tools_manifest.py | `tests\test_tools_manifest.py` | G | 工具总表改动后强制（分类计数吻合/待补充无重复/包可导入/表结构，19/19） |
-| test_instructions.py | `tests\test_instructions.py` | G | instructions.md 改动后强制（章节/铁律互查/引用存在/技能清单与目录一致/编写规范，31/31） |
-| test_evolution_gate.py | `tests\test_evolution_gate.py` | G | evolution_gate 改动后强制（快照/改动检测/流水兜底/自动测试/配套漏更/六步检查点/判定四条件/软提示硬告警/阈值配置/经验健康引擎/新增删除文件检测，45/45） |
-| test_health_check.py | `tests\test_health_check.py` | G | health_check 改动后强制（可运行/报告结构/九检查项/无失败项/regedit 登记/--run-quick 实跑/注入量管控，9/9） |
-| test_sync_push.py | `tests\test_sync_push.py` | G | sync_push 改动后强制（无标记拒绝/非push拒绝/有效推送/标记清除/重推需重确认/WSL 路径判定与转换/自动 to_portable/可移植性阻断/msgfile_exists 双通道，19/19） |
-| test_docs_sync.py | `tests\test_docs_sync.py` | G | docs-sync.md 改动后强制（变更类型/校验测试存在/被 regedit+AGENTS 引用，19/19） |
-| test_audit_references.py | `tests\test_audit_references.py` | G | 框架引用审计（引用存在性/旧术语残留/README 双向一致，3/3） |
-| test_repo_face.py | `tests\test_repo_face.py` | G | 仓库门面一致性（门面对照+STATE_FILES 残留+本机路径扫描+**仓库内 repo_face 镜像=门面一致性 9 对**，27/27；WSL 不可达回退 repo_face 镜像） |
-| test_setup_ps1.py | `tests\test_setup_ps1.py` | G | setup-windows.ps1 自动化测试（检测模式：工具清单必须/可选分类、双通道检测、PATH 修复、未装提示跳过、无自动安装残留、共享模块 setup-check、install-tools 一键安装、tools-manifest 总表对齐、AST，78/78；WSL 不可达回退 repo_face 镜像） |
-| README.md（测试清单） | `tests\README.md` | F | 查测试入口与运行命令 |
+| test_tools_manifest.py | `tests\test_tools_manifest.py` | G | 工具总表改动后强制（分类计数吻合/待补充无重复/包可导入/表结构，✓） |
+| test_instructions.py | `tests\test_instructions.py` | G | instructions.md 改动后强制（章节/铁律互查/引用存在/技能清单与目录一致/编写规范，✓） |
+| test_evolution_gate.py | `tests\test_evolution_gate.py` | G | evolution_gate 改动后强制（快照/改动检测/流水兜底/自动测试/配套漏更/六步检查点/判定四条件/软提示硬告警/阈值配置/经验健康引擎/新增删除文件检测，✓） |
+| test_health_check.py | `tests\test_health_check.py` | G | health_check 改动后强制（可运行/报告结构/九检查项/无失败项/regedit 登记/--run-quick 实跑/注入量管控，✓） |
+| test_sync_push.py | `tests\test_sync_push.py` | G | sync_push 改动后强制（无标记拒绝/非push拒绝/有效推送/标记清除/重推需重确认/WSL 路径判定与转换/自动 to_portable/可移植性阻断/msgfile_exists 双通道，✓） |
+| test_docs_sync.py | `tests\test_docs_sync.py` | G | docs-sync.md 改动后强制（变更类型/校验测试存在/被 regedit+AGENTS 引用，✓） |
+| test_audit_references.py | `tests\test_audit_references.py` | G | 框架引用审计（引用存在性/旧术语残留/README 双向一致，✓） |
+| test_repo_face.py | `tests\test_repo_face.py` | G | 仓库门面一致性（门面对照+STATE_FILES 残留+本机路径扫描+**仓库内 repo_face 镜像=门面一致性 9 对**，✓；WSL 不可达回退 repo_face 镜像） |
+| test_setup_ps1.py | `tests\test_setup_ps1.py` | G | setup-windows.ps1 自动化测试（检测模式：工具清单必须/可选分类、双通道检测、PATH 修复、未装提示跳过、无自动安装残留、共享模块 setup-check、install-tools 一键安装、tools-manifest 总表对齐、AST，✓；WSL 不可达回退 repo_face 镜像） |
+| test_inject_skills.py | `tests\test_inject_skills.py` | G | inject_skills 改动后强制（default 容器平铺/description 改写/幂等重注入/覆盖同步，✓） |
+| README.md（测试清单） | `tests\README.md` | F | 查测试入口与运行命令（**各测试用例数唯一权威位置**） |
 | L1 领域自测（7 个） | `skills\*\tests\test_skill_self.py`（+program_skill 的 test_compile_template.py） | G | 每个 skill 的领域自测：入口规范/模块引用无悬空/references 无悬空/技能特定断言；evolution_gate 精准触发（改哪个 skill 自动跑哪个）；program_skill 另有 c-project 骨架 WSL 实编译行为自测（WSL 不可达自动跳过） |
 
 ## 数据层

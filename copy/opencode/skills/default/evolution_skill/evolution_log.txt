@@ -1456,3 +1456,27 @@
 - 更新点：update_skill SKILL.md 第五步 commit 消息段补双坑：①Windows python 写 '/tmp/xxx' 落盘 <工具目录>tmp\xxx（cp 源路径须用 Windows 真实路径）；②wsl cp 静默失败致 /tmp/cmsg.txt 残留旧文件、commit 消息误用旧文案（commit 18f8e4d 教训）——commit 前必须 WSL 内验证消息首行与本次同步摘要一致
 - 来源：本次 update_skill 推送（commit 18f8e4d 内容正确但消息误用 09-04 旧文案）
 - 状态：active
+
+[2026-09-04] Qwen vLLM 严格校验适配 → system 合并模式（插件机制变更）
+- 状态：active
+- 场景数：2（用户抓包三重确认 + test_plugin 结构验证）
+- 最后验证：✓ 二次验证通过（2026-09-04 单元级 plugin 53/53；2026-09-10 真实抓包实测：真实项目目录不禁用 MD 注入，发往 Qwen vLLM 仅 1 条 system，opencode run 成功无报错；用户确认长期保留）
+- 核心关键词：system 合并、vLLM
+- 归属：evolution_skill
+- 载体：skill-banner.js（system.transform 默认合并单条 + OPENCODE_SYSTEM_MERGE=0 回退）、test_plugin.js 测试 8 重写+10b 新增（52→53）、regedit.md 插件行+注入策略段
+- 内容：单位 Qwen vLLM（@ai-sdk/openai-compatible）严格校验「system 恰好一条且位于开头」——插件 push 第 2 条 system 触发 400；修复：system.transform 把 output.system 全元素合并为单条（平台内置→注入文件→语言指令，信息零丢失），DeepSeek 等宽松后端同样正常；OPENCODE_DISABLE_MD_INJECT=1 禁用、OPENCODE_SYSTEM_MERGE=0 回退旧 push。测试全绿：plugin 53/53、platform_api 11/11、regedit 48/48、charset 7/7、instructions 33/33、health_check OK
+[2026-09-10] 会话自动门禁（ses_f75bc706bffeAyLC3rqKjvMWdA） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 4 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\plugins\skill-banner.js
+- <opencode配置目录>\skills\default\evolution_skill\evolution_log.txt
+- <opencode配置目录>\tests\test_plugin.js
+- <opencode配置目录>\tools-manifest.md
+
+
+[2026-09-04] 用户规则 → 自动双向拉取 + 注册表维护自动化改造
+- 状态：active
+- 场景数：3（用户三轮指令细化 + 实测踩坑）
+- 最后验证：2026-09-04
+- 核心关键词：自动同步、双向拉取、维护责任表
+- 归属：evolution_skill
+- 载体：skill-banner.js（needProjectSkillSync + session.created 自动同步）、inject_skills.py（default 容器平铺）、test_plugin.js 测试 14（53→58）、test_inject_skills.py（新增 8/8）、regedit.md（维护责任表+项目技能层 6 个修正+测试层用例数收敛为 ✓+插件/工具行更新）、instructions/AGENTS 铁律 6 补自动同步
+- 内容：① 进化方向=全局+项目都进化、自动双向拉取——已注入项目随全局进化自动同步（session.created 检测全局 SKILL.md mtime 更新→自动重注入），未注入项目无操作（首次注入仍显式触发）；项目反哺全局走 update_skill 资产盘点。② 注册表维护：头部加自动/人工责任表；测试层用例数从散落 N/N 收敛为 ✓（tests/README 唯一权威）。③ 踩坑链：判定用目录 max mtime 受运行时数据文件误触发→改只比 SKILL.md mtime+2 秒容差；edit 丢 export 关键字致测试 TypeError；诊断输出文件名读旧文件（rf_result 教训再现）——排查前先确认读的是本次输出

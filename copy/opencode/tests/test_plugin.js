@@ -1,7 +1,8 @@
 // 插件自测脚本：模拟 opencode 事件，验证 skill-banner.js 全部逻辑分支
-import { appendFileSync, existsSync, readFileSync, unlinkSync, writeFileSync } from "fs"
+import { appendFileSync, existsSync, readFileSync, unlinkSync, writeFileSync, mkdtempSync, mkdirSync, rmSync, utimesSync, statSync } from "fs"
+import { execSync } from "child_process"
 import { join } from "path"
-import { homedir } from "os"
+import { homedir, tmpdir } from "os"
 
 const HOME = homedir()
 const TRACE = join(HOME, ".config", "opencode", "skills", "default", "evolution_skill", "evolution_trace.jsonl")
@@ -155,22 +156,21 @@ console.log("[测试7] experimental.chat.system.transform hook")
 const hook = plugin["experimental.chat.system.transform"]
 check("hook 存在且为函数", typeof hook === "function")
 
-// === 测试 8：注入 4 个 md 文件内容 + 语言指令到 output.system ===
-console.log("[测试8] 系统提示注入 4 文件 + 语言指令")
+// === 测试 8：注入 4 个 md 文件内容 + 语言指令到 output.system（默认合并模式：单条 system） ===
+console.log("[测试8] 系统提示注入 4 文件 + 语言指令（合并单条）")
 const out1 = { system: ["orig-prompt"] }
 await hook({ sessionID: "sess-inj-1" }, out1)
-check("system 增加 2 个元素（注入文件 + 语言指令）", out1.system.length === 3)
-check("原内容未变", out1.system[0] === "orig-prompt")
-const inj = out1.system[1] || ""
+check("system 合并为单元素（Qwen vLLM 严格校验兼容）", out1.system.length === 1)
+const inj = out1.system[0] || ""
+check("原内容保留（orig-prompt 在合并后开头）", inj.startsWith("orig-prompt"))
 check("注入带【注册规则注入】标记", inj.includes("注册规则注入"))
 check("含 instructions.md 注入标记", inj.includes("注入文件 instructions.md"))
 check("含 regedit.md 注入标记", inj.includes("注入文件 regedit.md"))
 check("含 docs-sync.md 注入标记", inj.includes("注入文件 docs-sync.md"))
 check("含 tools-manifest.md 注入标记", inj.includes("注入文件 tools-manifest.md"))
 check("regedit.md 正文被注入（A 系统注入字样）", inj.includes("A 系统注入"))
-const langInj = out1.system[2] || ""
-check("注入平台检测语言指令（默认中文）", langInj.includes("语言指令·平台检测") && langInj.includes("中文"))
-check("语言指令为持续性约束（后续任何时候，非仅当前提问）", langInj.includes("后续任何时候") && langInj.includes("直到平台下一次更新语言指令"))
+check("语言指令并入同一 system（默认中文）", inj.includes("语言指令·平台检测") && inj.includes("中文"))
+check("语言指令为持续性约束（后续任何时候，非仅当前提问）", inj.includes("后续任何时候") && inj.includes("直到平台下一次更新语言指令"))
 
 // === 测试 9：mtime 缓存——文件变化后注入更新（消毒式：按行过滤 marker，不依赖快照，防中断残留） ===
 console.log("[测试9] 缓存刷新")
@@ -198,6 +198,14 @@ const out4 = { system: ["only"] }
 await hook({ sessionID: "sess-inj-4" }, out4)
 check("禁用时不注入（system 不变）", out4.system.length === 1 && out4.system[0] === "only")
 delete process.env.OPENCODE_DISABLE_MD_INJECT
+
+// === 测试 10b：合并回退通道（OPENCODE_SYSTEM_MERGE=0 → 旧 push 模式） ===
+console.log("[测试10b] 合并回退通道")
+process.env.OPENCODE_SYSTEM_MERGE = "0"
+const out4b = { system: ["orig-prompt"] }
+await hook({ sessionID: "sess-inj-4b" }, out4b)
+check("回退通道恢复 push 模式（3 元素）", out4b.system.length === 3 && out4b.system[0] === "orig-prompt")
+delete process.env.OPENCODE_SYSTEM_MERGE
 
 // === 测试 11：异常输出结构不崩 ===
 console.log("[测试11] 异常输出结构")
@@ -232,6 +240,40 @@ check("非用户消息不更新语言（保持英文）", (outL3.system[outL3.sy
 await handler({ event: { type: "message.part.updated", properties: { part: { role: "user" } } } })
 await handler({ event: { type: "message.part.updated", properties: {} } })
 check("无文本/空事件不崩", true)
+
+// === 测试 14：项目副本自动同步（全局+项目双向进化、自动双向拉取，2026-09-04 用户规则） ===
+console.log("[测试14] 项目副本自动同步")
+const OLD_TIME = new Date("2000-01-01T00:00:00Z")
+const tmpProj = mkdtempSync(join(tmpdir(), "syncproj_"))
+check("未注入项目 → 不需同步（无 .opencode/skills）", mod.needProjectSkillSync(tmpProj) === false)
+mkdirSync(join(tmpProj, ".opencode", "skills"), { recursive: true })
+check("空副本目录 → 不需同步", mod.needProjectSkillSync(tmpProj) === false)
+// 端到端：session.created 携带 directory + 已注入副本做旧 → 自动重新注入
+execSync(`python "${join(HOME, ".config", "opencode", "tools", "inject_skills.py")}" "${tmpProj}"`, { windowsHide: true })
+const projSkills = join(tmpProj, ".opencode", "skills")
+const victimPath = join(projSkills, "files_skill", "SKILL.md")
+utimesSync(victimPath, OLD_TIME, OLD_TIME)
+check("副本做旧后 → 判定需同步（全局源更新）", mod.needProjectSkillSync(tmpProj) === true)
+await handler({ event: { type: "session.created", properties: { sessionID: "sess-sync-1", directory: tmpProj } } })
+const stAfter = statSync(victimPath)
+check("自动同步后副本已更新（mtime 恢复新）", stAfter.mtime > OLD_TIME)
+let needAfter = false, needErr = ""
+try { needAfter = mod.needProjectSkillSync(tmpProj) } catch (e) { needErr = String((e && e.message) || e) }
+if (needAfter || needErr) {
+  const gsrc = join(HOME, ".config", "opencode", "skills")
+  const diagFile = join(tmpdir(), "sync_diag_out.txt")
+  let lines = ["needErr=" + needErr]
+  for (const name of readdirSync(projSkills)) {
+    if (name.startsWith(".")) continue
+    const srcMd = [join(gsrc, name), join(gsrc, "default", name)].map((d) => join(d, "SKILL.md")).find((p) => { try { statSync(p); return true } catch { return false } })
+    const projMd = join(projSkills, name, "SKILL.md")
+    if (!srcMd) continue
+    lines.push(name + " src=" + statSync(srcMd).mtimeMs + " proj=" + statSync(projMd).mtimeMs + " diff=" + (statSync(srcMd).mtimeMs - statSync(projMd).mtimeMs))
+  }
+  appendFileSync(diagFile, lines.join("\n") + "\n")
+}
+check("同步后 → 判定不需再同步", needAfter === false && needErr === "")
+rmSync(tmpProj, { recursive: true, force: true })
 
 console.log("\n结果：通过 " + pass + " 项，失败 " + fail + " 项")
 process.exit(fail > 0 ? 1 : 0)
