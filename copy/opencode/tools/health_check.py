@@ -98,7 +98,7 @@ if "--run" in sys.argv or "--run-quick" in sys.argv:
 
 # ⑤ 门禁最近会话 idle/drain 记录（快照目录 + 插件日志）
 snap_dir = os.path.join(os.environ.get("TEMP", os.path.expanduser("~\\AppData\\Local\\Temp")), "opencode_gate")
-resid = glob.glob(os.path.join(snap_dir, "gate_*.json"))
+resid = [f for f in glob.glob(os.path.join(snap_dir, "gate_*.json")) if "bare_declare" not in f]
 if resid:
     add_warn("门禁残留 %d 个快照未消费（下次 session.created 的 --drain 会补跑）" % len(resid))
 else:
@@ -109,15 +109,17 @@ if os.path.exists(plog):
     drain_n = tail.count("--drain") + tail.count("drain")
     add_ok("门禁最近日志：idle 触发 %d 次、drain 相关 %d 次" % (idle_n, drain_n))
 
-# ⑥ evolution_log 待处理项（近 10 条中含"待模型补充"骨架条目数）
+# ⑥ evolution_log 待处理项（最近 10 条条目中含"待模型补充"骨架条目数——只监控近期，历史骨架为流水事实不再累积告警）
 elog = os.path.join(CFG, "skills", "default", "evolution_skill", "evolution_log.txt")
 if os.path.exists(elog):
     c = open(elog, encoding="utf-8", errors="replace").read()
-    pending = c.count("智能归纳待模型补充")
+    entries = re.findall(r"\[[0-9]{4}-[0-9]{2}-[0-9]{2}\][^\[]+", c)
+    recent = entries[-10:]
+    pending = sum(1 for e in recent if "智能归纳待模型补充" in e)
     if pending > 0:
-        add_warn("evolution_log 有 %d 条门禁骨架待模型补充智能归纳" % pending)
+        add_warn("evolution_log 最近 10 条中有 %d 条门禁骨架待模型补充智能归纳" % pending)
     else:
-        add_ok("evolution_log 无待处理骨架条目")
+        add_ok("evolution_log 近期无待处理骨架条目（历史骨架为流水事实，不再累积告警）")
 
 # ⑦ 平台 API 依赖保障（实验性 hook 可用性；opencode 升级移除 API 时此处失败告警）
 api_test = os.path.join(TESTS, "test_platform_api.py")

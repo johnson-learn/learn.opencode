@@ -16,8 +16,16 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 CFG = os.path.join(os.path.expanduser("~"), ".config", "opencode")
 TOOLS = os.path.join(CFG, "tools")
 TESTS = os.path.join(CFG, "tests")
-LOG = os.path.join(CFG, "skills", "default", "evolution_skill", "evolution_log.txt")
-SNAP_DIR = os.path.join(tempfile.gettempdir(), "opencode_gate")
+# 测试隔离（统一开关）：OPENCODE_TEST_HOME 设置时所有运行时数据路径（流水/快照）指向该临时目录；
+# 未设置时走真实路径。测试只需设一个环境变量即可全隔离，禁止再加散落变量（防补丁蔓延）
+TEST_HOME = os.environ.get("OPENCODE_TEST_HOME") or None
+if TEST_HOME:
+    LOG = os.path.join(TEST_HOME, "evolution_log.txt")
+    SNAP_DIR = os.path.join(TEST_HOME, "gate_snap")
+    os.makedirs(SNAP_DIR, exist_ok=True)
+else:
+    LOG = os.path.join(CFG, "skills", "default", "evolution_skill", "evolution_log.txt")
+    SNAP_DIR = os.path.join(tempfile.gettempdir(), "opencode_gate")
 WATCH_EXT = (".md", ".txt", ".py", ".js", ".jsonc")
 IGNORE_DIRS = ("__pycache__", "node_modules", ".git", "archive")
 STATE_FILES = ("path_map.txt", "sync_target.txt")
@@ -192,6 +200,10 @@ def experience_health():
         if m:
             if cur:
                 entries.append(cur)
+            # 测试数据隔离：标题以"测试经验"开头的条目为 test_plugin.js 测试数据，跳过解析（防健康引擎误报）
+            if m.group(2).startswith("测试经验"):
+                cur = None
+                continue
             cur = {"date": m.group(1), "title": m.group(2)[:110], "status": "active",
                    "scenes": "", "verified": "", "keywords": "", "raw": ln.strip()[:200]}
         elif cur is not None:
@@ -349,13 +361,20 @@ def do_check(sid):
         snap = json.load(f)
     changed = []
     cur = scan()
+    # 测试临时产物隔离（防门禁噪音）：忽略 _gate_test_skill* / _gate_new_tool_test* 等测试创建又清理的文件
+    def _is_test_fixture(fp):
+        base = os.path.basename(fp)
+        parent = os.path.basename(os.path.dirname(fp))
+        return base.startswith("_gate_test_skill") or base.startswith("_gate_new_tool_test") or parent.startswith("_gate_test_skill")
     for fp, st in snap["files"].items():
+        if _is_test_fixture(fp):
+            continue
         if fp not in cur or cur[fp] != st:
             changed.append(fp)
     # A+C 方案（2026-08-28）：新增/删除文件检测——旧逻辑只对比快照内文件，新增文件不进门禁；
     # 现在显式检出，供进化检查任务做"适配决策"（四问分析 + 弹窗用户决定）
-    new_files = sorted(fp for fp in cur if fp not in snap["files"])
-    deleted = sorted(fp for fp in snap["files"] if fp not in cur)
+    new_files = sorted(fp for fp in cur if fp not in snap["files"] and not _is_test_fixture(fp))
+    deleted = sorted(fp for fp in snap["files"] if fp not in cur and not _is_test_fixture(fp))
     if not changed and not new_files and not deleted:
         print("[gate] 无规则文件改动，门禁通过（无需固化）")
         os.remove(sp)

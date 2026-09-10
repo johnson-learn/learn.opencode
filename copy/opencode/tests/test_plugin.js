@@ -5,13 +5,14 @@ import { join } from "path"
 import { homedir, tmpdir } from "os"
 
 const HOME = homedir()
-const TRACE = join(HOME, ".config", "opencode", "skills", "default", "evolution_skill", "evolution_trace.jsonl")
-const LOG = join(HOME, ".config", "opencode", "plugins", "plugin-evolution.log")
+// 测试隔离（统一开关 OPENCODE_TEST_HOME）：插件与 gate 的所有运行时数据路径指向临时目录
+const TEST_TMP = mkdtempSync(join(tmpdir(), "plugin_test_"))
+process.env.OPENCODE_TEST_HOME = TEST_TMP
+const TRACE = join(TEST_TMP, "trace.jsonl")
+const LOG = join(TEST_TMP, "plugin-evolution.log")
+const ELOG_TEST = join(TEST_TMP, "evolution_log.txt")
 
-// 清理旧测试数据
-for (const f of [TRACE, LOG]) { try { unlinkSync(f) } catch {} }
-
-// 加载插件模块
+// 加载插件模块（环境变量已在 import 前设置，插件常量指向临时文件）
 const mod = await import("file://" + join(HOME, ".config", "opencode", "plugins", "skill-banner.js").replace(/\\/g, "/"))
 
 // mock client
@@ -114,24 +115,20 @@ check("无待办时 prompt 只增 1 次（注册表提醒）", calls.prompt.leng
 check("新增 prompt 为注册表提醒而非进化任务", calls.prompt[calls.prompt.length - 1].body.parts[0].text.includes("注册表必读"))
 
 // === 测试 3i：使用率追踪端到端行为测试（V6 修复 ELOG bug 后补的测试缺口——报告点名测试体系应捕获此 bug） ===
-console.log("[测试3i] 使用率追踪端到端")
-const ELOG_TEST = join(HOME, ".config", "opencode", "skills", "default", "evolution_skill", "evolution_log.txt")
-const realElog = existsSync(ELOG_TEST) ? readFileSync(ELOG_TEST, "utf8") : ""
-try {
-  writeFileSync(ELOG_TEST, "[2026-08-28] 测试经验A\n- 状态：active\n- 核心关键词：网关鉴权、链路预算\n\n[2026-08-28] 测试经验B\n- 状态：deprecated\n- 核心关键词：废弃机制\n")
-  const mod2 = await import("file://" + join(HOME, ".config", "opencode", "plugins", "skill-banner.js").replace(/\\/g, "/") + "?v=usage")
-  const plugin2 = await mod2.SkillBanner({ client })
-  const h2 = plugin2.event
-  mockMessages = [{ info: { role: "assistant" }, parts: [{ type: "text", text: "今天讨论网关鉴权方案与链路预算" }] }]
-  await h2({ event: { type: "session.idle", properties: { sessionID: "sess-usage-001" } } })
-  await new Promise(r => setTimeout(r, 400))
-  const traceTxt = existsSync(TRACE) ? readFileSync(TRACE, "utf8") : ""
-  check("使用率追踪端到端写入 trace（active 经验命中）", traceTxt.includes("测试经验A"))
-  check("deprecated 条目不参与使用率匹配", !traceTxt.includes("测试经验B"))
-  check("ELOG 常量已定义（V6 P0 bug 修复防回归）", readFileSync(join(HOME, ".config", "opencode", "plugins", "skill-banner.js"), "utf8").includes("const ELOG = join"))
-} finally {
-  writeFileSync(ELOG_TEST, realElog)
-}
+console.log("[测试3i] 使用率追踪端到端（临时文件隔离，不碰真实流水）")
+writeFileSync(ELOG_TEST, "[2026-08-28] 测试经验A\n- 状态：active\n- 核心关键词：网关鉴权、链路预算\n\n[2026-08-28] 测试经验B\n- 状态：deprecated\n- 核心关键词：废弃机制\n")
+const mod2 = await import("file://" + join(HOME, ".config", "opencode", "plugins", "skill-banner.js").replace(/\\/g, "/") + "?v=usage")
+const plugin2 = await mod2.SkillBanner({ client })
+const h2 = plugin2.event
+mockMessages = [{ info: { role: "assistant" }, parts: [{ type: "text", text: "今天讨论网关鉴权方案与链路预算" }] }]
+await h2({ event: { type: "session.idle", properties: { sessionID: "sess-usage-001" } } })
+await new Promise(r => setTimeout(r, 400))
+const traceTxt = existsSync(TRACE) ? readFileSync(TRACE, "utf8") : ""
+check("使用率追踪端到端写入 trace（active 经验命中）", traceTxt.includes("测试经验A"))
+check("deprecated 条目不参与使用率匹配", !traceTxt.includes("测试经验B"))
+check("ELOG 常量支持统一测试隔离开关（OPENCODE_TEST_HOME）", readFileSync(join(HOME, ".config", "opencode", "plugins", "skill-banner.js"), "utf8").includes("OPENCODE_TEST_HOME"))
+const realElogPath = join(HOME, ".config", "opencode", "skills", "default", "evolution_skill", "evolution_log.txt")
+check("真实 evolution_log.txt 未被测试触碰", existsSync(realElogPath) && !readFileSync(realElogPath, "utf8").includes("测试经验A"))
 
 // === 测试 4：session.idle 无 sessionID → 不崩且记日志 ===
 console.log("[测试4] session.idle 缺 sessionID")
