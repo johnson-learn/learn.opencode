@@ -18,7 +18,8 @@
 | tools-manifest 完整性（分类计数吻合/待补充无重复/包可导入/表结构） | `test_tools_manifest.py` | `python tests\test_tools_manifest.py` | ✓ 21/21 |
 | instructions.md 规则一致性（章节/铁律互查/引用存在/技能清单与目录一致/编写规范） | `test_instructions.py` | `python tests\test_instructions.py` | ✓ 31/31 |
 | evolution 一致性（evolution_log.txt 近 5 条「」声明落入规则文件/evolution.md 规则文件定位与弹窗确认流程抽查） | `test_evolution_consistency.py` | `python tests\test_evolution_consistency.py` | ✓ 15/15 |
-| evolution 门禁（快照/改动检测/流水兜底追加/自动测试触发/待补充清单/--drain 自愈补跑/max_n 限流/配套漏更检测/六步检查点（含第三步·确认）/判定四条件声明与可追溯/四条件依据软提示与渐进硬告警/阈值配置化/经验健康引擎结构化扫描/新增与删除文件检测） | `test_evolution_gate.py` | `python tests\test_evolution_gate.py` | ✓ 45/45 |
+| evolution 门禁（快照/改动检测/流水兜底追加/自动测试触发/待补充清单/--drain 自愈补跑/max_n 限流/配套漏更检测/六步检查点（含第三步·确认）/判定四条件声明与可追溯/四条件依据软提示与渐进硬告警/阈值配置化/经验健康引擎结构化扫描/新增与删除文件检测/测试临时产物忽略） | `test_evolution_gate.py` | `python tests\test_evolution_gate.py` | ✓ 46/46 |
+| inject_skills 注入（default 容器平铺/description 改写为默认触发/幂等重注入/覆盖同步） | `test_inject_skills.py` | `python tests\test_inject_skills.py` | ✓ 8/8 |
 | 健康检查（可运行/报告结构/九检查项/无失败项/regedit 登记/--run-quick 实跑/注入量管控） | `test_health_check.py` | `python tests\test_health_check.py` | ✓ 9/9 |
 | sync_push 推送门禁（无标记拒绝/非push拒绝/有效推送/标记清除/重推需重确认/WSL 路径判定/自动 to_portable/可移植性阻断/msgfile_exists 双通道） | `test_sync_push.py` | `python tests\test_sync_push.py` | ✓ 19/19 |
 | **L1 领域自测**（各 skill 内：入口规范/模块引用无悬空/references 无悬空/技能特定断言；program_skill 另有 c-project 骨架 WSL 实编译行为自测） | `skills\<skill>\tests\test_skill_self.py` | `python skills\<skill>\tests\test_skill_self.py`（evolution_gate 改动 skill 时自动精准触发） | ✓ 7 个 skill 全绿 |
