@@ -542,3 +542,12 @@
 - 核心关键词：测试污染、骨架清理
 - 归属：evolution_skill
 - 内容：删除 2 条测试会话门禁骨架（sess-*/gate-test-* 测试产物，无经验价值；测试隔离修复后不再产生）；保留 1 条真实会话骨架（ses_ 开头）；health_check 骨架监控改为近期 10 条语义
+
+[2026-09-10] 框架维护：evolution_skill SKILL.md 三处残留同步（用户弹窗确认）
+- 状态：active
+- 场景数：1（用户点名核查框架遗留）
+- 最后验证：2026-09-10
+- 核心关键词：残留同步、门限现值、弹窗条款
+- 归属：evolution_skill
+- 载体：skills/default/evolution_skill/SKILL.md（第30/57/78行）
+- 内容：2026-09-04 注入量门限 50→70KB 与 2026-09-10 弹窗裁决的修订漏改 evolution_skill SKILL.md 三处：①第30行"不弹窗确认"→"追加流水前仍须弹窗确认"（与 AGENTS/instructions/evolution.md/铁律一致）；②第57行"上限 50KB（V2 修正）"→"上限 70KB（2026-09-04 决策 50→70）"；③第78行"30KB 注入量管控"→"70KB"。教训：门限/条款修订后必须全量扫描（grep 旧值残留），此前"门限表述只留现值"清理漏改 SKILL.md；本次通过全目录扫描（scan_legacy）定位全部残留点。已跑 skill_validate + test_evolution_consistency 校验

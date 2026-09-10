@@ -9,7 +9,7 @@
 {触发场景}：何时适用
 
 【判定四条件】场景数：X / 可移植：是 / 无重复：是 / 边界：明确
-（任一不满足 → 仅追加 evolution_log.txt 事实类，不进规则文件、不弹窗）
+（任一不满足 → 仅追加 evolution_log.txt 事实类，不进规则文件；追加前仍须弹窗确认）
 
 【第二步·归属】
 {主载体}：对应 SKILL.md / instructions.md / regedit.md / AGENTS.md / evolution.md
