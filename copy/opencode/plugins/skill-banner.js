@@ -10,6 +10,31 @@ const LOG_FILE = join(HOME, ".config", "opencode", "plugins", "plugin-evolution.
 const ELOG = join(HOME, ".config", "opencode", "skills", "default", "evolution_skill", "evolution_log.txt")
 const GATE = join(HOME, ".config", "opencode", "tools", "evolution_gate.py")
 const API_TEST = join(HOME, ".config", "opencode", "tests", "test_platform_api.py")
+const INJECT = join(HOME, ".config", "opencode", "tools", "inject_skills.py")
+
+// === 项目副本自动同步（2026-09-04 用户规则：全局+项目双向进化、自动双向拉取） ===
+// 全局 skill 进化后：项目已有副本（曾显式调用全局 skill 注入过）→ 自动重新注入同步全局最新；
+// 项目从未注入 → 无操作（首次注入仍按铁律第 6 条由显式调用触发）。
+// 判定：项目 .opencode/skills 存在 且 任一全局源目录 max mtime 晚于对应项目副本 → 需同步。
+export function needProjectSkillSync(directory) {
+  // 判定：项目副本 SKILL.md mtime 早于全局源 SKILL.md（全局进化后）→ 需同步
+  // 只比 SKILL.md（inject 改写 description 后 mtime=注入时刻，全局改 SKILL.md 后 mtime 更新）——
+  // 比目录 max mtime 会受运行时数据文件（流水/日志/快照）误触发（2026-09-04 实测踩坑）
+  const proj = join(directory, ".opencode", "skills")
+  if (!existsSync(proj)) return false
+  try {
+    for (const name of readdirSync(proj)) {
+      if (name.startsWith(".")) continue
+      const srcDir = [join(SKILLS_DIR, name), join(SKILLS_DIR, "default", name)].find((p) => existsSync(p))
+      if (!srcDir) continue
+      const srcMd = join(srcDir, "SKILL.md")
+      const projMd = join(proj, name, "SKILL.md")
+      if (!existsSync(srcMd) || !existsSync(projMd)) continue
+      if (statSync(srcMd).mtimeMs > statSync(projMd).mtimeMs + 2000) return true
+    }
+  } catch {}
+  return false
+}
 
 // === 注册事件注入（E 类 100% 平台执行）：experimental.chat.system.transform ===
 // 平台在每次 LLM 请求构建系统提示时触发本 hook（LLMRequestPrep.prepare），
@@ -265,15 +290,29 @@ function recordTrace(sessionId, agentInfo) {
   } catch {}
 }
 
-export const SkillBanner = async ({ client }) => {
+export const SkillBanner = async ({ client, directory }) => {
   const injectedSessions = new Set()
   return {
     "experimental.chat.system.transform": async (input, output) => {
       if (process.env.OPENCODE_DISABLE_MD_INJECT === "1") return
       if (!output || !Array.isArray(output.system)) return
       const text = loadInjectContent()
-      if (text) output.system.push(text)
-      output.system.push(langLine())
+      const extra = (text ? [text] : []).concat([langLine()])
+      if (!extra.length) return
+      if (process.env.OPENCODE_SYSTEM_MERGE === "0") {
+        // 回退通道：旧 push 模式（仅当后端不校验 system 唯一性时可用）
+        for (const e of extra) output.system.push(e)
+        return
+      }
+      // 默认合并模式：多条 system 合并为单条——Qwen 等 vLLM 严格校验「system 必须恰好一条且位于开头」，
+      // 多条 system（平台内置 + 插件注入）会报 System message must be at the beginning；
+      // 合并保留全部信息与顺序（平台内置 → 注入文件 → 语言指令），语义与 push 模式一致，DeepSeek 等宽松后端同样正常
+      const base = output.system.filter(e => typeof e === "string")
+      const nonStr = output.system.filter(e => typeof e !== "string")
+      const merged = base.join("\n\n") + (base.length ? "\n\n" : "") + extra.join("\n\n")
+      output.system.length = 0
+      for (const e of nonStr) output.system.push(e)
+      output.system.push(merged)
     },
     event: async ({ event }) => {
       try {
@@ -300,6 +339,18 @@ export const SkillBanner = async ({ client }) => {
           if (props.parentID) return
           const skills = loadSkills()
           if (skills.length === 0) return
+          // 项目副本自动同步：已注入项目且全局源有更新 → 重新注入（全局进化自动拉取到项目）
+          const projDir = props.directory || directory
+          if (projDir && typeof projDir === "string") {
+            try {
+              if (needProjectSkillSync(projDir)) {
+                execSync(`python "${INJECT}" "${projDir}"`, { timeout: 60000, windowsHide: true })
+                log("项目副本自动同步：已注入项目重新注入（全局源有更新）" + projDir)
+              }
+            } catch (e) {
+              log("项目副本自动同步失败：" + (e && e.message ? String(e.message).slice(0, 150) : String(e)))
+            }
+          }
           const lines = skills.map(([n, d]) => `${n} — ${d}`).join("\n")
           await client.tui.showToast({
             body: { message: `本机全局技能（${skills.length} 个）\n` + lines, variant: "info" },

@@ -75,7 +75,7 @@
    - **裁定条款（实测修正）**：语言跟随的唯一权威依据 = **当条消息的实际语言**，思考/回答/输出三者一致跟随；平台语言指令只是会话默认基调兜底，与当条消息实际语言不一致或平台检测失效时，一律以当条消息实际语言为准
 2. **"输出"二字触发 HTML 交付**（AGENTS.md 铁律第 4 条）：提问含"输出"→ 最终答案以 HTML 文件输出（MathJax/代码高亮/详版不限字数），保存在提问所在文件夹并浏览器打开；否则普通文本
 3. **输出文件跟随提问位置**（AGENTS.md 铁律第 5 条）：在哪个文件夹（会话工作目录）提问，输出文件默认保存在哪里；用户另行指定时按用户指定
-4. **新项目 skill 注入规则（AGENTS.md 铁律第 6 条）**：新项目首次显式调用全局 skill → 执行全部全局 skill 注入（脚本 `python <opencode配置目录>\tools\inject_skills.py <目标项目目录>`，description 改默认触发），注入后提醒用户重启 opencode；已注入项目默认覆盖更新
+4. **新项目 skill 注入规则（AGENTS.md 铁律第 6 条）**：新项目首次显式调用全局 skill → 执行全部全局 skill 注入（脚本 `python <opencode配置目录>\tools\inject_skills.py <目标项目目录>`，description 改默认触发），注入后提醒用户重启 opencode；**已注入项目随全局进化自动同步**（插件 session.created 检测全局源 SKILL.md 更新→自动重注入；未注入项目无操作）
 
 0.5 **字符边界规范细则（AGENTS.md 铁律第 9 条；细节以 AGENTS.md 为准）**：跨工具传数据一律文件化（禁内联中文/多行脚本；git commit 用 `-F`）；Python 写文件 `encoding="utf-8", newline="\n"`、读子进程输出 `encoding="utf-8", errors="replace"`；框架文本文件 UTF-8 无 BOM + LF（test_charset.py 防线，health_check 必跑）；临时文件放 `%LOCALAPPDATA%\Temp\opencode\`。
 

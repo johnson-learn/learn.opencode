@@ -32,7 +32,7 @@
 在哪个文件夹（会话工作目录）提问，输出文件默认保存在哪里；用户另行指定时按用户指定。
 
 ## 6. 新项目 skill 注入
-新项目首次显式调用全局 skill → 执行全部全局 skill 注入（脚本 `<opencode配置目录>\tools\inject_skills.py <项目目录>`，description 改默认触发）并提醒用户重启 opencode。
+新项目首次显式调用全局 skill → 执行全部全局 skill 注入（脚本 `<opencode配置目录>\tools\inject_skills.py <项目目录>`，description 改默认触发）并提醒用户重启 opencode。已注入项目随全局进化自动同步（插件 session.created 检测全局源更新→自动重注入）；未注入项目无操作。
 
 ## 7. 工具总表登记
 思考/回答中发现的好用工具、脚本、库，即使未写进具体 skill 也必须登记 `<opencode配置目录>\tools-manifest.md`（可先入"待补充"）。
