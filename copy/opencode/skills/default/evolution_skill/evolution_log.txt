@@ -561,3 +561,13 @@
 - 归属：AGENTS.md 铁律第10条 / instructions.md「全局通用回答规则」第5条 + 「全局 skill 编写规范」第12条
 - 载体（规则文件）：AGENTS.md（新增 ## 10. 内容产出不限篇幅）、instructions.md（通用回答规则第5条 + 编写规范第12条）、3gpp_skill/SKILL.md（通用输出规则新增"内容产出不限篇幅"）、files_skill/SKILL.md（通用输出规则新增同条）、regedit.md（AGENTS.md 登记 9条→10条铁律）、test_instructions.py（铁律编号断言 0~9/≤9 升级为 0~10/≤10，并改用整数排序避免字符串字典序把"10"排在"2"前）
 - 内容：① AGENTS.md 新增最高优先级铁律第10条：任何内容产出（梳理/文档/HTML/代码分析/综述/讲解）一律不限篇幅字数时间token，必须详尽展开（相似内容原样重列、禁止"与XX同构"带过）、**多轮追加写厚**（单个回复写不完就在后续多个连续回复对同一文件反复 edit 追加直到真正详尽，禁止压缩到单薄即宣称完成）、**禁止以搜索冒充理解**（协议/代码梳理必须基于实体内容通读，关键字搜索仅作定位辅助不得遗漏内容）、超大数据源按执行模块分批深读后分批整合为完整交付；② instructions.md 同步详版（通用回答规则第5条 + skill 编写规范第12条"所有输出类 skill 必须纳入"）；③ 3gpp_skill/files_skill 各自输出规则写入同条；④ regedit 登记 10 条铁律；⑤ test_instructions.py 断言随规则升级同步（0~10 共 11 条、引用编号 ≤10、整数排序修复）。已验证 test_regedit 48/48、test_instructions 33/33 全绿、无"9条铁律"残留。教训回顾：此前多个 HTML 交付文件被单次输出上限压缩到 20~30KB 即宣称完成，违背用户反复强调的不限篇幅要求；本次以铁律形式固化"多轮追加写厚+内容理解阅读"为永久规则。
+
+
+[2026-09-12] update_skill：sync_push.py repo 参数须传 UNC、WSL 仓库手动 git 最稳（用户弹窗确认固化）
+- 状态：active
+- 场景数：2（update_skill 加载时两次调 sync_push.py 均卡死被中断，直接进 WSL 手动 git 一次成功；反面+正面对照验证）
+- 最后验证：2026-09-12
+- 核心关键词：sync_push.py、is_wsl_repo、UNC 传参、WSL 手动 git
+- 归属：update_skill
+- 载体：skills/update_skill/SKILL.md（同步踩坑清单新增第6条 + 本 skill 经验索引 active 摘要同步）
+- 内容：sync_push.py 用 `"wsl.localhost" in repo` 判断是否 WSL 仓库；若 repo 参数传 WSL 内路径（/home/...，不含 wsl.localhost）会被误判为 Windows 仓库，脚本对不存在的路径跑 Windows git 而卡死/失败（实测两次调用执行被中断）。最可靠做法：WSL 仓库直接进 WSL bash 手动 `git add -A && git commit -F /tmp/cmsg.txt && git push origin main`，不依赖 sync_push.py 的路径判定；确要用 sync_push.py 则 repo 传 `\wsl.localhost\...`（UNC）形式、msgfile 传 WSL 内 /tmp 路径。本文档更新已在同会话 update_skill 推送中提交（若在推送后固化，下次 update_skill 再同步）。
