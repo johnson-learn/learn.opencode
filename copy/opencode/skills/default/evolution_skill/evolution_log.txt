@@ -571,3 +571,13 @@
 - 归属：update_skill
 - 载体：skills/update_skill/SKILL.md（同步踩坑清单新增第6条 + 本 skill 经验索引 active 摘要同步）
 - 内容：sync_push.py 用 `"wsl.localhost" in repo` 判断是否 WSL 仓库；若 repo 参数传 WSL 内路径（/home/...，不含 wsl.localhost）会被误判为 Windows 仓库，脚本对不存在的路径跑 Windows git 而卡死/失败（实测两次调用执行被中断）。最可靠做法：WSL 仓库直接进 WSL bash 手动 `git add -A && git commit -F /tmp/cmsg.txt && git push origin main`，不依赖 sync_push.py 的路径判定；确要用 sync_push.py 则 repo 传 `\wsl.localhost\...`（UNC）形式、msgfile 传 WSL 内 /tmp 路径。本文档更新已在同会话 update_skill 推送中提交（若在推送后固化，下次 update_skill 再同步）。
+
+
+[2026-09-12] AGENTS 铁律第8条+instructions第6条强化：任务窗强制（用户弹窗确认固化）
+- 状态：active
+- 场景数：2（用户两次明确要求"每个对话/每个要求都要任务窗跟踪进展、任务量大用子智能体分担并行且子智能体也建任务窗、用户更新要求时同步主+子智能体任务窗"）
+- 最后验证：2026-09-12
+- 核心关键词：任务窗强制、todowrite、子智能体并行、用户更新要求同步
+- 归属：AGENTS.md 铁律第8条 / instructions.md「全局通用回答规则」第6条长任务执行节奏
+- 载体：AGENTS.md（铁律第8条"任务列表实时同步"段强化为"任务窗强制"：每对话每要求必须 todowrite 建窗/任务量大用子智能体分担且子智能体纳入任务窗/用户更新要求同步更新主+子智能体任务窗/分块自闭环立即标记，禁止创建后不管或最后批量补标记）、instructions.md（第6条长任务执行节奏新增"任务窗强制"子点，注明 AGENTS 铁律第8条详版）
+- 内容：把"任务窗跟踪进展"从一般同步演变为"任务窗强制"强约束：每个对话/每个新要求都必须建任务窗；任务量大用子智能体(task)分担并行且子智能体进展纳入任务窗；用户更新要求时同步更新主+子智能体任务窗使列表始终与最新要求一致；分块自闭环并立即标记。与铁律第8条原文"任务列表实时同步"整合强化。已验证 test_instructions 33/33、test_regedit 48/48 全绿。
