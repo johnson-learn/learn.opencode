@@ -31,7 +31,7 @@
 
 | 注册项 | 位置 | 生效 | 说明 |
 |---|---|---|---|
-| AGENTS.md（9 条铁律） | `<opencode配置目录>\AGENTS.md` | A | 每会话系统提示必达，最高优先级；0=读注册表、1=每次响应复盘进化、2=同步边界、3=语言、4=输出HTML、5=输出位置、6=注入、7=工具登记、8=测试先行、9=字符边界规范 |
+| AGENTS.md（10 条铁律） | `<opencode配置目录>\AGENTS.md` | A | 每会话系统提示必达，最高优先级；0=读注册表、1=每次响应复盘进化、2=同步边界、3=语言、4=输出HTML、5=输出位置、6=注入、7=工具登记、8=测试先行、9=字符边界规范、10=内容产出不限篇幅 |
 | regedit.md（本注册表） | `<opencode配置目录>\regedit.md` | E（原 B） | 插件 system.transform 直读注入系统提示；原铁律第 0 条强制 read + 插件提醒保留为双保险；全体系组件加载方式登记 |
 | instructions.md（详版协议） | `<opencode配置目录>\instructions.md` | E（原 F） | 插件 system.transform 直读注入系统提示；六步进化流程（含第三步·确认弹窗）/五大进化能力/skill 编写规范/通用回答规则详版 |
 | docs-sync.md（配套同步映射表） | `<opencode配置目录>\docs-sync.md` | E（原 G） | 插件 system.transform 直读注入系统提示；变更类型→必须同步更新文件清单的权威映射 |
