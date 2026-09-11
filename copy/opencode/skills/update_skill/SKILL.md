@@ -230,6 +230,7 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
   3. **精炼入口 + references 结构**：聚合类 skill 可能已被重构为"入口 SKILL.md（精炼）+ references/*.md（详版）"，大块知识（如 3gpp_skill 的 FTP 结构）的更新在 references 里而非入口文件——同步前先摸清目标 skill 的文件结构再定位改动位置
   4. **UNC 9p 读缓存延迟（实测）**：WSL 内文件修改后，Windows 侧 `\\wsl.localhost\` UNC 视图有读缓存延迟（TTL 内读到旧内容）——经 UNC 读仓库的测试（test_repo_face/test_setup_ps1 等）在文件刚改后可能误报，且 `wsl --shutdown` 也不一定立即刷新；处置：文件修改后稍候重跑测试（TTL 过期自愈），或全程用 WSL 内 `md5sum/grep` 验证真实状态——**别信 UNC 瞬时读到的内容**，与 WSL 内验证结果不一致时以 WSL 内为准
   5. **诊断输出文件名一一对应**：临时诊断脚本写结果文件名必须与回读文件名严格一致（实测：rf_result.txt 与 rf_result_out.txt 混淆致反复读旧失败结果、多轮排查空转）
+  6. **sync_push.py 的 repo 参数必须传 Windows UNC 路径（含 `wsl.localhost`）**：脚本用 `"wsl.localhost" in repo` 判断是否 WSL 仓库——若传 WSL 内路径（如 `/home/...`，不含 `wsl.localhost`）会被误判为 Windows 仓库，脚本对不存在的路径跑 Windows git 而卡死/失败（实测：两次调用卡死、执行被中断）。**最可靠做法：WSL 仓库直接进 WSL bash 手动执行 `git add -A && git commit -F /tmp/cmsg.txt && git push origin main`**，不依赖 sync_push.py 的路径判定；用 sync_push.py 时 repo 参数必须传 `\\wsl.localhost\...`（UNC）形式，msgfile 传 WSL 内 `/tmp/...` 路径
 
 
 
@@ -246,4 +247,4 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 
 ## 本 skill 经验索引（分域健康监控台账）
 
-> 本 skill 相关经验在 `<opencode配置目录>\skills\default\evolution_skill\evolution_log.txt` 中带「归属：update_skill」字段的条目；active 条目摘要：to_portable 安装约定位置 guard、msgfile_exists WSL 双通道、git 路径双轨（git show 相对仓库根 vs status 相对当前目录）、形态污染三踩坑。低活性/待验证条目由经验健康引擎（gate --check）按归属分组提示。
+> 本 skill 相关经验在 `<opencode配置目录>\skills\default\evolution_skill\evolution_log.txt` 中带「归属：update_skill」字段的条目；active 条目摘要：to_portable 安装约定位置 guard、msgfile_exists WSL 双通道、git 路径双轨（git show 相对仓库根 vs status 相对当前目录）、形态污染三踩坑、sync_push.py repo 参数必须传 UNC(wsl.localhost) 否则误判 Windows 仓库而卡死（WSL 仓库手动 git 最稳）。低活性/待验证条目由经验健康引擎（gate --check）按归属分组提示。
