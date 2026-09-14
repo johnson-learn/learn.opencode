@@ -39,7 +39,7 @@
 | evolution.md（进化规则文件） | `<opencode配置目录>\skills\default\evolution_skill\evolution.md` | H | 规则类经验可执行载体；更新前须结合 evolution_log.txt 核对 + 弹窗确认 |
 | evolution_log.txt（进化历史流水） | `<opencode配置目录>\skills\default\evolution_skill\evolution_log.txt` | H | 历史流水，只增不改 |
 
-## 技能层（全局 6 个）
+## 技能层（全局 7 个）
 
 | 注册项 | 位置 | 生效 | 说明 |
 |---|---|---|---|
@@ -49,6 +49,7 @@
 | program_skill | `skills\program_skill\SKILL.md` | C+D | 全局仅显式"program_skill："；项目级副本默认触发 |
 | update_skill | `skills\update_skill\SKILL.md` | D | 仅显式"update_skill"；含双向同步全流程与同步边界铁律 |
 | evolution_skill | `skills\default\evolution_skill\SKILL.md` | C | 进化执行器，默认触发（见进化层） |
+| task_tracking_skill | `skills\default\task_tracking_skill\SKILL.md` | C | 任务窗执行器，默认触发；任务窗强制的执行载体，与 evolution_skill 同级 |
 
 ## 项目技能层
 

@@ -22,7 +22,7 @@
 | inject_skills 注入（default 容器平铺/description 改写为默认触发/幂等重注入/覆盖同步） | `test_inject_skills.py` | `python tests\test_inject_skills.py` | ✓ 8/8 |
 | 健康检查（可运行/报告结构/九检查项/无失败项/regedit 登记/--run-quick 实跑/注入量管控） | `test_health_check.py` | `python tests\test_health_check.py` | ✓ 9/9 |
 | sync_push 推送门禁（无标记拒绝/非push拒绝/有效推送/标记清除/重推需重确认/WSL 路径判定/自动 to_portable/可移植性阻断/msgfile_exists 双通道） | `test_sync_push.py` | `python tests\test_sync_push.py` | ✓ 19/19 |
-| **L1 领域自测**（各 skill 内：入口规范/模块引用无悬空/references 无悬空/技能特定断言；program_skill 另有 c-project 骨架 WSL 实编译行为自测） | `skills\<skill>\tests\test_skill_self.py` | `python skills\<skill>\tests\test_skill_self.py`（evolution_gate 改动 skill 时自动精准触发） | ✓ 7 个 skill 全绿 |
+| **L1 领域自测**（各 skill 内：入口规范/模块引用无悬空/references 无悬空/技能特定断言；program_skill 另有 c-project 骨架 WSL 实编译行为自测） | `skills\<skill>\tests\test_skill_self.py` | `python skills\<skill>\tests\test_skill_self.py`（evolution_gate 改动 skill 时自动精准触发） | ✓ 8 个 skill 全绿（含新增 task_tracking_skill 任务窗执行器） |
 | docs-sync 映射表完整性（变更类型/校验测试存在/被 regedit+AGENTS 引用） | `test_docs_sync.py` | `python tests\test_docs_sync.py` | ✓ 19/19 |
 | 框架引用审计（框架自有文件引用存在性/旧术语残留/README 双向一致） | `test_audit_references.py` | `python tests\test_audit_references.py` | ✓ 3/3 |
 | 仓库门面一致性（门面文件与框架现状对照 + STATE_FILES 残留 + 本机路径动态扫描 + 仓库内 repo_face 镜像=门面一致性 9 对，WSL 不可达时回退 repo_face 镜像） | `test_repo_face.py` | `python tests\test_repo_face.py` | ✓ 27/27 |

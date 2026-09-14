@@ -32,10 +32,13 @@ try:
 except Exception:
     pass
 bad_skills = []
+# default 容器路径解析：先查 skills/<d>/SKILL.md，再查 skills/default/<d>/SKILL.md，按实际存在位置取（2026-09-15 改：原仅硬编码 evolution_skill，新增 default 容器 skill 如 task_tracking_skill 被误判缺 SKILL.md）
 for d in sorted(set(skill_dirs)):
     p = os.path.join(skills_root, d, "SKILL.md")
-    if d == "evolution_skill":
-        p = os.path.join(skills_root, "default", d, "SKILL.md")
+    if not os.path.exists(p):
+        p_def = os.path.join(skills_root, "default", d, "SKILL.md")
+        if os.path.exists(p_def):
+            p = p_def
     if not os.path.exists(p):
         bad_skills.append(d + " 缺 SKILL.md")
         continue
@@ -44,7 +47,7 @@ for d in sorted(set(skill_dirs)):
         bad_skills.append(d + " frontmatter 异常")
     if len(c) > limit_kb * 1024:
         bad_skills.append(d + " 超 %dKB 门限(%d 字节)" % (limit_kb, len(c)))
-(bad_skills and [add_fail("skill 异常: " + b) for b in bad_skills]) or add_ok("6 个 skill frontmatter 合法且体积均在门限内")
+(bad_skills and [add_fail("skill 异常: " + b) for b in bad_skills]) or add_ok("%d 个 skill frontmatter 合法且体积均在门限内" % len(set(skill_dirs)))
 
 # ③ 插件最近执行（24h 内有日志）
 plog = os.path.join(CFG, "plugins", "plugin-evolution.log")

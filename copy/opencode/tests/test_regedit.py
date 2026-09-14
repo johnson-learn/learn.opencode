@@ -74,10 +74,12 @@ skill_dirs = [d for d in os.listdir(os.path.join(CFG, "skills"))
               if os.path.isdir(os.path.join(CFG, "skills", d)) and d != "default"]
 default_dirs = [d for d in os.listdir(os.path.join(CFG, "skills", "default"))
                 if os.path.isdir(os.path.join(CFG, "skills", "default", d))]
-check("skills 目录 5 个 + default 1 个与注册表一致",
+expected_default = ["evolution_skill", "task_tracking_skill"]
+check("skills 目录 5 个 + default 2 个与注册表一致",
       sorted(skill_dirs) == sorted(["3gpp_skill", "files_skill", "find_skill", "program_skill", "update_skill"])
-      and default_dirs == ["evolution_skill"])
+      and sorted(default_dirs) == sorted(expected_default))
 check("evolution_skill 已登记", registered("evolution_skill"))
+check("task_tracking_skill 已登记", registered("task_tracking_skill"))
 
 print("\n结果：通过 %d 项，失败 %d 项" % (pass_n, fail_n))
 sys.exit(1 if fail_n else 0)
