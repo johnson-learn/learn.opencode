@@ -1,6 +1,6 @@
 # opencode 工作环境迁移包
 
-> 本仓库 = 6 个全局 skill（3gpp_skill / files_skill / find_skill / program_skill / update_skill / evolution_skill）+ 全局配置 + 进化门禁 + 辅助脚本 + 一键安装脚本。
+> 本仓库 = 7 个全局 skill（3gpp_skill / files_skill / find_skill / program_skill / update_skill / evolution_skill / task_tracking_skill）+ 全局配置 + 进化门禁 + 辅助脚本 + 一键安装脚本。
 > 目标：任何一台新的 Windows 办公电脑，克隆本仓库后运行一个脚本，即可复现完整工作环境。
 
 ## 目录结构
@@ -26,7 +26,9 @@ copy\
 │   │   ├── find_skill\          网络资源获取与镜像加速
 │   │   ├── program_skill\       编程开发（默认 WSL Linux）
 │   │   ├── update_skill\        技能双向同步（五步：吸收远端→修改→自测→弹窗确认→推送）
-│   │   └── default\evolution_skill\   进化执行器（默认触发，含进化规则 evolution.md 与流水 evolution_log.txt）
+│   │   └── default\               默认触发执行器（2 个）
+│   │       ├── evolution_skill\       进化执行器（含进化规则 evolution.md 与流水 evolution_log.txt）
+│   │       └── task_tracking_skill\   任务窗/任务跟踪执行器
 │   ├── tests\                   测试用例（10 套 229 项，随仓库同步）
 │   └── tools\                   修炼工具（evolution_gate 进化门禁 / path_convert / inject_skills 等）
 ├── scripts\                   ← 部署到 %LOCALAPPDATA%\Temp\opencode\ 的辅助脚本
@@ -49,7 +51,7 @@ cd copy/setup
 # 2. 一键安装（按需加开关：-SkipWsl -SkipPip 等；国内网络加 -UseChinaMirror）
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File setup\setup-windows.ps1 -UseChinaMirror
 
-# 3. 重启终端，opencode 启动即带 6 个全局 skill
+# 3. 重启终端，opencode 启动即带 7 个全局 skill
 ```
 
 详细步骤与手动安装备查：见 `INSTALL.md`；依赖清单与下载途径：见 `REQUIREMENTS.md`。

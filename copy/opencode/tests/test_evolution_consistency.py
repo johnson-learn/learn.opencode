@@ -16,12 +16,14 @@ agents = open(os.path.join(CFG, "AGENTS.md"), encoding="utf-8").read()
 reg = open(os.path.join(CFG, "regedit.md"), encoding="utf-8").read()
 evo_skill = open(os.path.join(CFG, "skills", "default", "evolution_skill", "SKILL.md"), encoding="utf-8").read()
 us_skill = open(os.path.join(CFG, "skills", "update_skill", "SKILL.md"), encoding="utf-8").read()
-# 声明可能落在任何 skill 载体：全部全局 skill 的 SKILL.md 纳入核查范围
+# 声明可能落在任何 skill 载体：全部全局 skill 的 SKILL.md 纳入核查范围（含 default 容器 skill）
 other_skills = ""
 for name in ("3gpp_skill", "files_skill", "find_skill", "program_skill"):
-    p = os.path.join(CFG, "skills", name, "SKILL.md")
-    if os.path.exists(p):
-        other_skills += open(p, encoding="utf-8").read()
+    for candidate in (os.path.join(CFG, "skills", name, "SKILL.md"),
+                      os.path.join(CFG, "skills", "default", name, "SKILL.md")):
+        if os.path.exists(candidate):
+            other_skills += open(candidate, encoding="utf-8").read()
+other_skills += open(os.path.join(CFG, "skills", "default", "task_tracking_skill", "SKILL.md"), encoding="utf-8").read()
 
 # 1. 归属二分铁律已写入 AGENTS.md 与 evolution_skill
 check("AGENTS.md 含归属二分铁律", "归属二分铁律" in agents and "只写 evolution_log.txt = 归属失败" in agents)
@@ -31,7 +33,7 @@ check("AGENTS.md 含流程类变更须同步 SKILL.md+regedit", "流程类变更
 # 2. evolution_log.txt 近 5 条非门禁记录（追加式=最新在尾部）声明的「术语」在对应规则文件出现
 entries = [e for e in re.findall(r"\[[0-9]{4}-[0-9]{2}-[0-9]{2}\][^\[]+", hist) if "会话自动门禁" not in e]
 recent = entries[-5:]
-rule_files = agents + reg + evo_skill + us_skill + evo + other_skills
+rule_files = agents + reg + evo_skill + us_skill + evo + other_skills + open(os.path.join(CFG, "instructions.md"), encoding="utf-8").read()
 # 声明模式：「术语」/『术语』 视为机制/环节声明（近 5 条记录内；有声明则核查、无声明则跳过）
 declared = set()
 for e in recent:
