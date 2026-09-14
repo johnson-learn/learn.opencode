@@ -111,9 +111,16 @@
 - yt-dlp：`pip install yt-dlp`
 - ImageMagick：`winget install ImageMagick.ImageMagick`
 
+## opencode 数据存储运维（机制认知，2026-09-15 实测固化）
 
+> opencode 的会话/事件数据存于 SQLite 库 `opencode.db`（WAL 模式 + `auto_vacuum=0`）。
 
-
-
-
-
+| 项目 | 实测结论 |
+|---|---|
+| 数据位置 | `%USERPROFILE%\.local\share\opencode\`（opencode.db / -wal / -shm，Windows） |
+| 膨胀元凶 | `event` 表全量事件流，尤其 `message.part.updated`（每次流式输出更新都带完整 part 快照）——一个超长会话可累计数百 MB（实测单个会话 673MB） |
+| 删除会话 | TUI 删除会话会**逻辑删除** event/message 行（实测该会话 0 残留）；但删除当下不缩物理文件（freelist 累积） |
+| 空间回收 | **opencode 重启/关闭时自动 compact/VACUUM 回收**——实测删除 897MB 事件后重启，db 从 908MB 自动瘦到 11.64MB、integrity_check ok、数据完好。**无需手动 VACUUM、无需改 auto_vacuum** |
+| 控制膨胀建议 | 定期删除不再需要的超长会话（流式事件元凶）+ 定期重启 opencode，即可自动保持紧凑 |
+| 诊断命令 | 查孤儿残留：`SELECT COUNT(*),SUM(LENGTH(data)) FROM event WHERE aggregate_id='<sessionId>'`；查空闲页：`PRAGMA freelist_count`（可回收量）与 `PRAGMA page_count`（物理页数）；`PRAGMA integrity_check` 验完整性 |
+| 注意 | 有 opencode 进程运行时 db 被独占锁定，只读连接用 `file:...?mode=ro` 可查（VACUUM INTO 需目标可写）；重启前确认无遗漏会话无需保留 |
