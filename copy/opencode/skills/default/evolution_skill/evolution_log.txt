@@ -591,3 +591,43 @@
 - 归属：AGENTS.md 铁律第8条 / instructions.md 第6条
 - 载体：AGENTS.md（铁律第8条"任务窗强制"段重写为动作化：新增第0步=每收到一条新要求/新消息第一步即调用 todowrite 为该要求建立/更新对应任务(含子智能体任务)标in_progress,禁止先做后补窗;其后①④沿用）、instructions.md（第6条"任务窗强制"子点同步补入第0步动作）
 - 内容：把"任务窗强制"从原则性表述升级为可执行动作：每收到新要求第一步即建/更新任务窗，杜绝"先做后补窗/收到要求不建窗"；与"长任务执行节奏"(同目标一轮连续、里程碑才汇报)配合，根治"长任务反复中断/卡感"与"任务窗未同步"两个问题。已跑 test_instructions 33/33、test_regedit 48/48 全绿。
+
+[2026-09-15] task_tracking_skill 全局技能创建（default 容器默认触发）：任务窗强制动作化的执行器
+- 状态：active
+- 场景数：2（任务窗强制已在 AGENTS 铁律第8条/instructions 第6条固化且被新项目持续使用 + 本 skill 作为执行器补齐可执行流程与自检）
+- 最后验证：2026-09-15
+- 核心关键词：task_tracking_skill、任务窗执行器、todowrite 任务窗、先建窗再动工
+- 归属：task_tracking_skill
+- 载体：skills/default/task_tracking_skill/SKILL.md（处理流程0~5动作化/操作规范/铁律/自检）+ templates/todo-template.md + tests/test_skill_self.py
+- 内容：新全局 skill（default 容器平铺注入项目副本），承载 AGENTS 铁律第8条"任务窗强制"的可执行流程——收到新要求第一步即 todowrite 建/更新窗标 in_progress、每步完成立即标 completed、用户更新要求同步主+子智能体窗、任务量大用子智能体分担并入同一窗。与 evolution_skill 同级（默认触发）。已跑 test_skill_self 16/16、skill_validate、test_regedit 49/49、test_instructions 34/34 全绿。
+
+
+[2026-09-15] update_skill：task_tracking_skill 接入框架引发的两处现状变更需随 update_skill 同步（用户命令追加归属 update_skill 流水）
+- 状态：active
+- 场景数：2（task_tracking_skill 为第二个 default 容器 skill，暴露 health_check.py 仅硬编码 evolution_skill 的 default 路径解析 bug；test_evolution_consistency 稽查集合缺 instructions.md 致「全局 skill 编写规范」声明无处落）
+- 最后验证：2026-09-15
+- 核心关键词：default 容器路径解析、health_check、test_evolution_consistency、instructions.md 稽查范围
+- 归属：update_skill
+- 载体：tools/health_check.py（default 容器按实际存在位置解析 skills/<d> 或 skills/default/<d>，skill 计数动态化）、tests/test_evolution_consistency.py（instructions.md 纳入 rule_files、default 容器 skill 纳入 other_skills 扫描）
+- 内容：① health_check.py 原仅对 evolution_skill 特判 default 容器路径，新增第二个 default 容器 skill（task_tracking_skill）即被误判为缺 SKILL.md 使框架 health gate 带 [失败]、test_health_check 5/9 失败——改为按实际存在位置通用化解析后恢复 OK 9/0；② test_evolution_consistency 的 rule_files 稽查集合原未含 instructions.md（「全局 skill 编写规范」「全局通用回答规则」两术语根在 instructions.md），且 other_skills 未扫描 default 容器 skill，致 14/15 失败——补入后 15/15 全绿。两处均为框架脚本/测试源码变更，属 update_skill 同步时应纳入仓库的工作副本侧改动，本次仅在本机全局目录完成，随下次 update_skill 双向同步归入仓库。
+
+
+[2026-09-15] update_skill：本机 to_local 实际路径=正常部署，勿误当污染清理（用户指正固化）
+- 状态：active
+- 场景数：2（我把本机全局 instructions/regedit 的 C:\Users\<用户名> 实际路径误判为"污染隐患"提议清理；用户指明"本机用实际路径正常，仅同步到 GitHub 不能绝对路径因别的电脑路径不同"）
+- 最后验证：2026-09-15
+- 核心关键词：to_local 实际路径、可移植性校验边界、形态差异、勿清理本机
+- 归属：update_skill
+- 载体：update_skill SKILL.md「可移植性校验（推送前强制）」章节新增第 4 条边界澄清
+- 内容：可移植性校验只约束"同步侧待提交内容"——本机全局配置用实际路径（to_local）是本机正常运行的正确形态、不是污染、勿去清理；占位符化仅发生在同步仓库时（to_portable，因为别的电脑路径不同）。两者是 path_convert.py 双向转换管理的形态差异，非缺憾。判别：test_repo_face"被跟踪文件无本机用户名路径"扫描的是仓库/跟踪文件，不针对本机 to_local 文件。该次 update_skill 推送已保证仓库占位符化（commit c73596c）。
+
+
+[2026-09-15] opencode.db 运维机制：删除会话自动逻辑清、重启自动 compact 回收（修正"须手动 VACUUM"旧判断，用户确认固化）
+- 状态：active
+- 场景数：2（先以为 opencode.db 删除会话后物理空间永不自动回收、须手动 VACUUM；实测删除 897MB 超长会话事件后重启，db 从 908MB 自动瘦到 11.64MB、freelist 归零、integrity_check ok——证明 opencode 重启/关闭时自动 compact/VACUUM 回收）
+- 最后验证：2026-09-15
+- 核心关键词：opencode.db、event 表膨胀、message.part.updated、重启自动回收、删除会话
+- 归属：tools-manifest（opencode 数据存储运维）
+- 载体：tools-manifest.md 新增 opencode 数据存储运维章节（数据位置/膨胀元凶/删除会话/空间回收/控制建议/诊断命令/注意）
+- 内容：opencode 会对每个会话的全量事件（尤其 message.part.updated 流式更新）持久化到 SQLite 的 event 表（WAL+auto_vacuum=0），一个超长会话可数百 MB；TUI 删除会话是逻辑删除（event/message 行清除），物理文件删除当下不缩但 opencode 重启/关闭会自动 compact 回收。控制膨胀=定期删超长会话+定期重启，无需手动 VACUUM、无需改 auto_vacuum（用户选择保留原机制）。已跑 test_tools_manifest 全绿。
+
