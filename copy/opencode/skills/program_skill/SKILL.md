@@ -29,7 +29,7 @@ collaborates_with:
 |---|---|---|
 | WSL2 + Ubuntu 22.04 | 默认编译/运行/调试环境 | `wsl -l -v` |
 | Linux 工具链 | gcc 11.4/cmake 3.22/gdb 12.1/valgrind/strace | `wsl -d Ubuntu -e bash -c "gcc --version && gdb --version"` |
-| w64devkit | Windows 原生 GCC 备选（winpthreads） | `& "C:\w64devkit\w64devkit\bin\gcc.exe" --version` |
+| w64devkit | Windows 原生 GCC 备选（winpthreads） | `& "<w64devkit目录>\w64devkit\bin\gcc.exe" --version` |
 
 **移植说明**：核心 = WSL2 + Linux 工具链（apt 一条命令重建）；w64devkit 备选；源码目录约定 `<源码目录>\`（新机器自行创建，详见 references/tools.md）。
 

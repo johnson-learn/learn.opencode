@@ -47,7 +47,7 @@ collaborates_with:
 ### 目标目录确定（记忆机制）
 - **首次调用必须指出同步目标目录**，格式：`update_skill：<目标目录路径>`（Windows UNC 如 `\\wsl.localhost\Ubuntu\home\github\learn.opencode`，或 WSL 路径如 `/home/github/learn.opencode`）
 - 首次调用未指出目录 → **提示用户**："请指出同步目标目录，格式：update_skill：<目录路径>"，等待用户给出后再继续
-- 目录记忆：本机状态文件 `C:\Users\<用户名>\.config\opencode\skills\update_skill\sync_target.txt` 保存最近指定的目录；每次用户显式给出新目录 → 更新该文件
+- 目录记忆：本机状态文件 `<用户目录>\.config\opencode\skills\update_skill\sync_target.txt` 保存最近指定的目录；每次用户显式给出新目录 → 更新该文件
 - 后续调用未指出目录 → 读取状态文件用最近目录；**幂等**：目录已存在（或默认目录已存在）且状态文件有效时，不再重复询问，直接使用
 - Windows UNC 与 WSL 路径互转：UNC `\\wsl.localhost\Ubuntu\...` ↔ WSL `/...`；git 操作一律在 WSL 路径下执行
 
@@ -71,7 +71,7 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 #### （第一步内）版本对齐检查（旧机器升级场景防倒退，必做）
 > 场景：本机是早期移植的旧版本（如旧路径体系、缺新 skill），远端已有其它机器的新提交。**必须防止旧本机内容覆盖仓库新内容（版本倒退）**。
 1. pull 后对比本机与仓库的差异方向：
-   - 本机全局配置目录：`C:\Users\<用户名>\.config\opencode\`（含 skills、instructions.md、evolution.md、plugins）
+   - 本机全局配置目录：`<用户目录>\.config\opencode\`（含 skills、instructions.md、evolution.md、plugins）
    - 仓库目录：`copy\opencode\`（占位符版本）
 2. 判定规则：
    - **仓库有、本机没有**的文件/skill → 这是远端新增 → **先反向合入本机**（复制仓库文件 → path_convert to_local → 覆盖到本机），本机完成升级
@@ -128,7 +128,7 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 
 > 修改提交到远端前，必须校验**具备不同电脑可移植性**——待提交内容不得含本机特征。
 1. **自动扫描**：`python <opencode配置目录>\tests\test_update_skill.py` 用例 8（提交前可移植性校验）——扫描待提交目录，检出"本机 home 真实路径 / 本机用户名路径"即违规；此用例已进入提交前自测用例库
-2. **人工核查**：硬编码盘符绝对路径（`<工具目录>`、`E:\` 等）只允许"安装约定位置"（`C:\msys64`、`C:\Program Files`、`C:\Windows`、`C:\Temp` 等任何机器安装后相同的位置）；本机特有目录（`<项目目录>` 等）必须占位符化。**检测/Test-Path 类路径更优统一用动态环境变量**（`${env:ProgramFiles}`、`${env:ProgramFiles(x86)}`、`${env:SystemDrive}`），既不留任何字面盘符（满足更严"无绝对路径"铁律）又运行时可解析（2026-09-17 修订：占位符在这些路径运行时不可解析、`Test-Path` 报"路径中具有非法字符"，另一台机器实测）
+2. **人工核查**：硬编码盘符绝对路径（`<盘符根>` 等）只允许"安装约定位置"（`<msys64目录>`、`<程序文件目录>`、`<系统目录>`、`<系统临时目录>` 等任何机器安装后相同的位置，本地 to_local 保留真实、仓库 to_portable 一律转占位符）；本机特有目录（`<项目目录>` 等）必须占位符化。**检测/Test-Path 类路径更优统一用动态环境变量**（`${env:ProgramFiles}`、`${env:ProgramFiles(x86)}`、`${env:SystemDrive}`），既不留任何字面盘符（满足更严"无绝对路径"铁律）又运行时可解析（2026-09-17 修订：占位符在这些路径运行时不可解析、`Test-Path` 报"路径中具有非法字符"，另一台机器实测）
 3. 校验不通过 → 修复为占位符/动态推导 → 重跑用例 8 → 通过后才可进入 git 三步骤
 4. **边界澄清（可移植性校验只约束"同步侧待提交内容"）**：本机全局配置（如指令文件 instructions.md、注册表 regedit.md、各 skill 等）用**实际路径（to_local 形态，如 `<用户目录>\...`）是本机正常运行的正确部署**，**不是污染，勿去清理**；占位符化仅发生在**同步到仓库时**（to_portable，因为别的电脑路径不同）。所以：本机全局文件保持实际路径=正常；推送前/合入仓库时把它转成占位符=必须；两者是 `path_convert.py` 双向转换管理的**形态差异**，不是缺憾。判别：test_repo_face 等"被跟踪文件无本机用户名路径"扫描的是**仓库/跟踪文件**，不针对本机全局 to_local 文件——勿把本机 to_local 实际路径误判为污染而清理。
    - **仓库公共·双向可移植铁律（2026-09-17 用户修正）**：仓库供本机与其它机器 `pull` 移植更新到最新，故仓库（to_portable 版）**不得含任何 C/D/E 盘绝对路径，包括"安装约定位置"字面（如 `Program Files`、`msys64` 目录）**——其它机器可能是 D 盘/非默认安装/非 Windows，写死盘符对它们不成立。而**本机源（to_local）用真实绝对路径是本机正常部署，不是污染**，勿把本机源当"要无盘符的对象"来改。落点：运行时检测/Test-Path 路径一律动态环境变量（`${env:ProgramFiles}` 等，既无字面盘符又可解析）；非运行时文档/规则/经验记录用占位符或通用表述（如"安装约定位置（Program Files）"，不带盘符前缀）。
@@ -159,10 +159,10 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
    ```
    wsl -d Ubuntu -e bash -c "cp -r /mnt/c/Users/<用户名>/.config/opencode/skills/* /home/github/learn.opencode/copy/opencode/skills/ && cp /mnt/c/Users/<用户名>/.config/opencode/{instructions.md,evolution.md,opencode.jsonc} /home/github/learn.opencode/copy/opencode/ && mkdir -p /home/github/learn.opencode/copy/opencode/plugins && cp -r /mnt/c/Users/<用户名>/.config/opencode/plugins/* /home/github/learn.opencode/copy/opencode/plugins/"
    ```
-   **cp 后立即清理 STATE_FILES 与隐私防线（隐私事故后固化）**：① 删除工作树残留的本机状态文件（`copy/opencode/skills/update_skill/path_map.txt`、`sync_target.txt`——gitignore 只挡 git add，挡不住 cp 带入工作树）；② 隐私扫描：工作树 grep 检查本机用户名路径（`C:\Users\<用户名>`）归零——**禁止在框架文件里硬编码任何具体隐私词**（硬编码等于二次泄漏，教训）；③ 程序化防线：`python <opencode配置目录>\tests\test_repo_face.py`（含 STATE_FILES 与动态本机路径检查用例）。
+   **cp 后立即清理 STATE_FILES 与隐私防线（隐私事故后固化）**：① 删除工作树残留的本机状态文件（`copy/opencode/skills/update_skill/path_map.txt`、`sync_target.txt`——gitignore 只挡 git add，挡不住 cp 带入工作树）；② 隐私扫描：工作树 grep 检查本机用户名路径（`<用户目录>`）归零——**禁止在框架文件里硬编码任何具体隐私词**（硬编码等于二次泄漏，教训）；③ 程序化防线：`python <opencode配置目录>\tests\test_repo_face.py`（含 STATE_FILES 与动态本机路径检查用例）。
 2. **合入本机脚本** → 仓库 `scripts/`（同样覆盖式合入）：
    ```
-   cp C:\Users\<用户名>\AppData\Local\Temp\opencode\*.ps1、*.py 与 <opencode配置目录>\tools\inject_skills.py、fetch_skills.py → copy/scripts/
+   cp <用户目录>\AppData\Local\Temp\opencode\*.ps1、*.py 与 <opencode配置目录>\tools\inject_skills.py、fetch_skills.py → copy/scripts/
    ```
 3. **差异对比与裁决**：
    - `git status --short` 列出全部差异：`A`（本机新增→直接接受）、`M`（同文件两边可能都改）、`D`（仓库有本机无→**不删除，恢复保留**，除非确认已废弃）
@@ -194,10 +194,10 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 1. push 前记录旧 HEAD：`OLD=$(git rev-parse HEAD)`
 2. push 成功后检查远端：`git fetch origin && git log --oneline $OLD..origin/main | head`——有输出说明其它机器有新提交
 3. 有远端新提交 → `git pull --rebase origin main` → 提取变更文件：`git diff --name-only $OLD..HEAD` → 将这些文件**从仓库反向复制回本机**（差异合入、不删除本机文件）：
-   - `opencode/skills/...` → `C:\Users\<用户名>\.config\opencode\skills\...`
-   - `opencode/instructions.md、evolution.md、opencode.jsonc` → `C:\Users\<用户名>\.config\opencode\`
-   - `opencode/plugins/...` → `C:\Users\<用户名>\.config\opencode\plugins\`
-   - `scripts/...` → `C:\Users\<用户名>\AppData\Local\Temp\opencode\`
+   - `opencode/skills/...` → `<用户目录>\.config\opencode\skills\...`
+   - `opencode/instructions.md、evolution.md、opencode.jsonc` → `<用户目录>\.config\opencode\`
+   - `opencode/plugins/...` → `<用户目录>\.config\opencode\plugins\`
+   - `scripts/...` → `<用户目录>\AppData\Local\Temp\opencode\`
 4. 反向合入的冲突处理：同名文件本机与远端都改过时，按"信息完整性优先"合并（本机当前内容为主、远端新增有效内容并入），无法自动合并的 **question 工具弹窗让用户裁决**
 5. 无远端新提交 → 报告"远端无新变化"，流程结束
 
@@ -223,14 +223,14 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 ## 环境注意
 
 - 目标仓库在 WSL 内（`/home/github/learn.opencode/copy`），本机 Windows 源经 `/mnt/c/` 访问；WSL 未运行时先 `wsl -d Ubuntu` 拉起
-- **目录记忆状态文件**：`C:\Users\<用户名>\.config\opencode\skills\update_skill\sync_target.txt`（记录最近目标目录；首次调用必须由用户指出目录，后续默认用最近目录）
+- **目录记忆状态文件**：`<用户目录>\.config\opencode\skills\update_skill\sync_target.txt`（记录最近目标目录；首次调用必须由用户指出目录，后续默认用最近目录）
 - 推送认证走 SSH（git@github.com）；若换 HTTPS 需配 token
 - 仓库内 `setup/`（install-wsl.ps1 等）、`README.md`、`INSTALL.md`、`REQUIREMENTS.md` 为移植配套文档，同步时保留不动
 - **风险规避**：同步前检查不包含任何密钥/token；`~/.lobehub-market/credentials.json` 等凭证一律不进入仓库
 - 本机配置类内容（绝对路径/版本）集中在各 skill 的工具依赖清单，新机器按清单重配即可
 - 新增 skill 后记得手动跑一次本技能，把新 skill 同步到 GitHub
 - **⚠ 同步踩坑清单（执行时必须防）**：
-  1. **形态污染**：本机全局文件是 to_local 形态（真实路径），`cp` 直接覆盖会破坏仓库占位符体系（对称回退 + 用户名泄漏）——正确做法：cp 后必须跑 `path_convert.py to_portable` 并做残留扫描（真实用户名路径必须为 0）；to_portable 转换不覆盖的模式（如字面 `<用户名>`、安装约定位置 `C:\Program Files`）需人工以占位符形态重做；cp 后逐个文件 diff 甄别"真实内容差异"与"形态差异"，只保留前者
+  1. **形态污染**：本机全局文件是 to_local 形态（真实路径），`cp` 直接覆盖会破坏仓库占位符体系（对称回退 + 用户名泄漏）——正确做法：cp 后必须跑 `path_convert.py to_portable` 并做残留扫描（真实用户名路径必须为 0）；to_portable 转换不覆盖的模式（如字面 `<用户名>`、安装约定位置 `<程序文件目录>`）需人工以占位符形态重做；cp 后逐个文件 diff 甄别"真实内容差异"与"形态差异"，只保留前者
   2. **git 路径双轨**：`git show HEAD:<path>`/`git log -- <path>` 的路径**相对仓库根**（本仓库根 = `learn.opencode`，框架文件路径带 `copy/` 前缀）；`git status`/`git checkout -- <path>`/`git add <path>` 的路径**相对当前目录**——混用前缀会导致 checkout 静默失效、diff 误判（git show 失败输出被 2>/dev/null 吞掉后 diff 呈现全 `+` 行假象）
   3. **精炼入口 + references 结构**：聚合类 skill 可能已被重构为"入口 SKILL.md（精炼）+ references/*.md（详版）"，大块知识（如 3gpp_skill 的 FTP 结构）的更新在 references 里而非入口文件——同步前先摸清目标 skill 的文件结构再定位改动位置
   4. **UNC 9p 读缓存延迟（实测）**：WSL 内文件修改后，Windows 侧 `\\wsl.localhost\` UNC 视图有读缓存延迟（TTL 内读到旧内容）——经 UNC 读仓库的测试（test_repo_face/test_setup_ps1 等）在文件刚改后可能误报，且 `wsl --shutdown` 也不一定立即刷新；处置：文件修改后稍候重跑测试（TTL 过期自愈），或全程用 WSL 内 `md5sum/grep` 验证真实状态——**别信 UNC 瞬时读到的内容**，与 WSL 内验证结果不一致时以 WSL 内为准

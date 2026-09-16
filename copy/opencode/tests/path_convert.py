@@ -59,6 +59,13 @@ def build_local_map():
         "<用户桌面目录>": h + "Desktop",
         "<WSL用户映射>": "/mnt/c/Users/" + os.path.basename(h.rstrip("\\")),
         "<Python脚本目录>": h + "AppData\\Roaming\\Python\\Python312\\Scripts",
+        # 安装约定位置（自动类，默认系统盘；其它机器若非默认路径可在 path_map.txt 用同名 key 覆盖）
+        "<程序文件目录>": "C:\\Program Files",
+        "<程序文件目录(x86)>": "C:\\Program Files (x86)",
+        "<系统目录>": "C:\\Windows",
+        "<系统临时目录>": "C:\\Temp",
+        "<msys64目录>": "C:\\msys64",
+        "<w64devkit目录>": "C:\\w64devkit",
     }
     # 填写类（<项目目录>等）；过滤空值映射（如 <工具目录>= 未填写），防止 to_local 误删占位符
     m.update({ph: real for ph, real in load_path_map().items() if ph.strip() and real.strip()})
@@ -77,6 +84,15 @@ def build_portable_map():
         ("/mnt/c/Users/" + os.path.basename(h.rstrip("\\")), "<WSL用户映射>"),
         (h + "AppData\\Roaming\\Python\\Python312\\Scripts", "<Python脚本目录>"),
         (h.rstrip("\\"), "<用户目录>"),
+        # 安装约定位置：to_portable 转为无盘符占位符（仓库无 C/D/E 盘绝对路径铁律）；
+        # 由长路径优先排序保证，未被具体工具占位符（如 <LibreOffice目录>）覆盖的通用约定位置走这里
+        ("C:\\Program Files (x86)", "<程序文件目录(x86)>"),
+        ("C:\\Program Files", "<程序文件目录>"),
+        ("C:\\Windows", "<系统目录>"),
+        ("C:\\Temp", "<系统临时目录>"),
+        ("C:\\msys64", "<msys64目录>"),
+        ("C:\\w64devkit", "<w64devkit目录>"),
+        ("C:\\Users\\<用户名>", "<用户目录>"),
     ]
     # 填写类反向；过滤空值映射（path_map 中 <工具目录>= 等未填写项），
     # 否则生成 ("", ph) 会让 convert 的 replace("", ph) 在文本中每字符间插入占位符（2026-08-27 实测爆炸）
@@ -87,10 +103,11 @@ def build_portable_map():
     m.sort(key=lambda x: len(x[0]), reverse=True)
     return m
 
-# 安装约定位置保护清单（to_portable 不转换，保留字面）：
-# 任何机器安装后路径相同的系统/工具约定位置，如 C:\Program Files、C:\msys64、C:\Users\<用户名>（字面占位形式）。
-# 根因（2026-08-31 实测）：path_map 中 <工具目录>=盘符根（C:\）时，to_portable 会把 C:\ 前缀全部吞成
-# <工具目录>Program Files 等，破坏仓库"安装约定位置保留字面"约定（update_skill 人工核查规则）。
+# 安装约定位置保护清单（guard，to_portable 的**兜底**——防止盘符根映射把约定位置吞成 <工具目录>Program Files 等残片）：
+# 正常情况下这些约定位置已在 build_portable_map 的非根映射中转为无盘符占位符（<程序文件目录>、<系统目录> 等），
+# 满足"仓库无 C/D/E 盘绝对路径"双向可移植铁律；此处 guard 仅在调用方使用不含约定映射的自定义 pairs（如测试 9b）
+# 或缺映射时兜底保留字面，避免被 `<工具目录>=盘符根` 根映射误吞成 `<工具目录>Program Files` 残片。
+# 2026-09-17 修订：新增 6+1 个约定占位符映射，guard 由"主位保留字面"降级为"兜底防吞残片"。
 GUARD_PREFIXES = [
     r"C:\Program Files (x86)",
     r"C:\Program Files",

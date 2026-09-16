@@ -24,8 +24,8 @@ def register_fonts():
     chinese_font_paths = [
         '/System/Library/Fonts/STHeiti Light.ttc',  # macOS 黑体
         '/System/Library/Fonts/PingFang.ttc',       # macOS 苹方
-        'C:\Windows/Fonts/msyh.ttc',                # Windows 微软雅黑
-        'C:\Windows/Fonts/simhei.ttf',              # Windows 黑体
+        '<系统目录>/Fonts/msyh.ttc',                # Windows 微软雅黑
+        '<系统目录>/Fonts/simhei.ttf',              # Windows 黑体
     ]
 
     chinese_font = None

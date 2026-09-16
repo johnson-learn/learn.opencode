@@ -133,7 +133,7 @@
 - 根因：update_skill 流程 cp 后漏跑 to_portable → 含本机路径的 instructions.md 被推上 GitHub（sync_push 当时仅警告不阻断）
 - 修复1：sync_push 推送前**自动执行 to_portable**（对仓库 copy/opencode 目录，幂等）——流程漏步不再可能
 - 修复2：可移植性特征扫描由警告升级为**阻断**（git status 变更列表逐个扫描，检出 Users\用户名 特征即拒绝）
-- 修复3：instructions.md 第 33 行本机路径示例占位符化（C:\Users\<用户名>）
+- 修复3：instructions.md 第 33 行本机路径示例占位符化（<用户目录>）
 - test_sync_push 14→16/16（自动转换 + 阻断两用例）；已推送 8a2aebd，自动 to_portable 生效 rc=0
 [2026-08-27] 新开会话记录分析（Johnson 机器）+ 两方案实施（用户选 A+B）：
 - 生效确认：注册表提醒/方案A 新文案/gate 机器步骤/to_local 路径/中文回答全部正常
@@ -368,7 +368,7 @@
 - 最后验证：2026-09-01
 - 核心关键词：to_portable guard、msgfile_exists、update_skill 推送
 - 载体：tools/path_convert.py + tests/path_convert.py + tests/test_path_convert.py（guard 机制 23→36/36）、tools/sync_push.py + tests/test_sync_push.py（msgfile_exists 双通道 16→19/19）、instructions.md 同步边界铁律补充、仓库 22+ 文件
-- 内容：① 坑1【to_portable 误转安装约定位置】：path_map <工具目录>=盘符根（<工具目录>）映射把 C:\Program Files/C:\msys64/C:\Users\<用户名> 等约定位置吞成 <工具目录>Program Files 等——修复：GUARD_PREFIXES 保护清单（哨兵替换→转换→还原）；② 坑2【guard 挡长映射】：guard 先于映射执行会把 <LibreOffice目录>=<LibreOffice目录> 这类长映射挡住——修复：guard 只作用于盘符根映射（_is_root_pair 分流，先跑非根映射再 guard 保护跑根映射）；③ 坑3【sync_push msgfile 检查 WSL 失效】：UNC 视图与 WSL 内文件系统不一致，os.path.exists 对 \wsl.localhost\Ubuntu\tmp 误报不存在——修复：msgfile_exists 双通道（Windows 检查 + WSL 内 test -f 兜底）；④ 经验：仓库工作树同步一律 to_portable（已写入 instructions 铁律第 0 条）。推送：两轮弹窗确认均选择"推送"，sync_push 门禁执行，HEAD==origin/main 无反向合入需求
+- 内容：① 坑1【to_portable 误转安装约定位置】：path_map <工具目录>=盘符根（<工具目录>）映射把 <程序文件目录>/<msys64目录>/<用户目录> 等约定位置吞成 <程序文件目录> 等——修复：GUARD_PREFIXES 保护清单（哨兵替换→转换→还原）；② 坑2【guard 挡长映射】：guard 先于映射执行会把 <LibreOffice目录>=<LibreOffice目录> 这类长映射挡住——修复：guard 只作用于盘符根映射（_is_root_pair 分流，先跑非根映射再 guard 保护跑根映射）；③ 坑3【sync_push msgfile 检查 WSL 失效】：UNC 视图与 WSL 内文件系统不一致，os.path.exists 对 \wsl.localhost\Ubuntu\tmp 误报不存在——修复：msgfile_exists 双通道（Windows 检查 + WSL 内 test -f 兜底）；④ 经验：仓库工作树同步一律 to_portable（已写入 instructions 铁律第 0 条）。推送：两轮弹窗确认均选择"推送"，sync_push 门禁执行，HEAD==origin/main 无反向合入需求
 
 [2026-09-01] setup 脚本检测模式改造（用户要求：自动安装失败阻塞 → 只检测+提示永不阻塞）+ install-tools 一键安装脚本
 - 状态：active
@@ -614,7 +614,7 @@
 
 [2026-09-15] update_skill：本机 to_local 实际路径=正常部署，勿误当污染清理（用户指正固化）
 - 状态：active
-- 场景数：2（我把本机全局 instructions/regedit 的 C:\Users\<用户名> 实际路径误判为"污染隐患"提议清理；用户指明"本机用实际路径正常，仅同步到 GitHub 不能绝对路径因别的电脑路径不同"）
+- 场景数：2（我把本机全局 instructions/regedit 的 <用户目录> 实际路径误判为"污染隐患"提议清理；用户指明"本机用实际路径正常，仅同步到 GitHub 不能绝对路径因别的电脑路径不同"）
 - 最后验证：2026-09-15
 - 核心关键词：to_local 实际路径、可移植性校验边界、形态差异、勿清理本机
 - 归属：update_skill
@@ -672,12 +672,21 @@
 - 修复：源 copy/setup/setup-*.ps1 保持真实路径版（git checkout 还原），镜像改用源一对一 cp 还原；copy/scripts/path_convert.py 补齐 .js/.cjs/.mjs 白名单（与 copy/opencode/tools、tests 一致，上一提交漏了 scripts 副本）。
 - 验证：test_repo_face 27/27、test_setup_ps1 78/78（exit 0）、health OK 9/警告 2/失败 0（实跑全绿）。commit 3bbecae 已推送。
 - 写入点：update_skill SKILL.md 第五步·门面文档同步·repo_face 镜像刷新节（新增"镜像只做源一对一 cp，不得单独改动；setup 检测路径保持真实 Windows 路径与 test_setup_ps1 断言一致"）。
+
 2026-09-17 | 来源:独立会话setup绝对路径修复 | 更新点:update_skill SKILL.md 第五步可移植性校验+repo_face镜像刷新节
 经验:仓库“无绝对路径”铁律下,setup检测/Test-Path路径的最优形态=动态环境变量(${env:ProgramFiles}/${env:ProgramFiles(x86)}/${env:SystemDrive}),既无字面盘符又运行时可解析;占位符(<LibreOffice目录>等)在这些路径运行时不可解析→Test-Path报“路径中具有非法字符”(另一台机器实测,PowerShell 5.1),只可用于path_map写入的key/to_portable-to_local转换环。test_setup_ps1断言已同步为动态变量。
 履历:本次先按用户要求占位符化(commit ae4fcac)→另机运行报错→修订为动态环境变量(commit a46ff4a),镜像=源逐字节一致,test_repo_face 27/27、test_setup_ps1 78/78全绿。与旧经验(检测路径保持真实Windows路径字面)冲突,已按新验证结果演进修订SKILL.md旧条目(非DEPRECATED,动态变量为更优解)。
+
 [2026-09-17] update_skill 双向同步三条经验固化（WSL 复合 git 链失效 / 仓库双向可移植无盘符铁律 / to_portable guard 保留安装约定位置字面盘符为机制缺陷）
 - 状态：active
 - 来源：本会话 update_skill 双向同步实测 + 用户指正
 - 载体：update_skill SKILL.md 第五步可移植性校验·边界澄清节（新增"仓库公共·双向可移植铁律"）+ 同步踩坑清单第 7/8 条
 - 内容：① WSL 9p 环境下 git 写操作禁止用 && 复合链（add/commit/push 可能全部未生效却无报错、HEAD 不变、文件未 staged、输出被吞成假象）——须分步独立执行并逐一回看结果（本次 commit 479fa90 即分步成功）；② 仓库公共、本机与其它机器 pull 移植更新到最新即双向可移植，故仓库(to_portable)不得含任何 C/D/E 盘绝对路径（含安装约定位置字面，如 Program Files 目录）——其它机器可能 D 盘/非默认安装/非 Windows；本机源(to_local)用真实绝对路径是本机正常部署、非污染，勿把本机源当"要无盘符的对象"来改（用户纠正：本机是工作机器当然用绝对路径）；③ path_convert to_portable 的 GUARD_PREFIXES 把本机源安装约定位置保留成字面盘符、与仓库无盘符铁律冲突——当前仓库侧手工还原为占位符/通用表述、本机源不动，根因（改 guard 逻辑+三副本+test_path_convert 断言）已登记待整改，根治前每次 cp+to_portable 会再冒字面盘符须复查。
 - 验证：本会话实测分步 git push 成功（commit 479fa90）；仓库无盘符要求经 python 检测 + / 行命中 0 处新增达成
+
+[2026-09-17] path_convert guard 机制修复（安装约定位置 to_portable 转无盘符占位符，双向可移植铁律落地）
+- 状态：active
+- 来源：本会话 update_skill 双向可移植铁律驱动 + 用户授权修复
+- 载体：tools/path_convert.py + tests/path_convert.py + scripts/path_convert.py + tests/test_path_convert.py（新增 4 断言，39→43/43）+ skills/update_skill/references/portable-paths.md（登记 6 个约定占位符）
+- 内容：新增 6+1 个自动类约定占位符（<程序文件目录>、<程序文件目录(x86)>、<系统目录>、<系统临时目录>、<msys64目录>、<w64devkit目录>、<用户目录>对 <用户目录>），to_portable 把本机 Program Files/Windows/Temp/msys64/w64devkit 等安装约定位置从"guard 保留字面盘符"改为转无盘符占位符（符合仓库双向可移植铁律）；guard 降级为兜底（无约定映射的自定义 pairs 或缺失映射时防根映射吞成残片）；to_local 还原真实路径（默认系统盘，path_map 可覆盖 D 盘等非默认）；重跑 to_portable 顺带清理仓库 16+ 文件存量字面约定盘符。
+- 验证：test_path_convert 43/43（含 guard 兜底 9b 不变、双向还原断言）；重跑 to_portable 16 文件清理，.py 全语法 OK；抽查 translate_pdf/setup 等运行时脚本转换合理（to_local 后解析）。未实测：其它机器 D 盘 path_map 覆盖场景（路径经 to_local 还原正确）。

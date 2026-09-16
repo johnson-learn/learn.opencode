@@ -324,5 +324,33 @@ check("规则含强制弹窗表述（question 工具）", "question 工具" in s
 check("规则禁止文字提问代替弹窗", "禁止" in sk and "文字询问" in sk)
 check("规则明示未确认禁 commit/push", "不得执行任何 commit/push" in sk)
 
+# ============ 用例 10：to_portable 与 to_local 双脚本真实执行（真实 convert/walk_convert） ============
+print("[用例10] to_portable 与 to_local 双脚本真实执行（调用 path_convert convert/walk_convert 双向转换）")
+import re as _re10
+# 构造含多种真实路径（含安装约定位置与本机真实路径）的待转文本
+_txt10 = r"装 C:\Program Files\Git 与 C:\Windows\sys 与 C:\msys64\bin 与 " + CFG + r"\x 与 " + _lmap.get(_ph("用户目录"), "U") + r"\y"
+_c10 = _pc.convert(_txt10, _pmap)
+check("to_portable: C:\\Program Files → <程序文件目录>（无盘符）", _ph("程序文件目录") + r"\Git" in _c10)
+check("to_portable: C:\\Windows → <系统目录>", _ph("系统目录") + r"\sys" in _c10)
+check("to_portable: C:\\msys64 → <msys64目录>", _ph("msys64目录") + r"\bin" in _c10)
+check("to_portable: 本机配置目录 → <opencode配置目录>", _ph("opencode配置目录") in _c10)
+check("to_portable: 转换后无字面盘符绝对路径", not _re10.search(r'[A-Za-z]:\\', _c10))
+_back10 = _pc.convert(_c10, _lpairs)
+check("to_local: <程序文件目录> 还原 C:\\Program Files", r"C:\Program Files\Git" in _back10)
+check("to_local: <系统目录> 还原 C:\\Windows", r"C:\Windows\sys" in _back10)
+check("往返一致（to_portable→to_local 还原原文本）", _back10 == _txt10)
+check("双向标准·WSL/仓库侧(to_portable)无绝对路径 [A-Za-z]:\\", not _re10.search(r'[A-Za-z]:\\', _c10))
+check("双向标准·本机侧(to_local)无占位符<...>（还原为绝对路径、无通用/相对路径）", "<" not in _back10 and "\\" in _back10)
+# 目录级真实脚本执行（walk_convert，模拟 update_skill 实际调用 python path_convert.py to_portable/to_local <目录>）
+_w10 = tempfile.mkdtemp(prefix="us_pc_")
+open(os.path.join(_w10, "sample.md"), "w", encoding="utf-8").write(_txt10)
+_pc.walk_convert(_w10, _pmap, "to_portable")
+_g10 = open(os.path.join(_w10, "sample.md"), encoding="utf-8").read()
+check("walk_convert to_portable 目录级（真实脚本）", _ph("程序文件目录") + r"\Git" in _g10 and not _re10.search(r'[A-Za-z]:\\', _g10))
+_pc.walk_convert(_w10, _lpairs, "to_local")
+_g10b = open(os.path.join(_w10, "sample.md"), encoding="utf-8").read()
+check("walk_convert to_local 目录级往返还原（真实脚本）", _g10b == _txt10)
+shutil.rmtree(_w10, ignore_errors=True)
+
 print("\n结果：通过 %d 项，失败 %d 项" % (pass_n, fail_n))
 sys.exit(1 if fail_n else 0)

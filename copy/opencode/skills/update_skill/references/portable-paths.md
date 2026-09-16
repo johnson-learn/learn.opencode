@@ -6,6 +6,7 @@
 
 ### 占位符体系
 - **自动类**（转换时自动推导，无需用户填写）：`<用户目录>`、`<opencode配置目录>`、`<opencode数据目录>`、`<用户临时目录>`、`<用户AppData目录>`、`<用户桌面目录>`、`/mnt/c/Users/<用户目录>`、`<Python脚本目录>`
+- **自动类·安装约定位置**（自动推导，默认系统盘；非默认安装路径可在 path_map.txt 用同名 key 覆盖）：`<程序文件目录>`（Program Files）、`<程序文件目录(x86)>`、`<系统目录>`（Windows）、`<系统临时目录>`（Temp）、`<msys64目录>`、`<w64devkit目录>`（2026-09-17 新增：仓库双向可移植无盘符铁律下，to_portable 把本机 `<程序文件目录>` 等约定位置转此占位符、不再保留字面盘符；guard 降为兜底防根映射吞残片）
 - **工具类**（安装脚本自动探测本机实际安装目录并写入 path_map.txt，无需用户填写）：`<LibreOffice目录>`（找 soffice.com）、`<Chrome目录>`（找 chrome.exe）、`<Node目录>`（PATH 中 node 位置）、`<工具目录>`（找 w64devkit\bin\gcc.exe）、`<WSL安装目录>`（注册表 Lxss BasePath）
 - **数据类**（安装脚本交互选择：直接回车=默认目录，输入路径=用户定制；存于 path_map.txt）：`<资料目录>`（默认 `D:\opencode\doc\default`）、`<3GPP文档库目录>`（默认 `D:\opencode\doc\3gpp`）、`<项目目录>`（默认 `D:\opencode\project\default`）、`<源码目录>`（默认 `D:\opencode\code\default`）、`<离线安装包目录>`（默认 `D:\opencode\tool\default`）
 

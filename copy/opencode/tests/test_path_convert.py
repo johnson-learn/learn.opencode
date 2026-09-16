@@ -144,20 +144,26 @@ conv8 = pc.convert(txt8, pmap2)
 check("空值场景 convert 无全局插入（文本未爆炸膨胀）", len(conv8) <= len(txt8) * 3)
 check("convert 防御：显式空 key 对直接跳过", pc.convert("hello world", [("", "<空key>")]) == "hello world")
 
-# === 用例 9：安装约定位置保护（盘符根 <工具目录> 映射不吞 C:\ 约定前缀，2026-08-31 实测） ===
-print("[用例9] 安装约定位置保护（to_portable 保留字面）")
+# === 用例 9：安装约定位置转换（2026-09-17 修订：改为转无盘符占用符，符合仓库无盘符双向可移植铁律） ===
+print("[用例9] 安装约定位置 to_portable 转无盘符占位符（仓库无盘符铁律）")
 guard_txt = (r"装 C:\Program Files\Git 与 C:\Program Files (x86)\X 与 C:\Windows\sys 与 C:\Temp\LO "
              r"与 C:\msys64\ucrt64\bin 与 C:\w64devkit\bin 与 C:\Users\<用户名>\.config 与 C:/Temp/LO2 与 " + HOME + r"\real 与 " + CFG_DIR)
 conv9 = pc.convert(guard_txt, pairs)
-check("C:\\Program Files 保留字面", r"C:\Program Files\Git" in conv9)
-check("C:\\Program Files (x86) 保留字面", r"C:\Program Files (x86)\X" in conv9)
-check("C:\\Windows 保留字面", r"C:\Windows\sys" in conv9)
-check("C:\\msys64 保留字面", r"C:\msys64\ucrt64\bin" in conv9)
-check("C:\\w64devkit 保留字面", r"C:\w64devkit\bin" in conv9)
-check("C:\\Users\\<用户名> 字面占位形式保留", r"C:\Users\<用户名>\.config" in conv9)
-check("C:/Temp/ 正斜杠形式保留", "C:/Temp/LO2" in conv9)
-check("本机真实用户目录仍正常转占位符", HOME not in conv9 and ("<" + "用户目录" + ">") in conv9)
+check("C:\\Program Files 转 <程序文件目录>", ("<程序文件目录>\\Git" in conv9) and ("C:\\Program Files\\Git" not in conv9))
+check("C:\\Program Files (x86) 转 <程序文件目录(x86)>", ("<程序文件目录(x86)>\\X" in conv9) and ("C:\\Program Files (x86)" not in conv9))
+check("C:\\Windows 转 <系统目录>", ("<系统目录>\\sys" in conv9) and ("C:\\Windows\\sys" not in conv9))
+check("C:\\msys64 转 <msys64目录>", ("<msys64目录>\\ucrt64\\bin" in conv9) and ("C:\\msys64" not in conv9))
+check("C:\\w64devkit 转 <w64devkit目录>", ("<w64devkit目录>\\bin" in conv9) and ("C:\\w64devkit" not in conv9))
+check("C:\\Users\\<用户名> 转 <用户目录>", ("<用户目录>\\.config" in conv9) and ("C:\\Users\\<用户名>" not in conv9))
+check("C:/Temp/ 正斜杠转 <系统临时目录>", ("<系统临时目录>/LO2" in conv9) and ("C:/Temp/LO2" not in conv9))
+check("本机真实用户目录仍正常转占位符(<用户目录>)", HOME not in conv9 and ("<" + "用户目录" + ">") in conv9)
 check("配置目录仍正常转占位符", CFG_DIR not in conv9 and ("<" + "opencode配置目录" + ">") in conv9)
+# 约定占位符 to_local 可还原真实路径（双向可移植）
+pairs_l9 = [(ph, r) for ph, r in pc.build_local_map().items()]
+pairs_l9.sort(key=lambda x: len(x[0]), reverse=True)
+back9 = pc.convert("<程序文件目录>\\Git 与 <系统目录>\\sys 与 <msys64目录>\\ucrt64\\bin 与 <系统临时目录>\\LO", pairs_l9)
+check("约定占位符 to_local 还原真实路径（双向可移植）",
+      r"C:\Program Files\Git" in back9 and r"C:\Windows\sys" in back9 and r"C:\msys64\ucrt64\bin" in back9 and r"C:\Temp\LO" in back9)
 
 # 用例 9b：guard 只作用于盘符根映射——约定位置下的长映射（如 <LibreOffice目录>）仍正常转换
 pairs_custom = [("C:\\Program Files\\LibreOffice", "<LibreOffice目录>"), ("C:\\", "<工具目录>")]

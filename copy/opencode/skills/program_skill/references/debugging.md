@@ -28,7 +28,7 @@ gdb ./prog
 
 - WSL 默认 `core_pattern=|/wsl-capture-crash`：core 被系统进程吃掉、不落盘
 - **/mnt 上内核写不出 core**（9P 文件系统限制）：core_pattern 必须指向 Linux 内路径（如 `/cores`）或用 Windows 绝对路径（`<工具目录>Users\...` 形式经 WSL 互操作可以写入）；写入 Windows 盘时 gdb 加载用 `gdb ./prog <Windows路径>`（drvfs 直接可读）
-- 重启后配置丢失：写入 `/etc/sysctl.d/99-core.conf` 持久化：`echo 'kernel.core_pattern=C:\Users\<用户名>\cores\core.%e.%p' | sudo tee /etc/sysctl.d/99-core.conf && sudo sysctl -p /etc/sysctl.d/99-core.conf`
+- 重启后配置丢失：写入 `/etc/sysctl.d/99-core.conf` 持久化：`echo 'kernel.core_pattern=<用户目录>\cores\core.%e.%p' | sudo tee /etc/sysctl.d/99-core.conf && sudo sysctl -p /etc/sysctl.d/99-core.conf`
 - 检查：`cat /proc/sys/kernel/core_pattern`（非 wsl-capture-crash 即生效）
 
 ## 3. 内存泄漏定位（valgrind）

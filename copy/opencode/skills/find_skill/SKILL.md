@@ -27,7 +27,7 @@ collaborates_with:
 
 | 工具 | 用途 | 本机位置/版本 | 检查命令 | 缺失时安装 |
 |---|---|---|---|---|
-| curl.exe | 下载/探测（-L 重定向、-A UA 头、-m 超时、-o 输出） | Windows 自带 `C:\Windows\System32\curl.exe` | `curl.exe --version` | Windows 10+ 自带 |
+| curl.exe | 下载/探测（-L 重定向、-A UA 头、-m 超时、-o 输出） | Windows 自带 `<系统目录>\System32\curl.exe` | `curl.exe --version` | Windows 10+ 自带 |
 | node + market-cli | LobeHub 市场搜索/安装 | npx 缓存 `<用户目录>\AppData\Local\npm-cache\_npx\06aaad52133b3ed7\node_modules\@lobehub\market-cli\dist\cli.js`（含凭证 `~\.lobehub-market\credentials.json`） | `& node <cli.js> --help` | `npx -y @lobehub/market-cli register --name xxx --description xxx --source open-claw`（凭证需重新注册） |
 | Python 3.12 | 下载脚本（fetch_skills.py）、MSI 校验（msilib） | `python` | `python --version` | python.org |
 | tar / Expand-Archive | 解压 tarball/zip | Windows 自带 | `tar --version` | 自带 |

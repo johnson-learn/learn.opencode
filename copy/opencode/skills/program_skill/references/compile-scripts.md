@@ -73,7 +73,7 @@ target_link_libraries(app PRIVATE Threads::Threads m)
 # 用法: .\build.ps1 [输出名]
 param([string]$Out = "main")
 $ErrorActionPreference = "Stop"
-$gcc = "C:\w64devkit\w64devkit\bin\gcc.exe"
+$gcc = "<w64devkit目录>\w64devkit\bin\gcc.exe"
 $srcs = Get-ChildItem -Filter *.c | ForEach-Object { $_.Name }
 & $gcc -O2 -g -Wall -Wextra -pthread -o $Out $srcs
 if ($LASTEXITCODE -ne 0) { throw "编译失败" }
