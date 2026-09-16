@@ -82,8 +82,8 @@
 
 | 工具 | 用途 | 安装命令 | 检查命令 |
 |---|---|---|---|
-| skill_validate.py | skill 自检（frontmatter/路由） | 随仓库 scripts/ | `python scripts\skill_validate.py` |
-| path_convert.py | 路径占位符双向转换 | 随仓库 scripts/ | `python scripts\path_convert.py` |
+| skill_validate.py | skill 自检（frontmatter/路由） | 随仓库 `copy/opencode/tests/`（框架校验脚本） | `python <opencode配置目录>\tests\skill_validate.py` |
+| path_convert.py | 路径占位符双向转换 | 随仓库 `copy/opencode/tools/`（框架工具） | `python <opencode配置目录>\tools\path_convert.py` |
 | 本机 PS 脚本集 | 文档提取/OCR/页面校验 | 随仓库 scripts/ 部署到 `%LOCALAPPDATA%\Temp\opencode\` | `Test-Path %LOCALAPPDATA%\Temp\opencode\extract-docx.ps1` |
 | opencode debug 子命令（`debug config`/`debug info`/`debug paths` 等） | 查看平台**解析后**的合并配置，判断某配置字段是否真的被平台消费（如 instructions 字段 1.18 解析但不消费） | opencode 内置，零安装 | `cmd /c "opencode debug config"`（本机 1.18.18 实测；PowerShell 直调会因执行策略 SecurityError，需 `cmd /c` 包装） |
 | npm view `<pkg>` dist-tags | 查 npm 包版本线（latest 停产版 vs dev/beta 新架构线），判断某特性归属哪条版本线 | Node/npm 自带 | `cmd /c "npm view opencode-ai dist-tags --json"` |
