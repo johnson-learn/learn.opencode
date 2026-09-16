@@ -90,7 +90,7 @@
 | evolution_gate.py（进化门禁） | 机制步骤确定性执行：--snapshot/--check/--drain/--check-5step（六步检查点检测，参数名保留历史名） | 随仓库 `copy/opencode/tools/`（框架脚本） | `python <opencode配置目录>\tools\evolution_gate.py --help`（改动用例 test_evolution_gate.py） |
 | health_check.py（健康检查） | 一键健康检查九项：核心配置/skill frontmatter/插件执行/测试可解析/门禁记录/evolution_log 待处理/**平台 API 保障**/字符边界/**注入量管控（≤70KB）**；--run 全量 / --run-quick 快子集 | 随仓库 `copy/opencode/tools/`（框架脚本） | `python <opencode配置目录>\tools\health_check.py`（改动用例 test_health_check.py 9/9） |
 | sync_push.py（推送门禁） | update_skill 第五步脚本化推送：强制校验弹窗确认标记，无标记/非 push 直接拒绝 commit/push；成功后自动清除标记 | 随仓库 `copy/opencode/tools/`（框架脚本） | `python <opencode配置目录>\tools\sync_push.py`（改动用例 test_sync_push.py 7/7） |
-| tmp_registry.py（临时文件登记表） | 统一收口测试/脚本生成临时文件的登记与清理：register/unregister/cleanup_test/managed_tmp（try/finally 治本层）/cleanup_dead（死条目自净化）/scan_residue（前缀残留扫描）；登记表 tests/tmp_registry.json 常态应为空 | 随仓库 `copy/opencode/tools/`（框架脚本） | `python <opencode配置目录>\tools\tmp_registry.py scan`（改动用例 test_tmp_registry.py） |
+| tmp_registry.py（临时文件登记表） | 统一收口测试/脚本生成临时文件的登记与清理：register/unregister/cleanup_test/managed_tmp（try/finally 治本层）/cleanup_dead（死条目自净化）/scan_residue（前缀残留扫描）/防误删精确化（前缀+最小后缀双判据，白名单语义化含来源，拒绝短前缀与非框架目录）；登记表 tests/tmp_registry.json 常态应为空 | 随仓库 `copy/opencode/tools/`（框架脚本） | `python <opencode配置目录>\tools\tmp_registry.py scan`（改动用例 test_tmp_registry.py） |
 | test_runner.py（统一测试入口） | 门面+收口，不含用例：按入参路由到子入口（health→health_check全量 / health-quick→快集 / gate→evolution_gate精准 / update→test_update_skill），前后用 tmp_registry 收口；新增子入口在路由表登记 | 随仓库 `copy/opencode/tools/`（框架脚本） | `python <opencode配置目录>\tools\test_runner.py --help`（改动用例 test_test_runner.py） |
 
 ---
