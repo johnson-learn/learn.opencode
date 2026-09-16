@@ -27,7 +27,7 @@
 | 框架引用审计（框架自有文件引用存在性/旧术语残留/README 双向一致 + 运行时产物豁免 session.md/session.txt 正向用例） | `test_audit_references.py` | `python tests\test_audit_references.py` | ✓ 4/4 |
 | 仓库门面一致性（门面文件与框架现状对照 + STATE_FILES 残留 + 本机路径动态扫描 + 仓库内 repo_face 镜像=门面一致性 9 对，WSL 不可达时回退 repo_face 镜像） | `test_repo_face.py` | `python tests\test_repo_face.py` | ✓ 27/27 |
 | setup-windows.ps1（检测模式：开关精简/工具清单必须可选分类/共享检测模块 setup-check/双通道检测/PATH 自动修复/未装提示跳过/无自动安装残留/npm-pip 缺失汇总/WSL 检测化/install-tools 一键安装脚本/AST 语法/部署范围/path_convert 体系/盘符动态探测/注册事件注入验证/必备工具缺失告警/tools-manifest 总表自动对齐） | `test_setup_ps1.py` | `python tests\test_setup_ps1.py` | ✓ 78/78 |
-| tmp_registry 登记表机制（register/unregister/cleanup_test/managed_tmp try-finally 治本层/cleanup_dead 死条目自净化/scan_residue 前缀扫描/登记表结构） | `test_tmp_registry.py` | `python tests\test_tmp_registry.py` | ✓ 11/11 |
+| tmp_registry 登记表机制（register/unregister/cleanup_test/managed_tmp try-finally 治本层/cleanup_dead 死条目自净化/scan_residue 前缀扫描/登记表结构/防误删精确化：前缀+最小后缀双判据，拒绝短前缀与非框架目录） | `test_tmp_registry.py` | `python tests\test_tmp_registry.py` | ✓ 14/14 |
 | test_runner 统一测试入口（路由表登记子入口存在/子入口脚本存在/register_subentry/list_subentries/dry-run 路由/未知模式） | `test_test_runner.py` | `python tests\test_test_runner.py` | ✓ 9/9 |
 
 > skill_validate 体积门限：默认 8KB，超限输出「待决清单」，用户选择（--set-limit 改门限 / --ignore 忽略指定 / --ignore-all 忽略全部）写入 `skill_validate_config.json` 持久化，后续一致性生效（当前门限 30KB）。

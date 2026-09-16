@@ -272,7 +272,7 @@ function buildTaskText(gateOut, fiveOut) {
     "1. 经验固化：回顾上一会话，按 instructions.md 智能进化协议六步流程，把可复用经验（新方法/工具/踩坑/风险规避）固化到对应 skill（**任何非用户明确要求的文件修改——含规则文件与进化流水追加——必须先弹窗让用户确认**；question 工具逐条选择：同意/填写内容/跳过）\n" +
     "2. 工具登记：上一会话中用到/发现/提及的任何新工具、脚本、库——无论是否已写进具体 skill——必须登记到 tools-manifest.md（已在分类中的更新条目；新的先入「待补充」清单）\n" +
     "3. 总表同步：若上一会话新增了 skill 依赖工具或本机配置变更，同步更新 tools-manifest.md\n" +
-    "4. 校验自测：对本次所有 skill 文件改动，跑 python <项目目录>\\temp\\skill_validate.py <opencode配置目录>\\skills；涉及可执行内容的行为自测\n" +
+    "4. 校验自测：对本次所有 skill 文件改动，跑 python <opencode配置目录>\\tests\\skill_validate.py <opencode配置目录>\\skills；涉及可执行内容的行为自测\n" +
     "5. 合并/拆分/迁移类发现：只输出「进化建议」清单供用户确认，不自动执行\n" +
     "6. 全部完成且无新经验时，回复一行：「进化检查完成：本次无固化项」；否则回复固化项清单\n" +
     "7. 新增文件适配（A+C 方案 2026-08-28）：若门禁结果含【新增文件】清单，按 evolution_skill「新增文件适配决策」流程执行——四问分析 → question 弹窗让用户逐项决定 适配/忽略/存档 → 适配的走纳入动作（regedit/tools-manifest/instructions 登记）→ 验收测试全绿（test_regedit+skill_validate+test_instructions+health_check）\n" +

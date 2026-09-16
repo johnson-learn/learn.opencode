@@ -23,6 +23,9 @@ if r.returncode != 0:
 tmp = tempfile.mkdtemp(prefix="c_tpl_")
 shutil.copytree(TPL, os.path.join(tmp, "proj"))
 wsl_proj = "/tmp/c_tpl_proj_" + os.path.basename(tmp)
+# 动态推导 Windows 临时目录 -> WSL 挂载路径（消除硬编码本机路径，可移植；WSL 挂载约定 /mnt/c/Users/<user>/... 任何机器成立）
+_win_tmp = tempfile.gettempdir().replace("\\", "/")
+_wsl_tmp = "/mnt/" + _win_tmp[0].lower() + _win_tmp[2:]  # C:/... -> /mnt/c/...
 
 def wsl(cmd):
     r2 = subprocess.run(["wsl", "-d", "Ubuntu", "-e", "bash", "-c", cmd],
@@ -30,8 +33,8 @@ def wsl(cmd):
     return r2
 
 # 复制进 WSL 并 make 编译
-setup = ("rm -rf %s && mkdir -p %s && cp -r /mnt/c/Users/<用户名>/AppData/Local/Temp/%s/proj/* %s/ "
-         "&& cd %s && make 2>&1 | tail -3" % (wsl_proj, wsl_proj, os.path.basename(tmp), wsl_proj, wsl_proj))
+setup = ("rm -rf %s && mkdir -p %s && cp -r %s/%s/proj/* %s/ "
+         "&& cd %s && make 2>&1 | tail -3" % (wsl_proj, wsl_proj, _wsl_tmp, os.path.basename(tmp), wsl_proj, wsl_proj))
 r = wsl(setup)
 check("make 编译通过（gcc 零警告）", r.returncode == 0 and "error" not in r.stdout.lower() and "warning" not in r.stdout.lower())
 run_out = wsl("cd %s && ./app" % wsl_proj)

@@ -23,11 +23,35 @@ def _temp_root():
 # 统一前缀：登记表兜底扫描 %TEMP% 依赖此前缀。
 # 精确白名单待同步 WSL/GitHub 时补充（平台差异）。当前语义级前缀 + 兼容现有测试前缀。
 UNIFIED_PREFIX = "opencode_test_"
-KNOWN_TEST_PREFIXES = (
-    "opencode_test_", "gate_test_", "sp_", "inject_test_", "pc_test_",
-    "sv_cfg_", "us_test_", "us_merge_", "us_revert_", "us_remote_",
-    "us_port_", "us_popup_", "plugin_test_", "syncproj_",
-)
+# 精确白名单：框架测试临时目录前缀 -> 来源（语义化，防误删非框架临时目录）。
+# 防误删双判据：匹配需同时满足 ① 目录名以某前缀开头 ② 目录名长度 ≥ 前缀长度 + MIN_SUFFIX
+# （要求有实际的随机后缀，排除 "_" 裸目录 / 极短前缀被其它软件 3 字符目录误撞，如 "sp_a"/"us_ab"）。
+# 同步时按平台（Win %TEMP% / WSL /tmp）可在此扩展——不得放宽 MIN_SUFFIX 削弱防误删。
+MIN_SUFFIX = 3
+KNOWN_TEST_PREFIXES = {
+    "opencode_test_": "tmp_registry 统一前缀（哨兵）",
+    "opencode_test_reg_": "test_tmp_registry（登记表守护测试隔离根）",
+    "gate_test_":    "test_evolution_gate（gate 测试隔离根）",
+    "sp_":           "test_sync_push（git 临时仓库）",
+    "inject_test_":  "test_inject_skills",
+    "pc_test_":      "test_path_convert",
+    "sv_cfg_":       "test_skill_validate_config",
+    "us_test_":      "test_update_skill",
+    "us_merge_":     "test_update_skill（合并模拟）",
+    "us_revert_":    "test_update_skill（回退）",
+    "us_remote_":    "test_update_skill（远端）",
+    "us_port_":      "test_update_skill（可移植）",
+    "us_popup_":     "test_update_skill（弹窗）",
+    "plugin_test_":  "test_plugin.js",
+    "syncproj_":     "test_plugin.js（项目副本同步）",
+}
+
+def _is_framework_tmp_dir(name):
+    """精确判定目录名是否为框架临时目录（防误删双判据：前缀 + 最小后缀长度）。"""
+    for pre in KNOWN_TEST_PREFIXES:
+        if name.startswith(pre) and len(name) >= len(pre) + MIN_SUFFIX:
+            return True
+    return False
 
 def _read():
     p = _registry_path()
@@ -129,13 +153,18 @@ def cleanup_dead():
     return dead
 
 def scan_residue():
-    """扫描临时根下已知前缀残留，返回未登记或仍存在的临时路径清单（供审计告警，不自动删）。"""
+    """扫描临时根下框架临时目录残留，返回路径清单（供审计告警，不自动删）。
+    用 _is_framework_tmp_dir 精确判定（前缀 + 最小后缀双判据，防误删非框架目录）。"""
     root = _temp_root()
     found = []
-    for d in os.listdir(root) if os.path.isdir(root) else []:
-        full = os.path.join(root, d)
-        if os.path.isdir(full) and any(d.startswith(pre) for pre in KNOWN_TEST_PREFIXES):
-            found.append(full)
+    if os.path.isdir(root):
+        try:
+            for d in os.listdir(root):
+                full = os.path.join(root, d)
+                if os.path.isdir(full) and _is_framework_tmp_dir(d):
+                    found.append(full)
+        except Exception:
+            pass
     return found
 
 # --- 统一入口调用接口（test_runner 用它做收口）---

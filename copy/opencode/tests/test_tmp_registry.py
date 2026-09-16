@@ -59,6 +59,18 @@ os.makedirs(os.path.join(TEST_TMP, "opencode_test_scanto"), exist_ok=True)
 res = r.scan_residue()
 check("scan_residue 扫到已知前缀残留", any("gate_test_scanme" in p for p in res) and any("opencode_test_scanto" in p for p in res))
 
+# 5b. 防误删精确化：_is_framework_tmp_dir 的防误删双判据（前缀 + 最小后缀）
+# 拒绝过短/极简目录名（防短前缀撞非框架目录），拒绝裸前缀目录
+_ok_len1 = r._is_framework_tmp_dir("gate_test_abcd1234")
+_ok_len2 = r._is_framework_tmp_dir("sp_abcd1234")
+_check_no1 = r._is_framework_tmp_dir("sp_a")          # 前缀后仅 1 字符，不足 MIN_SUFFIX=3
+_check_no2 = r._is_framework_tmp_dir("us_ab")         # 前缀后仅 2 字符
+_check_no3 = r._is_framework_tmp_dir("gate_test_")    # 裸前缀目录（无后缀）
+_check_no4 = r._is_framework_tmp_dir("microsoft_cache")  # 非框架前缀
+check("防误删：有效后缀目录被识别为框架临时目录", _ok_len1 and _ok_len2)
+check("防误删：短前缀（后缀<MIN_SUFFIX）不被误判", (not _check_no1) and (not _check_no2) and (not _check_no3))
+check("防误删：非框架前缀目录不被误判", not _check_no4)
+
 # 6. 登记表文件存在且为列表结构
 check("登记表文件存在且初态为列表", os.path.exists(regfile) and isinstance(r._read(), list))
 
