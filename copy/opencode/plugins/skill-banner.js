@@ -11,6 +11,7 @@ const TRACE_FILE = TEST_HOME ? join(TEST_HOME, "trace.jsonl") : join(HOME, ".con
 const LOG_FILE = TEST_HOME ? join(TEST_HOME, "plugin-evolution.log") : join(HOME, ".config", "opencode", "plugins", "plugin-evolution.log")
 const ELOG = TEST_HOME ? join(TEST_HOME, "evolution_log.txt") : join(HOME, ".config", "opencode", "skills", "default", "evolution_skill", "evolution_log.txt")
 const GATE = join(HOME, ".config", "opencode", "tools", "evolution_gate.py")
+const RUNNER = join(HOME, ".config", "opencode", "tools", "test_runner.py")
 const API_TEST = join(HOME, ".config", "opencode", "tests", "test_platform_api.py")
 const INJECT = join(HOME, ".config", "opencode", "tools", "inject_skills.py")
 
@@ -95,6 +96,19 @@ function runGate(action, sid) {
     return out.trim()
   } catch (e) {
     log("evolution_gate " + action + " 执行失败：" + (e && e.message ? String(e.message).slice(0, 200) : ""))
+    return ""
+  }
+}
+
+function runTestRunner(sid) {
+  // 统一测试入口：gate 的测试执行（--check）经 test_runner 门面（第1层收口），完整透传输出供进化待办注入
+  try {
+    const out = execSync(`python "${RUNNER}" --gate --sid "${sid}"`, {
+      timeout: 600000, encoding: "utf8", windowsHide: true,
+    })
+    return out.trim()
+  } catch (e) {
+    log("test_runner --gate 执行失败：" + (e && e.message ? String(e.message).slice(0, 200) : ""))
     return ""
   }
 }
@@ -415,7 +429,8 @@ export const SkillBanner = async ({ client, directory }) => {
           recordTrace(sid, { phase: "idle" })
           log("session.idle 触发，执行机器步骤并写进化待办（会话 " + sid + "）")
           // 进化门禁：机制步骤由脚本确定性执行（流水兜底+自动测试，纯文件操作无 UI 副作用）
-          const gateOut = runGate("--check", sid)
+          // 2026-09-16：gate 的测试执行统一走 test_runner 门面（第1层收口），--snapshot/--check-5step 仍直调 gate
+          const gateOut = runTestRunner(sid)
           if (gateOut) {
             log("evolution_gate 门禁输出：\n" + gateOut.slice(0, 600))
           }

@@ -19,8 +19,8 @@ r = subprocess.run([sys.executable, INJECT, proj], capture_output=True, encoding
 check("首次注入 rc=0", r.returncode == 0, str(r.returncode))
 skills_dir = os.path.join(proj, ".opencode", "skills")
 names = sorted(d for d in os.listdir(skills_dir) if os.path.isdir(os.path.join(skills_dir, d)))
-check("注入 6 个 skill", names == ["3gpp_skill", "evolution_skill", "files_skill", "find_skill", "program_skill", "update_skill"], str(names))
-check("default 容器平铺（evolution_skill 在项目 skills 根）", "evolution_skill" in names)
+check("注入 8 个 skill", names == ["3gpp_skill", "evolution_skill", "files_skill", "find_skill", "program_skill", "session_compress_skill", "task_tracking_skill", "update_skill"], str(names))
+check("default 容器平铺（evolution_skill/task_tracking_skill 在项目 skills 根）", "evolution_skill" in names and "task_tracking_skill" in names)
 
 # 2. description 改写（仅显式触发 → 默认触发）
 c = open(os.path.join(skills_dir, "files_skill", "SKILL.md"), encoding="utf-8").read()
@@ -31,7 +31,7 @@ check("全局仅显式声明已移除", "仅显式触发，不靠关键词自动
 r2 = subprocess.run([sys.executable, INJECT, proj], capture_output=True, encoding="utf-8", errors="replace", timeout=120)
 check("重复注入幂等（rc=0）", r2.returncode == 0)
 names2 = sorted(d for d in os.listdir(skills_dir) if os.path.isdir(os.path.join(skills_dir, d)))
-check("重复注入后仍 6 个（无残留目录）", names2 == names, str(names2))
+check("重复注入后仍 8 个（无残留目录）", names2 == names, str(names2))
 
 # 4. 覆盖更新同步：项目副本被修改后重注入恢复为全局版
 victim = os.path.join(skills_dir, "files_skill", "SKILL.md")

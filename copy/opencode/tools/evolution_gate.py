@@ -16,6 +16,12 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 CFG = os.path.join(os.path.expanduser("~"), ".config", "opencode")
 TOOLS = os.path.join(CFG, "tools")
 TESTS = os.path.join(CFG, "tests")
+# tmp_registry 加载（纯 stdlib；失败则 _REG_GATE=None 收口增强失效但不影响 gate 本体）
+try:
+    _spec = importlib.util.spec_from_file_location("tmp_registry", os.path.join(TOOLS, "tmp_registry.py"))
+    _REG_GATE = importlib.util.module_from_spec(_spec); _spec.loader.exec_module(_REG_GATE)
+except Exception:
+    _REG_GATE = None
 # 测试隔离（统一开关）：OPENCODE_TEST_HOME 设置时所有运行时数据路径（流水/快照）指向该临时目录；
 # 未设置时走真实路径。测试只需设一个环境变量即可全隔离，禁止再加散落变量（防补丁蔓延）
 TEST_HOME = os.environ.get("OPENCODE_TEST_HOME") or None
@@ -92,7 +98,9 @@ def classify_change(fp):
     if "/skills/" in rel and rel.endswith("SKILL.md"):
         return "skill"
     if "/tests/" in rel and (rel.endswith(".py") or rel.endswith(".js")):
-        return "test"
+        # 仅 tests 根目录 test_ 前缀的独立测试归为 "test"；排除 skill_validate.py/path_convert.py 等附随工具脚本
+        #（2026-09-16 修复：此前会把 tests 根非 test_ 工具文件误归 "test"，致 docs-sync 配漏检测与精准触发误伤）
+        return "test" if os.path.basename(fp).startswith("test_") else None
     if "/tools/" in rel and rel.endswith(".py"):
         return "tool"
     if "/plugins/" in rel:
@@ -415,12 +423,23 @@ def do_check(sid):
     # 2. 按改动类型自动跑对应测试（docs-sync.md 映射表程序化落地：一致性测试全跑，防配套漏更）
     results = {}
     def run_test(name, cmd, cwd=TESTS):
+        # 第2层收口：测试用例级占位登记（源码层面不摸真实临时文件路径），跑完 finally 清理+去除登记
+        if _REG_GATE is not None:
+            try:
+                _probe = os.path.join(_REG_GATE._temp_root(), "gate_run_" + name.replace(":", "_"))
+                _REG_GATE.register(_probe, source="gate_run:" + name, phase="pre")
+            except Exception:
+                pass
         try:
             r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8",
                                errors="replace", timeout=180, cwd=cwd)
             results[name] = (r.returncode, r.stdout.strip().splitlines()[-1] if r.stdout.strip() else "")
         except Exception as e:
             results[name] = (-1, str(e)[:100])
+        finally:
+            if _REG_GATE is not None:
+                try: _REG_GATE.cleanup_test("gate_run:" + name)
+                except Exception: pass
     py = sys.executable
     if any("skills" in fp for fp in changed):
         run_test("skill_validate", [py, os.path.join(TESTS, "skill_validate.py"), os.path.join(CFG, "skills")])
@@ -439,6 +458,17 @@ def do_check(sid):
             t2 = os.path.join(base, "tests", "test_compile_template.py")
             if os.path.isfile(t2):
                 run_test("L1:program_compile", [py, t2])
+    # 测试文件自身改动精准触发回归（2026-09-16 补齐：与 skill 的 L1 精准触发对称——改哪个 test 跑哪个 test；
+    # 复用 classify_change 分类，再限 test_ 前缀规避其对 tests 根下非 test_ 工具文件（skill_validate.py/path_convert.py）
+    # 的误分类；仅限 tests 根目录可独立执行的 test_*.py，.js 走 test_plugin 专项）
+    test_hits = set()
+    for fp in list(changed) + list(new_files):
+        if classify_change(fp) == "test":
+            base = os.path.basename(fp)
+            if base.startswith("test_") and base.endswith(".py") and os.path.isfile(os.path.join(TESTS, base)):
+                test_hits.add(base)
+    for tn in sorted(test_hits):
+        run_test("TEST:" + tn, [py, os.path.join(TESTS, tn)])
     if any(fp.endswith("regedit.md") for fp in changed):
         run_test("test_regedit", [py, os.path.join(TESTS, "test_regedit.py")])
     if any("plugins" in fp for fp in changed):

@@ -63,6 +63,26 @@ check("经验健康引擎输出（方案丁：待验证清单/deprecated 校验/
 check("L1 领域自测精准触发（改动 skill 时自动跑该 skill tests/test_skill_self.py）", "L1:ztmp_gate_skill" in r.stdout)
 check("经验健康归属分组输出（分域健康监控）", "按归属分组" in r.stdout)
 
+# 3b. 测试文件自身改动精准触发回归（2026-09-16 新增：改 tests 根下 test_*.py 时，gate 触发该测试自身；与 skill 的 L1 精准触发对称）
+tmp_test = os.path.join(CFG, "tests", "test_ztmp_gate_trigger.py")
+open(tmp_test, "w", encoding="utf-8").write("# -*- coding: utf-8 -*-\nimport sys\nprint(\"ztmp gate trigger ok\")\nsys.exit(0)\n")
+r = run("--snapshot", sid)
+time.sleep(0.05)
+open(tmp_test, "a", encoding="utf-8").write("# v2\n")
+r = run("--check", sid)
+check("测试文件自身改动精准触发（改 test_ztmp_gate_trigger.py 时输出 TEST:test_ztmp_gate_trigger）",
+      "TEST:test_ztmp_gate_trigger" in r.stdout and "ztmp gate trigger ok" in r.stdout)
+os.remove(tmp_test)
+# 非 test_ 前缀的 tests 根工具文件（如 skill_validate.py/path_convert.py）不应被 test 精准触发误分类
+ztmp_tool = os.path.join(CFG, "tests", "ztmp_audit_tool.py")
+open(ztmp_tool, "w", encoding="utf-8").write("# -*- coding: utf-8 -*-\n# ztmp audit tool (non-test)\n")
+r = run("--snapshot", sid)
+time.sleep(0.05)
+open(ztmp_tool, "a", encoding="utf-8").write("# v2\n")
+r = run("--check", sid)
+check("非 test_ 前缀 tests 工具文件不触发 TEST（规避 classify 误分类）", "TEST:ztmp_audit_tool" not in r.stdout)
+os.remove(ztmp_tool)
+
 # 4. 快照文件清理
 import glob
 snaps = glob.glob(os.path.join(SNAPDIR, "gate_" + sid + ".json"))
@@ -99,6 +119,8 @@ _gm = _ilu7.module_from_spec(_gate); _gate.loader.exec_module(_gm)
 check("classify_change 分类正确（skill）", _gm.classify_change(r"C:\x\skills\foo_skill\SKILL.md") == "skill")
 check("classify_change 分类正确（test）", _gm.classify_change(r"C:\x\tests\test_a.py") == "test")
 check("classify_change 分类正确（rule）", _gm.classify_change(r"C:\x\regedit.md") == "rule")
+check("classify_change 非 test_ 前缀 tests 工具不归 test（2026-09-16 修复）",
+      _gm.classify_change(r"C:\x\tests\skill_validate.py") is None and _gm.classify_change(r"C:\x\tests\path_convert.py") is None)
 # 只改 skill 未同步配套 → 检出漏更
 w = _gm.check_docs_sync([os.path.join(CFG, r"skills\3gpp_skill\SKILL.md")])
 check("只改 SKILL.md 检出配套漏更（instructions/regedit/tests README）", len(w) == 3)
@@ -197,6 +219,11 @@ for _d in ("_gate_test_skill", "_gate_test_skill2", "ztmp_new_skill_detect", "zt
     shutil.rmtree(os.path.join(CFG, "skills", _d), ignore_errors=True)
 if os.path.exists(new_tool):
     os.remove(new_tool)
+# 清理 tests 根临时测试/工具文件（2026-09-16：纳入统一清理，防用例中途异常残留、污染下一会话 gate --check 的 changed 检测）
+for _tf in ("test_ztmp_gate_trigger.py", "ztmp_audit_tool.py"):
+    _p = os.path.join(CFG, "tests", _tf)
+    if os.path.exists(_p):
+        os.remove(_p)
 print("  （注：gate 测试流水与快照已全隔离到临时目录，真实数据零污染）")
 
 print("\n结果：通过 %d 项，失败 %d 项" % (pass_n, fail_n))

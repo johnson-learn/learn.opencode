@@ -26,6 +26,7 @@
 10. **experimental API 使用前提**：opencode 配置字段"被解析≠被消费"——必须用 debug config + 二进制字符串证据 + 新对话实测三段法核实后才可依赖
 11. **语言跟随裁定规则**：语言跟随的唯一权威依据=当条消息实际语言（思考/回答/输出三者一致跟随）；平台语言指令（【语言指令·平台检测】）只是会话默认基调兜底，与当条消息冲突或平台检测失效时一律以当条消息实际语言为准（规则兜底写入 instructions.md 第 1 条裁定条款）
 12. **进化质量与可持续性**：① 固化判定四条件——不满足只记流水事实类；② 经验状态标记（active/deprecated/invalidated，只追加标记不删改历史）；③ 重要经验二次验证（标待二次验证→下次任务验证→记结果）；④ 注入量管控（四注入文件合计上限 70KB；触顶时弹窗让用户选改门限或沿用）；⑤ 使用率自审（约 10 次会话未被提及→提示下沉/标 deprecated）；⑥ 冲突显式裁决（禁止静默二选一，响应中标注并同步改旧条目；弹窗决策）
+13. **改谁归谁精准触发（含测试层）**：框架自动测试触发遵循"改谁归谁"——改 skill 跑该 skill 的 L1 测试、改 regedit 跑 test_regedit、改插件跑 test_plugin、**改 tests 根下 test_*.py 跑该测试自身**（evolution_gate --check 复用 classify_change 生成 TEST:<file> 精准触发，与 L1 对称）；classify_change 对 tests 根**非 test_ 前缀的附随工具脚本**（skill_validate.py/path_convert.py 等）一律不归 "test" 类型（限定 test_ 前缀），防 docs-sync 配套漏更检测与精准触发误伤（2026-09-16 修复固化；前版本缺 test 层触发致改测试无自动化回归、非 test_ 工具被误归 test）
 
 ### 同步与规范
 

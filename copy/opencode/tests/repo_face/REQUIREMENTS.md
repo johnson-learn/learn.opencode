@@ -2,7 +2,7 @@
 
 # REQUIREMENTS.md — 新电脑环境依赖清单与下载途径
 
-> 本清单覆盖本仓库 6 个全局 skill（3gpp_skill / files_skill / find_skill / program_skill / update_skill / evolution_skill）与 AGENTS.md 工作约定的全部工具依赖。
+> 本清单覆盖本仓库 8 个全局 skill（3gpp_skill / files_skill / find_skill / program_skill / update_skill / session_compress_skill / evolution_skill / task_tracking_skill）与 AGENTS.md 工作约定的全部工具依赖。
 > 安装方式：**推荐直接运行 `setup\setup-windows.ps1`**（2026-09-01 起为检测模式：只检测+修复配置，不自动安装；未装工具提示建议命令后跳过，装好后重跑自动补齐），本文件是它的依据与手动安装备查表。
 > 所有工具均可纯命令行安装，无 GUI 操作；下载途径同时给出官方源与国内镜像（按网络环境选一）。
 

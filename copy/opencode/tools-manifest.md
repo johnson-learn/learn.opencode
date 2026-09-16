@@ -14,7 +14,7 @@
 | D. OCR 与公式识别 | 2 | pip |
 | E. 网络与同步 | 5 | 自带/apt |
 | F. 编程环境 | 3 | 离线包/apt |
-| G. 校验与辅助 | 8 | 自带/脚本 |
+| G. 校验与辅助 | 10 | 自带/脚本 |
 
 ---
 
@@ -90,6 +90,8 @@
 | evolution_gate.py（进化门禁） | 机制步骤确定性执行：--snapshot/--check/--drain/--check-5step（六步检查点检测，参数名保留历史名） | 随仓库 `copy/opencode/tools/`（框架脚本） | `python <opencode配置目录>\tools\evolution_gate.py --help`（改动用例 test_evolution_gate.py） |
 | health_check.py（健康检查） | 一键健康检查九项：核心配置/skill frontmatter/插件执行/测试可解析/门禁记录/evolution_log 待处理/**平台 API 保障**/字符边界/**注入量管控（≤70KB）**；--run 全量 / --run-quick 快子集 | 随仓库 `copy/opencode/tools/`（框架脚本） | `python <opencode配置目录>\tools\health_check.py`（改动用例 test_health_check.py 9/9） |
 | sync_push.py（推送门禁） | update_skill 第五步脚本化推送：强制校验弹窗确认标记，无标记/非 push 直接拒绝 commit/push；成功后自动清除标记 | 随仓库 `copy/opencode/tools/`（框架脚本） | `python <opencode配置目录>\tools\sync_push.py`（改动用例 test_sync_push.py 7/7） |
+| tmp_registry.py（临时文件登记表） | 统一收口测试/脚本生成临时文件的登记与清理：register/unregister/cleanup_test/managed_tmp（try/finally 治本层）/cleanup_dead（死条目自净化）/scan_residue（前缀残留扫描）；登记表 tests/tmp_registry.json 常态应为空 | 随仓库 `copy/opencode/tools/`（框架脚本） | `python <opencode配置目录>\tools\tmp_registry.py scan`（改动用例 test_tmp_registry.py） |
+| test_runner.py（统一测试入口） | 门面+收口，不含用例：按入参路由到子入口（health→health_check全量 / health-quick→快集 / gate→evolution_gate精准 / update→test_update_skill），前后用 tmp_registry 收口；新增子入口在路由表登记 | 随仓库 `copy/opencode/tools/`（框架脚本） | `python <opencode配置目录>\tools\test_runner.py --help`（改动用例 test_test_runner.py） |
 
 ---
 
@@ -111,16 +113,23 @@
 - yt-dlp：`pip install yt-dlp`
 - ImageMagick：`winget install ImageMagick.ImageMagick`
 
-## opencode 数据存储运维（机制认知，2026-09-15 实测固化）
+## opencode 数据存储运维（机制认知，2026-09-15 实测固化 / 09-16 修订）
 
-> opencode 的会话/事件数据存于 SQLite 库 `opencode.db`（WAL 模式 + `auto_vacuum=0`）。
+> opencode 的会话/事件数据存于 SQLite 库 `opencode.db`（WAL 模式；是否 auto_vacuum 以实测 PRAGMA 为准，勿预设）。
 
 | 项目 | 实测结论 |
 |---|---|
 | 数据位置 | `%USERPROFILE%\.local\share\opencode\`（opencode.db / -wal / -shm，Windows） |
 | 膨胀元凶 | `event` 表全量事件流，尤其 `message.part.updated`（每次流式输出更新都带完整 part 快照）——一个超长会话可累计数百 MB（实测单个会话 673MB） |
-| 删除会话 | TUI 删除会话会**逻辑删除** event/message 行（实测该会话 0 残留）；但删除当下不缩物理文件（freelist 累积） |
-| 空间回收 | **opencode 重启/关闭时自动 compact/VACUUM 回收**——实测删除 897MB 事件后重启，db 从 908MB 自动瘦到 11.64MB、integrity_check ok、数据完好。**无需手动 VACUUM、无需改 auto_vacuum** |
-| 控制膨胀建议 | 定期删除不再需要的超长会话（流式事件元凶）+ 定期重启 opencode，即可自动保持紧凑 |
-| 诊断命令 | 查孤儿残留：`SELECT COUNT(*),SUM(LENGTH(data)) FROM event WHERE aggregate_id='<sessionId>'`；查空闲页：`PRAGMA freelist_count`（可回收量）与 `PRAGMA page_count`（物理页数）；`PRAGMA integrity_check` 验完整性 |
+| 删除会话 | TUI 删除会话会**删除** `session` 行 + 该会话全部 `event` 行（实测含 `ses_` 前缀的 aggregate_id 查不到任何残留）；但**删除当下物理文件不缩小**（实测 27.6MB→删后 27.72MB，几乎不变；且 freelist_count 可能为 0=页被复用/已整理，不必然累积空闲页） |
+| 空间回收 | **重启/关闭会把 WAL checkpoint 清空**（实测 WAL 4.2MB→32B）。**是否自动 VACUUM 缩库不必然**——实测删除会话后重启，物理库几乎不变（27.7MB 维持、`freelist_count=0`）；也曾有删除 897MB 事件后重启 db 从 908MB→11.64MB 的缩库实例。故"重启必自动缩库"不可一概而论，实际取决于被删数据占比与页复用状态，勿作为必然承诺；需要确定性缩库时才考虑手动 `VACUUM` |
+| 控制膨胀建议 | 定期删除不再需要的超长会话（流式事件元凶）+ 定期重启 opencode 清空 WAL；物理瘦身主要靠删除占用大头的大会话（如单个 16MB 的 event 流），小会话删除对体积影响小 |
+| 诊断命令 | **注意 `event.aggregate_id` 带 `ses_` 前缀**（如 `ses_f5d264bdcffex7PvHataG5owPR`），裸 sessionId 查不到——查孤儿残留用 `SELECT COUNT(*),SUM(LENGTH(data)) FROM event WHERE aggregate_id LIKE '%<sessionId>\''` 或完整前缀；查空闲页：`PRAGMA freelist_count`（可回收量）与 `PRAGMA page_count`（物理页数）；`PRAGMA integrity_check` 验完整性 |
 | 注意 | 有 opencode 进程运行时 db 被独占锁定，只读连接用 `file:...?mode=ro` 可查（VACUUM INTO 需目标可写）；重启前确认无遗漏会话无需保留 |
+
+
+
+
+
+
+

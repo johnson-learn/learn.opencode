@@ -41,7 +41,13 @@ EXCLUDE_PAT = [
     r"\s",  # 含空格=命令示例
     r"\.json$.*\.json$",  # 无
 ]
+# 运行时产物豁免：skill 执行时生成到用户工作目录的产物名（非框架静态文件，在框架内不核验存在性）
+# 例：session_compress_skill -> session.md/session.txt；此类名称即使出现在 SKILL.md 反引号中也不算框架引用
+RUNTIME_ARTIFACT_NAMES = {"session.md", "session.txt"}
+
 def skip_ref(ref):
+    if ref in RUNTIME_ARTIFACT_NAMES:
+        return True
     for p in EXCLUDE_PAT:
         if re.search(p, ref):
             return True
@@ -109,6 +115,14 @@ for f in sorted(listed - actual):
     print("    幽灵:", f)
 for f in sorted(actual - listed):
     print("    漏登:", f)
+
+# 运行时产物豁免正向用例：session_compress_skill 等生成物名必须被 skip_ref 豁免，不当框架引用
+# （防未来误删 RUNTIME_ARTIFACT_NAMES 或豁免逻辑导致 session 产物重新误报）
+_artifact_exempt_ok = all(skip_ref(n) for n in ("session.md", "session.txt"))
+# 对照：一个确实缺失的普通引用不应被豁免（保证豁免只针对产物名，不泛化放过真实缺失引用）
+_normal_ref_still_checked = not skip_ref("missing_framework_ref.md")
+check("运行时产物豁免生效（session.md/session.txt 豁免，普通缺失引用仍检查）",
+      _artifact_exempt_ok and _normal_ref_still_checked)
 
 print("\n结果：通过 %d 项，失败 %d 项" % (pass_n, fail_n))
 sys.exit(1 if fail_n else 0)

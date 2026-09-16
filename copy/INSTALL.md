@@ -71,9 +71,9 @@ robocopy opencode\plugins "%USERPROFILE%\.config\opencode\plugins" /E
 
 ## 验证清单
 
-1. 重启 opencode，会话创建时应 toast 展示全局技能清单（6 个 skill）
+1. 重启 opencode，会话创建时应 toast 展示全局技能清单（8 个 skill）
 2. 按 `tools-manifest.md` 逐类检查工具（A~G 检查命令）
-3. 跑测试自检：`python "%USERPROFILE%\.config\opencode\tests\skill_validate.py" "%USERPROFILE%\.config\opencode\skills"`，其余用例见 `tests\README.md`
+3. 跑测试自检：`python "%USERPROFILE%\.config\opencode\tests\skill_validate.py" "%USERPROFILE%\.config\opencode\skills"`，其余用例经统一入口 `python "%USERPROFILE%\.config\opencode\tools\test_runner.py" --health` 全量驱动（见 `tests\README.md`）
 4. 进化门禁：会话结束后查 `plugins\plugin-evolution.log` 应有 evolution_gate 记录
 5. 首次 update_skill 需指出同步目标目录
 

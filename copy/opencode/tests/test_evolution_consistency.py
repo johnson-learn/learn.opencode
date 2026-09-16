@@ -24,6 +24,7 @@ for name in ("3gpp_skill", "files_skill", "find_skill", "program_skill"):
         if os.path.exists(candidate):
             other_skills += open(candidate, encoding="utf-8").read()
 other_skills += open(os.path.join(CFG, "skills", "default", "task_tracking_skill", "SKILL.md"), encoding="utf-8").read()
+other_skills += open(os.path.join(CFG, "skills", "session_compress_skill", "SKILL.md"), encoding="utf-8").read()
 
 # 1. 归属二分铁律已写入 AGENTS.md 与 evolution_skill
 check("AGENTS.md 含归属二分铁律", "归属二分铁律" in agents and "只写 evolution_log.txt = 归属失败" in agents)

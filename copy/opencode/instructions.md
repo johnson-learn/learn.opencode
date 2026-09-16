@@ -110,6 +110,7 @@
 5. **子技能资源库规范**：聚合类 skill 的子技能放 `modules/<目录>/GUIDE.md`（SKILL.md 改名 GUIDE.md，不独立注册）；路由表用 `modules/<目录>` 引用
 5b. **templates/ 目录约定**：固定格式产出（工程骨架/输出模板/固化模板）放 `templates/`，SKILL.md 用一句话索引；program_skill 的 C 工程骨架、evolution_skill 的六步固化模板即此用法——模板是"复制即用"的产出物，非知识条目，不随入口注入
 5c. **L1 领域自测约定**：每个 skill 必须有 `<opencode配置目录>\skills\<skill名>\tests\test_skill_self.py`（入口规范/模块引用无悬空/references 无悬空/技能特定断言）+ SKILL.md 末尾「本 skill 经验索引」节；evolution_gate 精准触发（改哪个跑哪个）；涉及可执行骨架的 skill（如 program_skill）另配行为自测（实编译实运行）
+5d. **测试归口与临时文件收口**：新增测试就近归子入口（框架机制→health_check/gate、同步→update_skill）；无子入口则新建并登记到 `tools/test_runner.py` 路由表 + regedit/tests-README（违约由 test_test_runner 校验）。测试创建临时文件用 `tools/tmp_registry.py` 的 `managed_tmp`（with 内登记、退出 finally 清理+去登记）或 register/unregister；`tests/tmp_registry.json` 常态应为空；运行经 test_runner 门面 + health_check/gate 循环内 tmp_registry 两层收口
 6. **环境注意章节（必须）**：本机已装工具、调用规范（全路径/特殊参数）、未装大件（需用户同意）
 7. **权威源规则**：领域有官方权威源（如 3GPP 官网）时，必须写"权威源声明"并规定"其它资料可参考，但以官网为准"
 8. **持续更新约定**：涉及外部资源（网站/FTP）的 skill 必须写"后续访问发现新变化时同步更新本 skill"
@@ -128,7 +129,8 @@
 | `program_skill` | 编程开发（默认 WSL Linux 环境） |
 | `update_skill` | 技能双向同步更新（仅显式触发） |
 | `evolution_skill` | 智能进化协议执行器（默认触发） |
-| `task_tracking_skill` | 任务窗/任务跟踪执行器（默认触发） |
+| `task_tracking_skill` | 任务窗/任务跟踪执行器（默认触发，AGENTS 铁律第 8 条任务窗强制的执行载体，与 evolution_skill 同级） |
+| `session_compress_skill` | 会话压缩/上下文精简执行器（仅显式触发，按模板生成 session.md 供新会话继承） |
 
 ## 项目 skill（默认触发）
 

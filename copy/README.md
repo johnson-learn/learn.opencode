@@ -1,6 +1,6 @@
 # opencode 工作环境迁移包
 
-> 本仓库 = 7 个全局 skill（3gpp_skill / files_skill / find_skill / program_skill / update_skill / evolution_skill / task_tracking_skill）+ 全局配置 + 进化门禁 + 辅助脚本 + 一键安装脚本。
+> 本仓库 = 8 个全局 skill（3gpp_skill / files_skill / find_skill / program_skill / update_skill / session_compress_skill / evolution_skill / task_tracking_skill）+ 全局配置 + 进化门禁 + 统一测试入口 + 辅助脚本 + 一键安装脚本。
 > 目标：任何一台新的 Windows 办公电脑，克隆本仓库后运行一个脚本，即可复现完整工作环境。
 
 ## 目录结构
@@ -20,17 +20,18 @@ copy\
 │   ├── tools-manifest.md         工具总清单（唯一权威，分类 A~G + 待补充）
 │   ├── package.json              skill-banner 插件依赖
 │   ├── plugins\                 插件（会话 toast + 进化门禁触发）
-│   ├── skills\                  显式触发 skill（5 个，SKILL.md + modules 子技能库）
+│   ├── skills\                  显式触发 skill（6 个，SKILL.md + modules 子技能库）
 │   │   ├── 3gpp_skill\          3GPP 移动通信标准专家
 │   │   ├── files_skill\         文件识别/OCR/公式/文档处理
 │   │   ├── find_skill\          网络资源获取与镜像加速
 │   │   ├── program_skill\       编程开发（默认 WSL Linux）
 │   │   ├── update_skill\        技能双向同步（五步：吸收远端→修改→自测→弹窗确认→推送）
+│   │   ├── session_compress_skill\  会话压缩/上下文精简（按模板生成 session.md 供新会话继承）
 │   │   └── default\               默认触发执行器（2 个）
 │   │       ├── evolution_skill\       进化执行器（含进化规则 evolution.md 与流水 evolution_log.txt）
 │   │       └── task_tracking_skill\   任务窗/任务跟踪执行器
-│   ├── tests\                   测试用例（10 套 229 项，随仓库同步）
-│   └── tools\                   修炼工具（evolution_gate 进化门禁 / path_convert / inject_skills 等）
+│   ├── tests\                   测试用例（20 套，随仓库同步；统一入口 test_runner 驱动 + 临时文件登记清洗 tmp_registry 收口）
+│   └── tools\                   修炼工具（evolution_gate 进化门禁 / test_runner 统一测试入口 / tmp_registry 登记清洗 / path_convert / inject_skills 等）
 ├── scripts\                   ← 部署到 %LOCALAPPDATA%\Temp\opencode\ 的辅助脚本
 ├── setup\
 │   ├── setup-windows.ps1         一键配置（主脚本，检测模式：只检测+修复，不自动安装）
@@ -51,7 +52,7 @@ cd copy/setup
 # 2. 一键安装（按需加开关：-SkipWsl -SkipPip 等；国内网络加 -UseChinaMirror）
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File setup\setup-windows.ps1 -UseChinaMirror
 
-# 3. 重启终端，opencode 启动即带 7 个全局 skill
+# 3. 重启终端，opencode 启动即带 8 个全局 skill
 ```
 
 详细步骤与手动安装备查：见 `INSTALL.md`；依赖清单与下载途径：见 `REQUIREMENTS.md`。

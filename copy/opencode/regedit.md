@@ -50,6 +50,7 @@
 | update_skill | `skills\update_skill\SKILL.md` | D | 仅显式"update_skill"；含双向同步全流程与同步边界铁律 |
 | evolution_skill | `skills\default\evolution_skill\SKILL.md` | C | 进化执行器，默认触发（见进化层） |
 | task_tracking_skill | `skills\default\task_tracking_skill\SKILL.md` | C | 任务窗执行器，默认触发；任务窗强制的执行载体，与 evolution_skill 同级 |
+| session_compress_skill | `skills\session_compress_skill\SKILL.md` | C+D | 全局仅显式"session_compress_skill："；项目级副本默认触发 |
 
 ## 项目技能层
 
@@ -73,9 +74,11 @@
 | fetch_skills.py | `tools\fetch_skills.py` | F | 从技能目录网站获取 skill |
 | cross_move.py | `tools\cross_move.py` | F | 跨 skill 归位 |
 | generalize.py | `tools\generalize.py` | F | 经验通用化改写 |
-| evolution_gate.py | `tools\evolution_gate.py` | E | 进化门禁脚本：session.created 时插件调 --drain（异步后台自愈补跑残留快照，max_n=3 限流）+ --snapshot；session.idle 时 --check——机制步骤（流水兜底追加/自动测试/一致性校验/**配套漏更检测（docs-sync 映射反向校验）**/**新增与删除文件检测（全目录清单快照对比，输出【新增文件】待适配清单）**/**二次验证未闭环计数**/**经验健康引擎（结构化条目扫描：待验证清单/deprecated 定位/条目级老化）**）确定性执行；**--check-5step：六步检查点检测（参数名保留历史名）+ 判定四条件声明检测 + 可追溯检测（场景数=1 须带依据）+ 三条件依据软提示** |
+| evolution_gate.py | `tools\evolution_gate.py` | E | 进化门禁脚本：session.created 时插件调 --drain（异步后台自愈补跑残留快照，max_n=3 限流）+ --snapshot；session.idle 时 --check——机制步骤（流水兜底追加/自动测试/一致性校验/**配套漏更检测（docs-sync 映射反向校验）**/**新增与删除文件检测（全目录清单快照对比，输出【新增文件】待适配清单）**/**测试文件自身改动精准触发（改 tests 根下 test_*.py 时触发该测试自身，与 skill 的 L1 触发对称）**/**二次验证未闭环计数**/**经验健康引擎（结构化条目扫描：待验证清单/deprecated 定位/条目级老化）**）确定性执行；**--check-5step：六步检查点检测（参数名保留历史名）+ 判定四条件声明检测 + 可追溯检测（场景数=1 须带依据）+ 三条件依据软提示** |
 | health_check.py | `tools\health_check.py` | F | 一键健康检查：①核心配置齐全 ②skill frontmatter+体积门限 ③插件最近执行 ④测试可解析 ⑤门禁 idle/drain 记录 ⑥evolution_log 待处理项 ⑦平台 API 依赖保障（实验性 hook 可用性）⑧字符边界规范（CRLF/BOM/编码扫描）⑨注入量管控（四注入文件合计 ≤70KB）；--run 实跑全部测试 / --run-quick 实跑快子集（跑前提示预计耗时） |
 | sync_push.py | `tools\sync_push.py` | G | 推送门禁脚本化：强制校验用户弹窗确认标记（无标记/非 push 选择直接拒绝 commit/push）；**推送前自动 to_portable（流程漏步不再可能）+ 可移植性强制阻断（残留本机用户名特征即拒绝）**；推送成功后自动清除标记；**WSL 仓库（wsl.localhost 路径）自动走 WSL 内 git 推送（SSH 密钥与 commit author 与历史一致）** |
+| tmp_registry.py | `tools\tmp_registry.py` | G | 临时文件登记表助手：统一收口测试/脚本生成的临时文件登记与清理（register/unregister/cleanup_test/managed_tmp try-finally 治本层/cleanup_dead 死条目自净化/scan_residue 前缀残留扫描）；登记表 tests\tmp_registry.json 常态应为空；统一测试入口 test_runner 收口时调用 |
+| test_runner.py | `tools\test_runner.py` | G | 统一测试入口（门面+收口，不含用例）：按入参路由到子入口（--health→health_check全量 / --health-quick→快集 / --gate→evolution_gate精准 / --update→test_update_skill），前后用 tmp_registry 收口；新增子入口在路由表登记（test_test_runner 守护校验路由表登记存在） |
 | archive\（18 个） | `tools\archive\` | F | 历史一次性脚本存档，不执行 |
 
 ## 测试层
@@ -92,11 +95,13 @@
 | test_regedit.py | `tests\test_regedit.py` | G | 注册表改动后强制（本表与实际文件系统一致性） |
 | test_tools_manifest.py | `tests\test_tools_manifest.py` | G | 工具总表改动后强制（分类计数吻合/待补充无重复/包可导入/表结构，✓） |
 | test_instructions.py | `tests\test_instructions.py` | G | instructions.md 改动后强制（章节/铁律互查/引用存在/技能清单与目录一致/编写规范，✓） |
-| test_evolution_gate.py | `tests\test_evolution_gate.py` | G | evolution_gate 改动后强制（快照/改动检测/流水兜底/自动测试/配套漏更/六步检查点/判定四条件/软提示硬告警/阈值配置/经验健康引擎/新增删除文件检测，✓） |
+| test_evolution_gate.py | `tests\test_evolution_gate.py` | G | evolution_gate 改动后强制（快照/改动检测/流水兜底/自动测试/配套漏更/六步检查点/判定四条件/软提示硬告警/阈值配置/经验健康引擎/新增删除文件检测/测试文件自身改动精准触发，✓） |
+| test_tmp_registry.py | `tests\test_tmp_registry.py` | G | tmp_registry/登记表机制改动后强制（register/unregister/cleanup_test/managed_tmp try-finally/cleanup_dead 死条目自净化/scan_residue 前缀扫描/登记表结构，✓） |
+| test_test_runner.py | `tests\test_test_runner.py` | G | test_runner 统一入口改动后强制（路由表登记子入口存在/子入口脚本存在/register_subentry/list_subentries/dry-run/未知模式，✓） |
 | test_health_check.py | `tests\test_health_check.py` | G | health_check 改动后强制（可运行/报告结构/九检查项/无失败项/regedit 登记/--run-quick 实跑/注入量管控，✓） |
 | test_sync_push.py | `tests\test_sync_push.py` | G | sync_push 改动后强制（无标记拒绝/非push拒绝/有效推送/标记清除/重推需重确认/WSL 路径判定与转换/自动 to_portable/可移植性阻断/msgfile_exists 双通道，✓） |
 | test_docs_sync.py | `tests\test_docs_sync.py` | G | docs-sync.md 改动后强制（变更类型/校验测试存在/被 regedit+AGENTS 引用，✓） |
-| test_audit_references.py | `tests\test_audit_references.py` | G | 框架引用审计（引用存在性/旧术语残留/README 双向一致，✓） |
+| test_audit_references.py | `tests\test_audit_references.py` | G | 框架引用审计（引用存在性/旧术语残留/README 双向一致；运行时产物名豁免——session_compress_skill 的 session.md/txt 等生成物不算框架引用，✓） |
 | test_repo_face.py | `tests\test_repo_face.py` | G | 仓库门面一致性（门面对照+STATE_FILES 残留+本机路径扫描+**仓库内 repo_face 镜像=门面一致性 9 对**，✓；WSL 不可达回退 repo_face 镜像） |
 | test_setup_ps1.py | `tests\test_setup_ps1.py` | G | setup-windows.ps1 自动化测试（检测模式：工具清单必须/可选分类、双通道检测、PATH 修复、未装提示跳过、无自动安装残留、共享模块 setup-check、install-tools 一键安装、tools-manifest 总表对齐、AST，✓；WSL 不可达回退 repo_face 镜像） |
 | test_inject_skills.py | `tests\test_inject_skills.py` | G | inject_skills 改动后强制（default 容器平铺/description 改写/幂等重注入/覆盖同步，✓） |

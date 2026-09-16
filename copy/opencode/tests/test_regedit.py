@@ -69,17 +69,18 @@ missing = [f for f, _ in fs_checks if not os.path.exists(os.path.join(CFG, f.rep
 check("注册表登记的 17 个文件实际存在", len(missing) == 0)
 if missing: print("    缺失:", missing)
 
-# 7. skills 目录实际 6 个全局 skill 与注册表一致
+# 7. skills 目录实际 7 个全局 skill 与注册表一致
 skill_dirs = [d for d in os.listdir(os.path.join(CFG, "skills"))
               if os.path.isdir(os.path.join(CFG, "skills", d)) and d != "default"]
 default_dirs = [d for d in os.listdir(os.path.join(CFG, "skills", "default"))
                 if os.path.isdir(os.path.join(CFG, "skills", "default", d))]
 expected_default = ["evolution_skill", "task_tracking_skill"]
-check("skills 目录 5 个 + default 2 个与注册表一致",
-      sorted(skill_dirs) == sorted(["3gpp_skill", "files_skill", "find_skill", "program_skill", "update_skill"])
+check("skills 目录 6 个 + default 2 个与注册表一致",
+      sorted(skill_dirs) == sorted(["3gpp_skill", "files_skill", "find_skill", "program_skill", "update_skill", "session_compress_skill"])
       and sorted(default_dirs) == sorted(expected_default))
 check("evolution_skill 已登记", registered("evolution_skill"))
 check("task_tracking_skill 已登记", registered("task_tracking_skill"))
+check("session_compress_skill 已登记", registered("session_compress_skill"))
 
 print("\n结果：通过 %d 项，失败 %d 项" % (pass_n, fail_n))
 sys.exit(1 if fail_n else 0)

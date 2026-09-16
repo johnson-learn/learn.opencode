@@ -631,3 +631,20 @@
 - 载体：tools-manifest.md 新增 opencode 数据存储运维章节（数据位置/膨胀元凶/删除会话/空间回收/控制建议/诊断命令/注意）
 - 内容：opencode 会对每个会话的全量事件（尤其 message.part.updated 流式更新）持久化到 SQLite 的 event 表（WAL+auto_vacuum=0），一个超长会话可数百 MB；TUI 删除会话是逻辑删除（event/message 行清除），物理文件删除当下不缩但 opencode 重启/关闭会自动 compact 回收。控制膨胀=定期删超长会话+定期重启，无需手动 VACUUM、无需改 auto_vacuum（用户选择保留原机制）。已跑 test_tools_manifest 全绿。
 
+
+[2026-09-15] HTML 输出规则精简：去掉"主线三件套"装饰性串联要求，规则入口通用化（用户指令）
+- 状态：active
+- 来源：用户指令（认为三件套"太冗余"）
+- 核心关键词：主线三件套、讲次分层、HTML 输出、通用化
+- 归属：files_skill / 3gpp_skill
+- 变更：files_skill「### HTML 格式」删除"框架与主线"条目的主线三件套（① 文首 .mainline 导览块；② 每讲设问桥接；③ 每讲小结移交句/末讲收口），改为"讲次分层结构"通用条目（h2 大章 + h3 X.Y 小节）；3gpp_skill 铁律第 8 条"主线串联结构"删去三件套（设问/小结移交/导览块/收口块/机械拼接改造法与插入技巧），保留"生命周期问题链 + 双视角落地（网络侧-终端侧）"通用方法；references/html-svg.md 同步精简
+- 数据：将 skill 中 PDCCH/BWP 等单项目特定例子通用化（去文件名佐证）——样式完整性条目去 BWP/PDCCH 佐证、MathJax 分隔符条目 PDCCH 480 个$ 例子改为通用表述、3gpp_skill 同步更新 HTML 输出要求引用（"框架与主线"→"讲次分层结构"）
+
+[2026-09-16] gate 测试文件改动无自动化回归缺口 + classify_change 非 test_ 前缀误分类修复（机制缺陷，用户确认固化）
+- 状态：active
+- 场景数：2（gate 测试文件改动无回归触发，实际踩中并用户点名；classify_change 对 tests 根非 test_ 工具脚本普遍误分类）
+- 最后验证：2026-09-16
+- 核心关键词：test 精准触发、classify_change、改谁归谁、docs-sync、L1 对称、误分类
+- 归属：framework（evolution_gate.py / test_evolution_gate.py）
+- 载体：evolution_gate.py（触发段+classify_change）；test_evolution_gate.py（+3 用例防回归）；regedit.md/test_README（配套同步）
+- 内容：① 框架「改谁归谁」精准触发覆盖 skill(L1)/regedit/plugins，唯独测试文件自身改动无自动化回归（改 test 不跑该 test，缺陷要等手动 health_check 才暴露）。已修复：gate --check 复用 classify_change，对 tests 根 test_*.py 增 TEST:<file> 精准触发，与 L1 严格对称。② classify_change 原将 /tests/ 下非 test_ 前缀附随工具脚本（skill_validate.py/path_convert.py）误归 'test'，致 docs-sync 漏更检测与精准触发误伤；已修复为 test 分类限定 test_ 前缀。③ 测试临时文件（test_ztmp_gate_trigger.py/ztmp_audit_tool.py）纳入末尾统一清理防残留污染门禁。验证：test_evolution_gate.py 46→49 全绿，health_check --run-quick OK 11/0/0。经验体现为脚本代码+注释+守护用例（可执行载体），不另立 evolution.md 规则条目。

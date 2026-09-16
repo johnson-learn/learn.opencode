@@ -38,7 +38,7 @@ def rd_face(name):
 
 # 2. copy/README 技能清单与框架一致
 r = rd("copy\\README.md") if mode == "仓库直读" else rd("COPY_README.md")
-check("copy/README 含 6 个 skill 说明", all(s in r for s in ["3gpp_skill", "files_skill", "find_skill", "program_skill", "update_skill", "evolution_skill"]))
+check("copy/README 含 8 个 skill 说明", all(s in r for s in ["3gpp_skill", "files_skill", "find_skill", "program_skill", "update_skill", "session_compress_skill", "evolution_skill", "task_tracking_skill"]))
 check("copy/README 含 default 容器结构", "default" in r and "evolution_skill" in r)
 check("copy/README 含进化门禁说明", "门禁" in r or "evolution_gate" in r)
 check("copy/README 含无权限机器说明", "无权限机器" in r or "不需要执行 update_skill" in r)
@@ -56,7 +56,7 @@ check("REQUIREMENTS 含 7 高价值工具关键词", all(x in q for x in ["playw
 
 # 5. 根 README 入口
 root = rd("README.md") if mode == "仓库直读" else rd("ROOT_README.md")
-check("根 README 含 6 个 skill 表述", "6 个 skill" in root or "6 个全局" in root)
+check("根 README 含 8 个 skill 表述", "8 个 skill" in root or "8 个全局" in root)
 
 # 6. 隐私与可移植性防线（2026-08-27 隐私事故后固化）：真实仓库直读模式检查
 if mode == "仓库直读":

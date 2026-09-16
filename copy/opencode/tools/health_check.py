@@ -11,6 +11,18 @@ CFG = os.path.join(os.path.expanduser("~"), ".config", "opencode")
 TESTS = os.path.join(CFG, "tests")
 ok, warn, fail = [], [], []
 
+def _load_registry():
+    # 加载 tools/tmp_registry.py（纯 stdlib）；失败则返回 None（收口增强失效但不影响健康检查本体）
+    import importlib.util
+    try:
+        p = os.path.join(CFG, "tools", "tmp_registry.py")
+        s = importlib.util.spec_from_file_location("tmp_registry", p)
+        m = importlib.util.module_from_spec(s); s.loader.exec_module(m)
+        return m
+    except Exception:
+        return None
+_reg = _load_registry()
+
 def add_ok(t): ok.append(t)
 def add_warn(t): warn.append(t)
 def add_fail(t): fail.append(t)
@@ -80,6 +92,15 @@ if "--run" in sys.argv or "--run-quick" in sys.argv:
         "约 30~90 秒" if quick_only else "约 5~10 分钟"))
     run_fail = []
     for f in targets:
+        # 第2层收口：测试用例级登记——登记 %TEMP% 下该测试的占位路径（非测试文件本身），跑完 finally 清理+去除登记
+        # 注意：绝不能登记测试文件本身（TESTS/f），否则 cleanup 会误删框架测试文件
+        _probe = None
+        if _reg is not None:
+            try:
+                _probe = os.path.join(_reg._temp_root(), "health_run_" + f)
+                _reg.register(_probe, source="health_run:" + f, phase="pre")
+            except Exception:
+                _probe = None
         try:
             r = subprocess.run([sys.executable, os.path.join(TESTS, f), os.path.join(CFG, "skills")] if f == "skill_validate.py" else [sys.executable, os.path.join(TESTS, f)],
                                capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300, cwd=TESTS)
@@ -87,8 +108,15 @@ if "--run" in sys.argv or "--run-quick" in sys.argv:
                 run_fail.append(f)
         except Exception as e:
             run_fail.append(f + "(" + str(e)[:40] + ")")
+        finally:
+            if _reg is not None:
+                try: _reg.cleanup_test("health_run:" + f)
+                except Exception: pass
     js = os.path.join(TESTS, "test_plugin.js")
     if not quick_only and os.path.exists(js):
+        if _reg is not None:
+            try: _reg.register(os.path.join(_reg._temp_root(), "health_run_test_plugin.js"), source="health_run:test_plugin.js", phase="pre")
+            except Exception: pass
         try:
             r = subprocess.run(["node", js], capture_output=True, text=True,
                                encoding="utf-8", errors="replace", timeout=300, cwd=TESTS)
@@ -96,6 +124,10 @@ if "--run" in sys.argv or "--run-quick" in sys.argv:
                 run_fail.append("test_plugin.js")
         except Exception as e:
             run_fail.append("test_plugin.js(" + str(e)[:40] + ")")
+        finally:
+            if _reg is not None:
+                try: _reg.cleanup_test("health_run:test_plugin.js")
+                except Exception: pass
     label = "快测试子集（%d 个）" % len(targets) if quick_only else "全部测试（%d py + test_plugin.js）" % len(py_tests)
     (run_fail and [add_fail("实跑失败: " + f) for f in run_fail]) or add_ok("实跑%s通过" % label)
 

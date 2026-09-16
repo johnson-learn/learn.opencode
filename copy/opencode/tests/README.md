@@ -18,15 +18,17 @@
 | tools-manifest 完整性（分类计数吻合/待补充无重复/包可导入/表结构） | `test_tools_manifest.py` | `python tests\test_tools_manifest.py` | ✓ 21/21 |
 | instructions.md 规则一致性（章节/铁律互查/引用存在/技能清单与目录一致/编写规范） | `test_instructions.py` | `python tests\test_instructions.py` | ✓ 31/31 |
 | evolution 一致性（evolution_log.txt 近 5 条「」声明落入规则文件/evolution.md 规则文件定位与弹窗确认流程抽查） | `test_evolution_consistency.py` | `python tests\test_evolution_consistency.py` | ✓ 15/15 |
-| evolution 门禁（快照/改动检测/流水兜底追加/自动测试触发/待补充清单/--drain 自愈补跑/max_n 限流/配套漏更检测/六步检查点（含第三步·确认）/判定四条件声明与可追溯/四条件依据软提示与渐进硬告警/阈值配置化/经验健康引擎结构化扫描/新增与删除文件检测/测试临时产物忽略） | `test_evolution_gate.py` | `python tests\test_evolution_gate.py` | ✓ 46/46 |
+| evolution 门禁（快照/改动检测/流水兜底追加/自动测试触发/待补充清单/--drain 自愈补跑/max_n 限流/配套漏更检测/六步检查点（含第三步·确认）/判定四条件声明与可追溯/四条件依据软提示与渐进硬告警/阈值配置化/经验健康引擎结构化扫描/新增与删除文件检测/测试临时产物忽略/测试文件自身改动精准触发（改哪个 test 跑哪个）/classify_change 非 test_ 前缀不误归 test/临时文件统一清理防残留） | `test_evolution_gate.py` | `python tests\test_evolution_gate.py` | ✓ 49/49 |
 | inject_skills 注入（default 容器平铺/description 改写为默认触发/幂等重注入/覆盖同步） | `test_inject_skills.py` | `python tests\test_inject_skills.py` | ✓ 8/8 |
 | 健康检查（可运行/报告结构/九检查项/无失败项/regedit 登记/--run-quick 实跑/注入量管控） | `test_health_check.py` | `python tests\test_health_check.py` | ✓ 9/9 |
 | sync_push 推送门禁（无标记拒绝/非push拒绝/有效推送/标记清除/重推需重确认/WSL 路径判定/自动 to_portable/可移植性阻断/msgfile_exists 双通道） | `test_sync_push.py` | `python tests\test_sync_push.py` | ✓ 19/19 |
-| **L1 领域自测**（各 skill 内：入口规范/模块引用无悬空/references 无悬空/技能特定断言；program_skill 另有 c-project 骨架 WSL 实编译行为自测） | `skills\<skill>\tests\test_skill_self.py` | `python skills\<skill>\tests\test_skill_self.py`（evolution_gate 改动 skill 时自动精准触发） | ✓ 8 个 skill 全绿（含新增 task_tracking_skill 任务窗执行器） |
+| **L1 领域自测**（各 skill 内：入口规范/模块引用无悬空/references 无悬空/技能特定断言；program_skill 另有 c-project 骨架 WSL 实编译行为自测） | `skills\<skill>\tests\test_skill_self.py` | `python skills\<skill>\tests\test_skill_self.py`（evolution_gate 改动 skill 时自动精准触发） | ✓ 9 个 skill 全绿（含新增 session_compress_skill 会话压缩） |
 | docs-sync 映射表完整性（变更类型/校验测试存在/被 regedit+AGENTS 引用） | `test_docs_sync.py` | `python tests\test_docs_sync.py` | ✓ 19/19 |
-| 框架引用审计（框架自有文件引用存在性/旧术语残留/README 双向一致） | `test_audit_references.py` | `python tests\test_audit_references.py` | ✓ 3/3 |
+| 框架引用审计（框架自有文件引用存在性/旧术语残留/README 双向一致 + 运行时产物豁免 session.md/session.txt 正向用例） | `test_audit_references.py` | `python tests\test_audit_references.py` | ✓ 4/4 |
 | 仓库门面一致性（门面文件与框架现状对照 + STATE_FILES 残留 + 本机路径动态扫描 + 仓库内 repo_face 镜像=门面一致性 9 对，WSL 不可达时回退 repo_face 镜像） | `test_repo_face.py` | `python tests\test_repo_face.py` | ✓ 27/27 |
 | setup-windows.ps1（检测模式：开关精简/工具清单必须可选分类/共享检测模块 setup-check/双通道检测/PATH 自动修复/未装提示跳过/无自动安装残留/npm-pip 缺失汇总/WSL 检测化/install-tools 一键安装脚本/AST 语法/部署范围/path_convert 体系/盘符动态探测/注册事件注入验证/必备工具缺失告警/tools-manifest 总表自动对齐） | `test_setup_ps1.py` | `python tests\test_setup_ps1.py` | ✓ 78/78 |
+| tmp_registry 登记表机制（register/unregister/cleanup_test/managed_tmp try-finally 治本层/cleanup_dead 死条目自净化/scan_residue 前缀扫描/登记表结构） | `test_tmp_registry.py` | `python tests\test_tmp_registry.py` | ✓ 11/11 |
+| test_runner 统一测试入口（路由表登记子入口存在/子入口脚本存在/register_subentry/list_subentries/dry-run 路由/未知模式） | `test_test_runner.py` | `python tests\test_test_runner.py` | ✓ 9/9 |
 
 > skill_validate 体积门限：默认 8KB，超限输出「待决清单」，用户选择（--set-limit 改门限 / --ignore 忽略指定 / --ignore-all 忽略全部）写入 `skill_validate_config.json` 持久化，后续一致性生效（当前门限 30KB）。
 
@@ -37,6 +39,9 @@
 3. 测试数据用临时目录，跑完清理
 4. 断言写错导致的失败也是 bug——修正断言后重跑至全绿，并记录踩坑
 5. 新用例建好后立即登记到本表
+6. **就近归口**：新增测试用例归到对应子入口下（框架机制→health_check / gate；同步→update_skill）；无对应子入口则新建独立子入口，**务必登记到 tools 目录下 test_runner.py 的路由表 + 本表**——被 health 全量（`test_runner --health`）覆盖，且临时文件由 test_runner 门面 + 子入口循环内 tmp_registry 两层收口。
+7. **新子入口登记**：在 test_runner 路由表加一行（入参→子入口命令→说明）并登记到 regedit 工具层；违约由 `test_test_runner.py` 校验（路由表登记子入口存在、子入口脚本存在）。
+8. **临时文件收口**：测试创建临时文件用 `tmp_registry.managed_tmp(...)`（with 内登记、退出 finally 清理+去登记）或 register/unregister；tests 目录下 tmp_registry.json 登记表常态应为空，残留由 `scan_residue`/`cleanup_dead` 处理。
 
 ## 本机路径约定
 
