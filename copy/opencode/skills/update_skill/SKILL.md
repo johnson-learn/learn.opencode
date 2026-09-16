@@ -138,6 +138,7 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 3. **无权限机器不受影响**：门面维护只在有权限机器的 update_skill 流程内；无权限机器 `git pull` 即得更新后的门面与 skill，不需执行 update_skill 修改
 4. **程序化核查**：`python <opencode配置目录>\tests\test_repo_face.py`（门面一致性测试：README 技能清单 vs skills 目录、INSTALL 关键步骤存在、REQUIREMENTS 权威引用）——挂入第三步自测
 5. **repo_face 镜像刷新（实测教训后固化）**：门面文件/setup 脚本/tools-manifest 任一变更后，必须同步刷新仓库内镜像 `copy\opencode\tests\repo_face\`（9 个文件：COPY_README/INSTALL/REQUIREMENTS/ROOT_README + setup-windows/setup-check/install-tools/install-wsl + tools-manifest）为对应源文件最新内容，并同步拷回本机 `tests\repo_face\`——镜像是无 WSL 机器跑 test_repo_face/test_setup_ps1 的回退数据，漂移会致无 WSL 机器测试误判；test_repo_face.py 6d 用例（仓库内镜像=门面一致性）程序化拦截漂移，镜像文件与源文件内容必须一致（仅行尾/形态允许差异）。**镜像 cp 必须用仓库内 to_portable 后的占位符版源文件（实测）**：path_convert 跳过 tests 目录（repo_face 在其下不会被转换），从本机 to_local 文件直接拷会泄漏本机路径被 6b 检出——正确顺序：cp 本机→仓库后先 to_portable 整个 opencode/，再 cp opencode/<源> → opencode/tests/repo_face/
+   - **镜像只做"源的一对一 cp"，不得单独改动镜像而不动源（2026-09-17 回归踩坑）**：源 `copy/setup/*.ps1` 的检测路径应保持真实 Windows 安装路径（`<Node目录>` 等，非本机用户名隐私，跨机一致）——test_setup_ps1 明确断言这些真实路径存在，把 setup 检测路径占位符化必致该测试断掉；注意 setup-windows.ps1 第 308 行"占位符→真实路径"部署转换环用 `<LibreOffice目录>/<Chrome目录>/<Node目录>` 占位符是**设计内**，与检测段真实路径不冲突。镜像（repo_face/<源>）与源必须逐字节一致，只可通过"改源→cp 到镜像"维护，禁止单独编辑镜像造成 6d 漂移
 
 #### （第五步·推送分支）同步预览 + 弹窗确认脚本化（优化 5）
 

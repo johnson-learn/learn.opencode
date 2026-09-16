@@ -648,3 +648,27 @@
 - 归属：framework（evolution_gate.py / test_evolution_gate.py）
 - 载体：evolution_gate.py（触发段+classify_change）；test_evolution_gate.py（+3 用例防回归）；regedit.md/test_README（配套同步）
 - 内容：① 框架「改谁归谁」精准触发覆盖 skill(L1)/regedit/plugins，唯独测试文件自身改动无自动化回归（改 test 不跑该 test，缺陷要等手动 health_check 才暴露）。已修复：gate --check 复用 classify_change，对 tests 根 test_*.py 增 TEST:<file> 精准触发，与 L1 严格对称。② classify_change 原将 /tests/ 下非 test_ 前缀附随工具脚本（skill_validate.py/path_convert.py）误归 'test'，致 docs-sync 漏更检测与精准触发误伤；已修复为 test 分类限定 test_ 前缀。③ 测试临时文件（test_ztmp_gate_trigger.py/ztmp_audit_tool.py）纳入末尾统一清理防残留污染门禁。验证：test_evolution_gate.py 46→49 全绿，health_check --run-quick OK 11/0/0。经验体现为脚本代码+注释+守护用例（可执行载体），不另立 evolution.md 规则条目。
+[2026-09-17] 会话自动门禁（ses_f54f6fb43ffe4f8qMbJcbC8KqW） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 6 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\plugins\skill-banner.js
+- <opencode配置目录>\skills\3gpp_skill\references\tools.md
+- <opencode配置目录>\skills\files_skill\SKILL.md
+- <opencode配置目录>\skills\files_skill\references\tools.md
+- <opencode配置目录>\skills\find_skill\SKILL.md
+- <opencode配置目录>\skills\find_skill\references\tools.md
+
+[2026-09-17] 会话自动门禁（ses_f54ee2353ffeeB2NP6A1mh1Ngm） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 3 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tests\path_convert.py
+- <opencode配置目录>\tests\test_path_convert.py
+- <opencode配置目录>\tools\path_convert.py
+
+[2026-09-17] 会话自动门禁（ses_f54e5a2b1ffeCry0e3fkOvQg15） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 2 个规则文件（清单见下）；智能归纳待模型补充
+- <opencode配置目录>\tests\repo_face\tools-manifest.md
+- <opencode配置目录>\tools-manifest.md
+
+
+[2026-09-17] 全量回归修复（test_repo_face 漂移 + path_convert .js 白名单补齐）→ 固化经验到 update_skill 第五步镜像刷新节：
+- 踩坑：上一提交只把 repo_face 镜像（setup-check/setup-windows.ps1）Node/LibreOffice/Chrome 检测路径占位符化，未同步源 copy/setup/，且 test_repo_face 6d 要求镜像与源逐字节一致 → 漂移红；同时占位符化 setup 检测路径与 test_setup_ps1 真实路径断言（<Node目录> 等）冲突 → 该测试断掉（77/1）。
+- 根因：镜像维护违反了"镜像=源一对一 cp、不单独编辑"的既有约定；且忽略 setup 检测路径应保持真实 Windows 安装路径（非用户隐私、跨机一致），仅第 308 行占位符→真实部署转换环用占位符是设计内。
+- 修复：源 copy/setup/setup-*.ps1 保持真实路径版（git checkout 还原），镜像改用源一对一 cp 还原；copy/scripts/path_convert.py 补齐 .js/.cjs/.mjs 白名单（与 copy/opencode/tools、tests 一致，上一提交漏了 scripts 副本）。
+- 验证：test_repo_face 27/27、test_setup_ps1 78/78（exit 0）、health OK 9/警告 2/失败 0（实跑全绿）。commit 3bbecae 已推送。
+- 写入点：update_skill SKILL.md 第五步·门面文档同步·repo_face 镜像刷新节（新增"镜像只做源一对一 cp，不得单独改动；setup 检测路径保持真实 Windows 路径与 test_setup_ps1 断言一致"）。

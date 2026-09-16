@@ -9,7 +9,7 @@
 | Python + PyMuPDF | 页面渲染 PNG、文本搜索 | `python` + `pymupdf` | `python -c "import pymupdf, docx"` | `pip install pymupdf python-docx -i 清华源` |
 | matplotlib | 结构图/走势图 SVG 生成（配图主力之一） | `python -c "import matplotlib"`（3.11+） | 同上 | `pip install matplotlib -i 清华源` |
 | Mermaid CLI (mmdc) | 流程图/时序图/状态图 → SVG（配图主力之一） | `<用户AppData目录>\npm\mmdc.cmd`（node v24 + 全局包） | `mmdc.cmd --version` | `npm.cmd install -g @mermaid-js/mermaid-cli`；渲染设 `$env:PUPPETEER_EXECUTABLE_PATH` 指向系统 Chrome；PowerShell 下用 `mmdc.cmd` 非 `mmdc`（ps1 被执行策略禁） |
-| PS 提取脚本 | doc/docx 文本提取 | `<用户临时目录>\opencode\extract-docx.ps1` / `extract-doc.ps1` | `Test-Path <脚本>` | 从原机复制 Temp\opencode |
+| PS 提取脚本 | doc/docx 文本提取 | `<用户临时目录>\opencode\extract-docx.ps1` / `extract-doc.ps1` | `Test-Path <用户临时目录>\opencode\extract-doc.ps1` | 从原机复制 Temp\opencode |
 | 网络抓取 | FTP 目录/下载（需 UA 头） | PowerShell `Invoke-WebRequest` / `curl.exe -A` | `curl.exe --version` | Windows 自带 |
 | 本机文档库 | 本地规范（仅用户明确要求时用） | `<3GPP文档库目录>\` | `Test-Path` | 从 3GPP FTP 重新下载（流程见官网权威信息章节） |
 | 本机 6G 文档 | TR 22.870/38.914 存档 | `<项目目录>\temp\6G\` | `Test-Path` | 按「FTP 访问技巧」重下 |

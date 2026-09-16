@@ -11,7 +11,7 @@
 | MS Office | Word/PPT COM 生成 docx/pptx | Office 16 | `New-Object -ComObject Word.Application` | — |
 | Python 文档库 | docx/pptx/xlsx/pdf 处理 + 模板渲染 | python-docx/python-pptx/openpyxl/xlrd/pypdf/pdfplumber/PyMuPDF/matplotlib/PIL/chardet/pyzbar/opencv/imageio-ffmpeg/docxtpl/Jinja2/python-magic | `python -c "import docx, pptx, openpyxl, xlrd, pypdf, pdfplumber, pymupdf, matplotlib, PIL, chardet, pyzbar, cv2, imageio_ffmpeg, docxtpl, jinja2, magic"` | `pip install python-docx python-pptx openpyxl xlrd pypdf pdfplumber pymupdf matplotlib pillow chardet pyzbar opencv-python imageio-ffmpeg docxtpl jinja2 python-magic-bin -i 清华源` |
 | Chrome | headless 校验 HTML/JS | `<Chrome目录>\chrome.exe` | `Test-Path` | — |
-| 本机 PS 脚本 | doc/docx 提取、OCR、页面校验 | `<用户临时目录>\opencode\*.ps1`（extract-docx/doc、ocr、check-*） | `Test-Path <脚本>` | 从原机复制整套 Temp\opencode |
+| 本机 PS 脚本 | doc/docx 提取、OCR、页面校验 | `<用户临时目录>\opencode\*.ps1`（extract-doc/doc、ocr、check-*） | `Test-Path <用户临时目录>\opencode\*.ps1` | 从原机复制整套 Temp\opencode |
 | node+npx | LobeHub market-cli | npx 缓存 `06aaad52133b3ed7` 下 cli.js | `& node <cli.js> --help` | `npx -y @lobehub/market-cli`（首次拉取） |
 | Mermaid CLI (mmdc) | 流程图/时序图/状态图 → SVG（示意图绘制主力） | `<用户AppData目录>\npm\mmdc.cmd`（node v24 + 全局包） | `mmdc.cmd --version` | `npm.cmd install -g @mermaid-js/mermaid-cli`（渲染用系统 Chrome：设环境变量 `PUPPETEER_EXECUTABLE_PATH=<Chrome目录>\chrome.exe`；PowerShell 下须调 `mmdc.cmd` 而非 `mmdc`，因 ps1 被执行策略禁） |
 | OCRmyPDF | 扫描 PDF→可搜索 PDF（加 OCR 文本层） | python 包 17.10.0（exe 不在 PATH，用 `python -m ocrmypdf`） | `python -m ocrmypdf --version` | `pip install ocrmypdf -i 清华源` + tesseract（见下行，本机 5.4.0 实测扫描件→可搜索 PDF ✓） |
