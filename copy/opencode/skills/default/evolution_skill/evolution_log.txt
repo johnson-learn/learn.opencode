@@ -675,3 +675,9 @@
 2026-09-17 | 来源:独立会话setup绝对路径修复 | 更新点:update_skill SKILL.md 第五步可移植性校验+repo_face镜像刷新节
 经验:仓库“无绝对路径”铁律下,setup检测/Test-Path路径的最优形态=动态环境变量(${env:ProgramFiles}/${env:ProgramFiles(x86)}/${env:SystemDrive}),既无字面盘符又运行时可解析;占位符(<LibreOffice目录>等)在这些路径运行时不可解析→Test-Path报“路径中具有非法字符”(另一台机器实测,PowerShell 5.1),只可用于path_map写入的key/to_portable-to_local转换环。test_setup_ps1断言已同步为动态变量。
 履历:本次先按用户要求占位符化(commit ae4fcac)→另机运行报错→修订为动态环境变量(commit a46ff4a),镜像=源逐字节一致,test_repo_face 27/27、test_setup_ps1 78/78全绿。与旧经验(检测路径保持真实Windows路径字面)冲突,已按新验证结果演进修订SKILL.md旧条目(非DEPRECATED,动态变量为更优解)。
+[2026-09-17] update_skill 双向同步三条经验固化（WSL 复合 git 链失效 / 仓库双向可移植无盘符铁律 / to_portable guard 保留安装约定位置字面盘符为机制缺陷）
+- 状态：active
+- 来源：本会话 update_skill 双向同步实测 + 用户指正
+- 载体：update_skill SKILL.md 第五步可移植性校验·边界澄清节（新增"仓库公共·双向可移植铁律"）+ 同步踩坑清单第 7/8 条
+- 内容：① WSL 9p 环境下 git 写操作禁止用 && 复合链（add/commit/push 可能全部未生效却无报错、HEAD 不变、文件未 staged、输出被吞成假象）——须分步独立执行并逐一回看结果（本次 commit 479fa90 即分步成功）；② 仓库公共、本机与其它机器 pull 移植更新到最新即双向可移植，故仓库(to_portable)不得含任何 C/D/E 盘绝对路径（含安装约定位置字面，如 Program Files 目录）——其它机器可能 D 盘/非默认安装/非 Windows；本机源(to_local)用真实绝对路径是本机正常部署、非污染，勿把本机源当"要无盘符的对象"来改（用户纠正：本机是工作机器当然用绝对路径）；③ path_convert to_portable 的 GUARD_PREFIXES 把本机源安装约定位置保留成字面盘符、与仓库无盘符铁律冲突——当前仓库侧手工还原为占位符/通用表述、本机源不动，根因（改 guard 逻辑+三副本+test_path_convert 断言）已登记待整改，根治前每次 cp+to_portable 会再冒字面盘符须复查。
+- 验证：本会话实测分步 git push 成功（commit 479fa90）；仓库无盘符要求经 python 检测 + / 行命中 0 处新增达成

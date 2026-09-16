@@ -10,6 +10,8 @@ collaborates_with:
 
 > **update_skill 执行时必须保证三点：① 当前电脑的新增修改同步到远端（GitHub）；② 远端内容保持可移植（占位符体系），能移植安装到全新电脑；③ 远端新提交能反向更新到另一台已移植旧版本的电脑上（pull + 版本对齐 + to_local）。**
 
+> **双向可移植性机制（本技能核心概念，每次执行必须据此理解与校验）**：WSL 仓库（用于同步给 GitHub）是**公共代码**，不同工作机器（包括本机）会**从工作仓库拉取最新修改**到工作机器上，工作机器若有改动修改也会**同步回工作仓库**，因此要求**工作仓库代码不能包含工作机器上的专有/绝对路径**（任何 C/D/E 盘字面绝对路径，含"安装约定位置"字面一律不允许；运行时路径用动态环境变量 `${env:ProgramFiles}` 等，非运行时文档/规则/经验记录用占位符或通用表述）——保证任何机器拉下来能用、改完能反推，即"双向可移植"。
+
 本技能负责把本机 opencode 配置（全局 skill + 规则 + 脚本）同步到 GitHub 仓库，实现"本机进化 → 云端同步 → 其它机器移植"闭环。
 
 
@@ -129,6 +131,7 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 2. **人工核查**：硬编码盘符绝对路径（`<工具目录>`、`E:\` 等）只允许"安装约定位置"（`C:\msys64`、`C:\Program Files`、`C:\Windows`、`C:\Temp` 等任何机器安装后相同的位置）；本机特有目录（`<项目目录>` 等）必须占位符化。**检测/Test-Path 类路径更优统一用动态环境变量**（`${env:ProgramFiles}`、`${env:ProgramFiles(x86)}`、`${env:SystemDrive}`），既不留任何字面盘符（满足更严"无绝对路径"铁律）又运行时可解析（2026-09-17 修订：占位符在这些路径运行时不可解析、`Test-Path` 报"路径中具有非法字符"，另一台机器实测）
 3. 校验不通过 → 修复为占位符/动态推导 → 重跑用例 8 → 通过后才可进入 git 三步骤
 4. **边界澄清（可移植性校验只约束"同步侧待提交内容"）**：本机全局配置（如指令文件 instructions.md、注册表 regedit.md、各 skill 等）用**实际路径（to_local 形态，如 `<用户目录>\...`）是本机正常运行的正确部署**，**不是污染，勿去清理**；占位符化仅发生在**同步到仓库时**（to_portable，因为别的电脑路径不同）。所以：本机全局文件保持实际路径=正常；推送前/合入仓库时把它转成占位符=必须；两者是 `path_convert.py` 双向转换管理的**形态差异**，不是缺憾。判别：test_repo_face 等"被跟踪文件无本机用户名路径"扫描的是**仓库/跟踪文件**，不针对本机全局 to_local 文件——勿把本机 to_local 实际路径误判为污染而清理。
+   - **仓库公共·双向可移植铁律（2026-09-17 用户修正）**：仓库供本机与其它机器 `pull` 移植更新到最新，故仓库（to_portable 版）**不得含任何 C/D/E 盘绝对路径，包括"安装约定位置"字面（如 `Program Files`、`msys64` 目录）**——其它机器可能是 D 盘/非默认安装/非 Windows，写死盘符对它们不成立。而**本机源（to_local）用真实绝对路径是本机正常部署，不是污染**，勿把本机源当"要无盘符的对象"来改。落点：运行时检测/Test-Path 路径一律动态环境变量（`${env:ProgramFiles}` 等，既无字面盘符又可解析）；非运行时文档/规则/经验记录用占位符或通用表述（如"安装约定位置（Program Files）"，不带盘符前缀）。
 
 #### （第五步·推送分支）门面文档同步（仓库门面）
 
@@ -233,6 +236,8 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
   4. **UNC 9p 读缓存延迟（实测）**：WSL 内文件修改后，Windows 侧 `\\wsl.localhost\` UNC 视图有读缓存延迟（TTL 内读到旧内容）——经 UNC 读仓库的测试（test_repo_face/test_setup_ps1 等）在文件刚改后可能误报，且 `wsl --shutdown` 也不一定立即刷新；处置：文件修改后稍候重跑测试（TTL 过期自愈），或全程用 WSL 内 `md5sum/grep` 验证真实状态——**别信 UNC 瞬时读到的内容**，与 WSL 内验证结果不一致时以 WSL 内为准
   5. **诊断输出文件名一一对应**：临时诊断脚本写结果文件名必须与回读文件名严格一致（实测：rf_result.txt 与 rf_result_out.txt 混淆致反复读旧失败结果、多轮排查空转）
   6. **sync_push.py 的 repo 参数必须传 Windows UNC 路径（含 `wsl.localhost`）**：脚本用 `"wsl.localhost" in repo` 判断是否 WSL 仓库——若传 WSL 内路径（如 `/home/...`，不含 `wsl.localhost`）会被误判为 Windows 仓库，脚本对不存在的路径跑 Windows git 而卡死/失败（实测：两次调用卡死、执行被中断）。**最可靠做法：WSL 仓库直接进 WSL bash 手动执行 `git add -A && git commit -F /tmp/cmsg.txt && git push origin main`**，不依赖 sync_push.py 的路径判定；用 sync_push.py 时 repo 参数必须传 `\\wsl.localhost\...`（UNC）形式，msgfile 传 WSL 内 `/tmp/...` 路径
+   7. **WSL 复合 `&&` git 写操作链在 9p 下偶发整体不执行（实测 2026-09-17）**：`git status && … && git add -A && git commit -F /tmp/cmsg.txt && git push` 这类复合命令在 WSL-9p 下 add/commit/push 可能**全部没生效却无报错**（HEAD 不变、文件未 staged，输出被吞成假象）——**git 写操作一律分步独立执行**：`git add -A` → `git diff --cached --stat`（确认已 staged）→ `git commit -F /tmp/cmsg.txt` → `git push`，每步单独一条命令并回看结果，不要用 `&&` 一口气串联提交
+   8. **to_portable guard 把本机源 `Program Files` 等安装约定位置保留成字面盘符（机制缺陷，已登记待整改）**：本机源（to_local）经验/规则记录里的 `Program Files` 等"安装约定位置"（to_local 形态带盘符前缀），经 `path_convert.py to_portable` 时被 `GUARD_PREFIXES` 保护**保留字面盘符**（不转占位符），使仓库版露盘符字面、与"仓库无盘符"铁律冲突。**当前处置**：仓库侧把这类记录手工还原为占位符/通用表述（"安装约定位置（Program Files）"），本机源保持真实路径不动；**根因待整改**：改 path_convert guard 逻辑 + 三副本 + test_path_convert 断言（另行立项）；在根治前，下次 cp+to_portable 会再次冒出字面盘符，同步时必须复查
 
 
 
