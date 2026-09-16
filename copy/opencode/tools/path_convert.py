@@ -157,7 +157,7 @@ def walk_convert(root, pairs, suffix):
         for fn in filenames:
             if fn.lower() in STATE_FILES:
                 continue
-            if not fn.lower().endswith((".md", ".jsonc", ".json", ".txt", ".ps1", ".py", ".bat", ".sh")):
+            if not fn.lower().endswith((".md", ".jsonc", ".json", ".txt", ".ps1", ".py", ".bat", ".sh", ".js", ".cjs", ".mjs")):
                 continue
             p = os.path.join(dirpath, fn)
             try:
@@ -196,7 +196,7 @@ def scan_unknown_placeholders(root):
         for fn in filenames:
             if fn.lower() in STATE_FILES:
                 continue
-            if not fn.lower().endswith((".md", ".jsonc", ".json", ".txt", ".ps1", ".py", ".bat", ".sh")):
+            if not fn.lower().endswith((".md", ".jsonc", ".json", ".txt", ".ps1", ".py", ".bat", ".sh", ".js", ".cjs", ".mjs")):
                 continue
             p = os.path.join(dirpath, fn)
             try:

@@ -62,6 +62,29 @@ check("path_map.txt 未被动", (r"E:\openCodeDefault=" + HOME + "\\x") in open(
 check("sync_target.txt 未被动", "\\\\wsl.localhost" in open(os.path.join(walk_dir, "sync_target.txt"), encoding="utf-8").read())
 check("普通文件被转换", ("<" + "用户目录" + ">") in open(os.path.join(walk_dir, "normal.md"), encoding="utf-8").read())
 
+# === 用例 4b：.js/.cjs/.mjs 白名单加入（2026-09-16：plugins/skill-banner.js 等需双向转换） ===
+print("[用例4b] .js/.cjs/.mjs 白名单（walk_convert 双向转换）")
+js_dir = os.path.join(tmp, "js_test")
+os.makedirs(js_dir)
+open(os.path.join(js_dir, "skill-banner.js"), "w", encoding="utf-8").write("引用 " + CFG_DIR + " 与 " + HOME + "\\x")
+open(os.path.join(js_dir, "mod.cjs"), "w", encoding="utf-8").write("引用 " + CFG_DIR)
+open(os.path.join(js_dir, "mod.mjs"), "w", encoding="utf-8").write("引用 " + TMP_DIR)
+pc.walk_convert(js_dir, pairs, "testjs")
+js_txt = open(os.path.join(js_dir, "skill-banner.js"), encoding="utf-8").read()
+cjs_txt = open(os.path.join(js_dir, "mod.cjs"), encoding="utf-8").read()
+mjs_txt = open(os.path.join(js_dir, "mod.mjs"), encoding="utf-8").read()
+check(".js to_portable 转占位符", ("<" + "opencode配置目录" + ">") in js_txt and HOME not in js_txt)
+check(".cjs to_portable 转占位符", ("<" + "opencode配置目录" + ">") in cjs_txt)
+check(".mjs to_portable 转占位符", ("<" + "用户临时目录" + ">") in mjs_txt)
+pairs_l_js = [(ph, real) for ph, real in pc.build_local_map().items()]
+pairs_l_js.sort(key=lambda x: len(x[0]), reverse=True)
+js_back = pc.convert(js_txt, pairs_l_js)
+cjs_back = pc.convert(cjs_txt, pairs_l_js)
+mjs_back = pc.convert(mjs_txt, pairs_l_js)
+check(".js to_local 还原真实路径", ("<" + "opencode配置目录" + ">") not in js_back and CFG_DIR in js_back)
+check(".cjs to_local 还原真实路径", ("<" + "opencode配置目录" + ">") not in cjs_back and CFG_DIR in cjs_back)
+check(".mjs to_local 还原真实路径", ("<" + "用户临时目录" + ">") not in mjs_back and TMP_DIR in mjs_back)
+
 # === 用例 5：未知占位符扫描 ===
 print("[用例5] 未知占位符检测（白名单机制：只报框架占位符全集内残留，文档示例尖括号词不误报）")
 scan_dir = os.path.join(tmp, "scan")
