@@ -59,13 +59,14 @@ def build_local_map():
         "<用户桌面目录>": h + "Desktop",
         "<WSL用户映射>": "/mnt/c/Users/" + os.path.basename(h.rstrip("\\")),
         "<Python脚本目录>": h + "AppData\\Roaming\\Python\\Python312\\Scripts",
-        # 安装约定位置（自动类，默认系统盘；其它机器若非默认路径可在 path_map.txt 用同名 key 覆盖）
-        "<程序文件目录>": "C:\\Program Files",
-        "<程序文件目录(x86)>": "C:\\Program Files (x86)",
-        "<系统目录>": "C:\\Windows",
-        "<系统临时目录>": "C:\\Temp",
-        "<msys64目录>": "C:\\msys64",
-        "<w64devkit目录>": "C:\\w64devkit",
+        # 安装约定位置（自动类）。to_local 还原值必须从目标机环境变量动态读真实位置——硬编码 C:\ 不可移植
+        # （其它机器可能 D 盘/非默认/非 Windows），读不到才回退约定默认；仍可用 path_map.txt 同名 key 覆盖。
+        "<程序文件目录>": os.environ.get("ProgramFiles") or "C:\\Program Files",
+        "<程序文件目录(x86)>": os.environ.get("ProgramFiles(x86)") or "C:\\Program Files (x86)",
+        "<系统目录>": os.environ.get("SystemRoot") or "C:\\Windows",
+        "<系统临时目录>": (os.environ.get("SystemDrive") or "C:") + "\\Temp",
+        "<msys64目录>": "C:\\msys64",      # 无标准环境变量，回退约定默认 + path_map 覆盖
+        "<w64devkit目录>": "C:\\w64devkit", # 无标准环境变量，回退约定默认 + path_map 覆盖
     }
     # 填写类（<项目目录>等）；过滤空值映射（如 <工具目录>= 未填写），防止 to_local 误删占位符
     m.update({ph: real for ph, real in load_path_map().items() if ph.strip() and real.strip()})
@@ -85,13 +86,14 @@ def build_portable_map():
         (h + "AppData\\Roaming\\Python\\Python312\\Scripts", "<Python脚本目录>"),
         (h.rstrip("\\"), "<用户目录>"),
         # 安装约定位置：to_portable 转为无盘符占位符（仓库无 C/D/E 盘绝对路径铁律）；
+        # 映射键用环境变量读本机真实值（如 SystemRoot=C:\WINDOWS 大写），与 to_local 对称，保证大小写/盘符匹配；
         # 由长路径优先排序保证，未被具体工具占位符（如 <LibreOffice目录>）覆盖的通用约定位置走这里
-        ("C:\\Program Files (x86)", "<程序文件目录(x86)>"),
-        ("C:\\Program Files", "<程序文件目录>"),
-        ("C:\\Windows", "<系统目录>"),
-        ("C:\\Temp", "<系统临时目录>"),
-        ("C:\\msys64", "<msys64目录>"),
-        ("C:\\w64devkit", "<w64devkit目录>"),
+        (os.environ.get("ProgramFiles(x86)", "C:\\Program Files (x86)"), "<程序文件目录(x86)>"),
+        (os.environ.get("ProgramFiles", "C:\\Program Files"), "<程序文件目录>"),
+        (os.environ.get("SystemRoot", "C:\\Windows"), "<系统目录>"),
+        ((os.environ.get("SystemDrive", "C:")) + "\\Temp", "<系统临时目录>"),
+        ("C:\\msys64", "<msys64目录>"),         # 无标准环境变量，约定默认
+        ("C:\\w64devkit", "<w64devkit目录>"),    # 无标准环境变量，约定默认
         ("C:\\Users\\<用户名>", "<用户目录>"),
     ]
     # 填写类反向；过滤空值映射（path_map 中 <工具目录>= 等未填写项），

@@ -327,17 +327,18 @@ check("规则明示未确认禁 commit/push", "不得执行任何 commit/push" i
 # ============ 用例 10：to_portable 与 to_local 双脚本真实执行（真实 convert/walk_convert） ============
 print("[用例10] to_portable 与 to_local 双脚本真实执行（调用 path_convert convert/walk_convert 双向转换）")
 import re as _re10
-# 构造含多种真实路径（含安装约定位置与本机真实路径）的待转文本
-_txt10 = r"装 C:\Program Files\Git 与 C:\Windows\sys 与 C:\msys64\bin 与 " + CFG + r"\x 与 " + _lmap.get(_ph("用户目录"), "U") + r"\y"
+# 构造含多种真实路径（含安装约定位置与本机真实路径）的待转文本；约定位置用环境变量动态拼（还原值随目标机真实位置，非硬编码 C:\）
+_pf10 = os.environ.get("ProgramFiles", r"C:\Program Files")
+_sr10 = os.environ.get("SystemRoot", r"C:\Windows")
+_txt10 = r"装 " + _pf10 + r"\Git 与 " + _sr10 + r"\sys 与 C:\msys64\bin 与 " + CFG + r"\x 与 " + _lmap.get(_ph("用户目录"), "U") + r"\y"
 _c10 = _pc.convert(_txt10, _pmap)
-check("to_portable: C:\\Program Files → <程序文件目录>（无盘符）", _ph("程序文件目录") + r"\Git" in _c10)
-check("to_portable: C:\\Windows → <系统目录>", _ph("系统目录") + r"\sys" in _c10)
-check("to_portable: C:\\msys64 → <msys64目录>", _ph("msys64目录") + r"\bin" in _c10)
+check("to_portable: ProgramFiles → <程序文件目录>（无盘符）", _ph("程序文件目录") + r"\Git" in _c10)
+check("to_portable: SystemRoot → <系统目录>", _ph("系统目录") + r"\sys" in _c10)
 check("to_portable: 本机配置目录 → <opencode配置目录>", _ph("opencode配置目录") in _c10)
 check("to_portable: 转换后无字面盘符绝对路径", not _re10.search(r'[A-Za-z]:\\', _c10))
 _back10 = _pc.convert(_c10, _lpairs)
-check("to_local: <程序文件目录> 还原 C:\\Program Files", r"C:\Program Files\Git" in _back10)
-check("to_local: <系统目录> 还原 C:\\Windows", r"C:\Windows\sys" in _back10)
+check("to_local: <程序文件目录> 还原目标机 ProgramFiles 真实路径", _pf10 + r"\Git" in _back10)
+check("to_local: <系统目录> 还原目标机 SystemRoot 真实路径", _sr10 + r"\sys" in _back10)
 check("往返一致（to_portable→to_local 还原原文本）", _back10 == _txt10)
 check("双向标准·WSL/仓库侧(to_portable)无绝对路径 [A-Za-z]:\\", not _re10.search(r'[A-Za-z]:\\', _c10))
 check("双向标准·本机侧(to_local)无占位符<...>（还原为绝对路径、无通用/相对路径）", "<" not in _back10 and "\\" in _back10)
@@ -351,6 +352,32 @@ _pc.walk_convert(_w10, _lpairs, "to_local")
 _g10b = open(os.path.join(_w10, "sample.md"), encoding="utf-8").read()
 check("walk_convert to_local 目录级往返还原（真实脚本）", _g10b == _txt10)
 shutil.rmtree(_w10, ignore_errors=True)
+
+# ---- 按方向强校验（用户要求）----
+# 1) to_portable = 本机 → 仓库：检查仓库侧转换结果无任何绝对路径（含 C/D/E 盘及大小写变体）
+check("[to_portable 本机→仓库] 仓库侧结果无 C/D/E 盘绝对路径", not _re10.search(r'[A-Za-z]:\\', _c10))
+check("[to_portable 本机→仓库] 仓库侧结果无 C/D/E 盘绝对路径(大小写不敏感校验)", _c10.lower().find(":\\") == -1 or _c10.lower().count(":\\") == 0)
+check("[to_portable 本机→仓库] 仓库侧结果含通用占位符", "<" in _c10)
+# 2) to_local = 仓库 → 本机：(1) 检查本机侧无通用占位符（无 <...>，即无 C:D:E 盘占位形态），还原为绝对路径
+check("[to_local 仓库→本机] 本机侧无通用占位符 <…>", "<" not in _back10)
+_abs_scan = [t for t in _re10.findall(r'[A-Za-z]:\\[^\s<>,]+', _back10)]
+check("[to_local 仓库→本机] 还原结果为绝对路径（含盘符根）", len(_abs_scan) > 0 and _abs_scan[0][0:2] in ("C:","D:","E:","c:","d:","e:"))
+# (2) 所有还原绝对路径有效且路径下文件真实存在（用本机真实存在的目录样本）
+_ok10 = True
+for _ph_key in ["opencode配置目录","用户目录","程序文件目录","系统目录"]:
+    _rp = _pc.convert(_ph(_ph_key), _lpairs)
+    if _ph_key in ("用户目录","opencode配置目录"):
+        _real = _lmap.get(_ph(_ph_key))
+    elif _ph_key == "程序文件目录":
+        _real = _pf10
+    else:
+        _real = _sr10
+    if _rp != _real or not os.path.isdir(_rp):
+        _ok10 = False
+        print(f"    ✗ 还原无效 {_ph_key}: {_rp!r} real={_real!r} isdir={os.path.isdir(_rp)}")
+check("[to_local 仓库→本机] 还原绝对路径有效且目录真实存在(opencode配置/用户/程序文件/系统目录)",
+      _ok10 and os.path.isdir(CFG) and os.path.isdir(os.path.expanduser("~")) and os.path.isdir(_pf10) and os.path.isdir(_sr10))
+
 
 print("\n结果：通过 %d 项，失败 %d 项" % (pass_n, fail_n))
 sys.exit(1 if fail_n else 0)
