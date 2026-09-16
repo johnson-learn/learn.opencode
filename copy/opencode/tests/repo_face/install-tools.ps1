@@ -132,7 +132,7 @@ if (Test-Cmd "python") {
 if (Test-Cmd "python") {
   python -c "import weasyprint" 2>$null
   if ($LASTEXITCODE -eq 0) {
-    $msysRoot = "C:\msys64"
+    $msysRoot = "$env:SystemDrive\msys64"
     $msysBash = Join-Path $msysRoot "usr\bin\bash.exe"
     $gtkDll = Join-Path $msysRoot "ucrt64\bin\libgtk-3-0.dll"
     if (-not (Test-Path $gtkDll)) {
@@ -160,7 +160,7 @@ if (Test-Cmd "python") {
         Ok "WEASYPRINT_DLL_DIRECTORIES 已持久化配置：$msysBin"
       } else { Ok "WEASYPRINT_DLL_DIRECTORIES 已配置：$msysBin" }
     } else {
-      Warn "weasyprint 依赖 MSYS2 GTK3 未就绪（可手动：winget install MSYS2.MSYS2 后 pacman -S mingw-w64-ucrt-x86_64-gtk3，配环境变量 WEASYPRINT_DLL_DIRECTORIES=C:\msys64\ucrt64\bin）"
+      Warn "weasyprint 依赖 MSYS2 GTK3 未就绪（可手动：winget install MSYS2.MSYS2 后 pacman -S mingw-w64-ucrt-x86_64-gtk3，配环境变量 WEASYPRINT_DLL_DIRECTORIES=$env:SystemDrive\msys64\ucrt64\bin）"
     }
   }
 }

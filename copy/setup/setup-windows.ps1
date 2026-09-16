@@ -213,18 +213,16 @@ if (-not $SkipDeploy) {
   }
 
   $loDir = Find-AppDir @(
-    "C:\Program Files\LibreOffice",
-    "C:\Program Files (x86)\LibreOffice",
-    "D:\LibreOffice",
-    "D:\Program Files\LibreOffice"
+    "<LibreOffice目录>",
+    "${env:ProgramFiles(x86)}\LibreOffice"
   ) "program\soffice.com"
   if (-not $loDir -and (Test-Soffice)) {
     try { $loDir = (Split-Path -Parent (Split-Path -Parent (Get-Command soffice).Source)) } catch {}
   }
 
   $chromeDir = Find-AppDir @(
-    "C:\Program Files\Google\Chrome\Application",
-    "C:\Program Files (x86)\Google\Chrome\Application",
+    "<Chrome目录>",
+    "${env:ProgramFiles(x86)}\Google\Chrome\Application",
     "${env:LOCALAPPDATA}\Google\Chrome\Application"
   ) "chrome.exe"
 
@@ -296,7 +294,7 @@ if (-not $SkipDeploy) {
     New-Item -ItemType Directory -Path $DefaultDir -Force | Out-Null
     return $DefaultDir
   }
-  $dBase = "D:\opencode"
+  $dBase = "$env:SystemDrive\opencode"
   $docDir  = Ask-Dir "<资料目录>"          "$dBase\doc\default"
   $gppDir  = Ask-Dir "<3GPP文档库目录>"     "$dBase\doc\3gpp"
   $projDir = Ask-Dir "<项目目录>"           "$dBase\project\default"
@@ -373,7 +371,7 @@ Step "8. 验证汇总"
 # 若 LibreOffice 已安装但 soffice 不在 PATH，自动加入用户 PATH
 if (Test-Soffice -and -not (Test-Cmd "soffice")) {
   $soDir = $null
-  foreach ($p in @("C:\Program Files\LibreOffice\program","C:\Program Files (x86)\LibreOffice\program")) {
+  foreach ($p in @("<LibreOffice目录>\program","${env:ProgramFiles(x86)}\LibreOffice\program")) {
     if (Test-Path (Join-Path $p "soffice.exe")) { $soDir = $p; break }
   }
   if ($soDir -and (Add-ToUserPath $soDir)) { Ok "已将 LibreOffice program 目录加入用户 PATH：$soDir（新开终端生效）" }
@@ -387,7 +385,7 @@ $checks = @(
   @{ name = "git";             ok = (Test-Cmd "git") },
   @{ name = "soffice";         ok = (Test-Soffice) },
   @{ name = "Tesseract";       ok = (Test-Tesseract) },
-  @{ name = "Chrome";          ok = (Test-Path "C:\Program Files\Google\Chrome\Application\chrome.exe") -or (Test-Path "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe") },
+  @{ name = "Chrome";          ok = (Test-Path "<Chrome目录>\chrome.exe") -or (Test-Path "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe") },
   @{ name = "skills 部署";     ok = (Test-Path (Join-Path $ConfigDir "skills\3gpp_skill\SKILL.md")) },
   @{ name = "辅助脚本部署";    ok = (Test-Path (Join-Path $ToolDir "extract-docx.ps1")) }
 )
