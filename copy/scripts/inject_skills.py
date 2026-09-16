@@ -1,9 +1,28 @@
 # -*- coding: utf-8 -*-
 # 新项目 skill 注入脚本：把全局 skill 复制为项目级 skill，并改写 description 为"默认触发"
 # 用法：python inject_skills.py <目标项目目录>
+# 覆盖式幂等：重复执行=把项目副本同步为全局最新（自动双向拉取的执行器）
+# default 容器：skills/default/<name>（如 evolution_skill）注入时平铺为项目 skills/<name>
 import os, re, shutil, sys
 
 GLOBAL_SKILLS = r"<opencode配置目录>\skills"
+
+
+def iter_global_skills():
+    """遍历全局 skill：skills/<name>/SKILL.md 与 skills/default/<name>/SKILL.md（default 容器平铺）"""
+    out = []
+    for name in os.listdir(GLOBAL_SKILLS):
+        src = os.path.join(GLOBAL_SKILLS, name)
+        if not os.path.isdir(src):
+            continue
+        if os.path.isfile(os.path.join(src, "SKILL.md")):
+            out.append((name, src))
+        else:
+            for sub in os.listdir(src):
+                ssub = os.path.join(src, sub)
+                if os.path.isdir(ssub) and os.path.isfile(os.path.join(ssub, "SKILL.md")):
+                    out.append((sub, ssub))
+    return out
 
 def rewrite_description(text, name):
     """把'仅显式触发'的全局 description 改写为项目级默认触发"""
@@ -25,11 +44,7 @@ def main(target):
     target_skills = os.path.join(target, ".opencode", "skills")
     os.makedirs(target_skills, exist_ok=True)
     count = 0
-    for name in os.listdir(GLOBAL_SKILLS):
-        src = os.path.join(GLOBAL_SKILLS, name)
-        src_skill = os.path.join(src, "SKILL.md")
-        if not os.path.isdir(src) or not os.path.isfile(src_skill):
-            continue
+    for name, src in iter_global_skills():
         dst = os.path.join(target_skills, name)
         if os.path.exists(dst):
             shutil.rmtree(dst, ignore_errors=True)

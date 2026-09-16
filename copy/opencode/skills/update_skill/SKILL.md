@@ -126,7 +126,7 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 
 > 修改提交到远端前，必须校验**具备不同电脑可移植性**——待提交内容不得含本机特征。
 1. **自动扫描**：`python <opencode配置目录>\tests\test_update_skill.py` 用例 8（提交前可移植性校验）——扫描待提交目录，检出"本机 home 真实路径 / 本机用户名路径"即违规；此用例已进入提交前自测用例库
-2. **人工核查**：硬编码盘符绝对路径（`<工具目录>`、`E:\` 等）只允许"安装约定位置"（`C:\msys64`、`C:\Program Files`、`C:\Windows`、`C:\Temp` 等任何机器安装后相同的位置）；本机特有目录（`<项目目录>` 等）必须占位符化
+2. **人工核查**：硬编码盘符绝对路径（`<工具目录>`、`E:\` 等）只允许"安装约定位置"（`C:\msys64`、`C:\Program Files`、`C:\Windows`、`C:\Temp` 等任何机器安装后相同的位置）；本机特有目录（`<项目目录>` 等）必须占位符化。**检测/Test-Path 类路径更优统一用动态环境变量**（`${env:ProgramFiles}`、`${env:ProgramFiles(x86)}`、`${env:SystemDrive}`），既不留任何字面盘符（满足更严"无绝对路径"铁律）又运行时可解析（2026-09-17 修订：占位符在这些路径运行时不可解析、`Test-Path` 报"路径中具有非法字符"，另一台机器实测）
 3. 校验不通过 → 修复为占位符/动态推导 → 重跑用例 8 → 通过后才可进入 git 三步骤
 4. **边界澄清（可移植性校验只约束"同步侧待提交内容"）**：本机全局配置（如指令文件 instructions.md、注册表 regedit.md、各 skill 等）用**实际路径（to_local 形态，如 `<用户目录>\...`）是本机正常运行的正确部署**，**不是污染，勿去清理**；占位符化仅发生在**同步到仓库时**（to_portable，因为别的电脑路径不同）。所以：本机全局文件保持实际路径=正常；推送前/合入仓库时把它转成占位符=必须；两者是 `path_convert.py` 双向转换管理的**形态差异**，不是缺憾。判别：test_repo_face 等"被跟踪文件无本机用户名路径"扫描的是**仓库/跟踪文件**，不针对本机全局 to_local 文件——勿把本机 to_local 实际路径误判为污染而清理。
 
@@ -138,7 +138,7 @@ wsl -d Ubuntu -e bash -c "cd /home/github/learn.opencode/copy && git pull --reba
 3. **无权限机器不受影响**：门面维护只在有权限机器的 update_skill 流程内；无权限机器 `git pull` 即得更新后的门面与 skill，不需执行 update_skill 修改
 4. **程序化核查**：`python <opencode配置目录>\tests\test_repo_face.py`（门面一致性测试：README 技能清单 vs skills 目录、INSTALL 关键步骤存在、REQUIREMENTS 权威引用）——挂入第三步自测
 5. **repo_face 镜像刷新（实测教训后固化）**：门面文件/setup 脚本/tools-manifest 任一变更后，必须同步刷新仓库内镜像 `copy\opencode\tests\repo_face\`（9 个文件：COPY_README/INSTALL/REQUIREMENTS/ROOT_README + setup-windows/setup-check/install-tools/install-wsl + tools-manifest）为对应源文件最新内容，并同步拷回本机 `tests\repo_face\`——镜像是无 WSL 机器跑 test_repo_face/test_setup_ps1 的回退数据，漂移会致无 WSL 机器测试误判；test_repo_face.py 6d 用例（仓库内镜像=门面一致性）程序化拦截漂移，镜像文件与源文件内容必须一致（仅行尾/形态允许差异）。**镜像 cp 必须用仓库内 to_portable 后的占位符版源文件（实测）**：path_convert 跳过 tests 目录（repo_face 在其下不会被转换），从本机 to_local 文件直接拷会泄漏本机路径被 6b 检出——正确顺序：cp 本机→仓库后先 to_portable 整个 opencode/，再 cp opencode/<源> → opencode/tests/repo_face/
-   - **镜像只做"源的一对一 cp"，不得单独改动镜像而不动源（2026-09-17 回归踩坑）**：源 `copy/setup/*.ps1` 的检测路径应保持真实 Windows 安装路径（`<Node目录>` 等，非本机用户名隐私，跨机一致）——test_setup_ps1 明确断言这些真实路径存在，把 setup 检测路径占位符化必致该测试断掉；注意 setup-windows.ps1 第 308 行"占位符→真实路径"部署转换环用 `<LibreOffice目录>/<Chrome目录>/<Node目录>` 占位符是**设计内**，与检测段真实路径不冲突。镜像（repo_face/<源>）与源必须逐字节一致，只可通过"改源→cp 到镜像"维护，禁止单独编辑镜像造成 6d 漂移
+   - **镜像只做"源的一对一 cp"，不得单独改动镜像而不动源**：源 `copy/setup/*.ps1` 的**检测/Test-Path 路径统一用动态环境变量**（`${env:ProgramFiles}`、`${env:ProgramFiles(x86)}`、`${env:SystemDrive}`，如 `${env:ProgramFiles}\nodejs`、`${env:ProgramFiles}\LibreOffice\program\soffice.exe`）——既无字面盘符绝对路径（2026-09-17 用户铁律：仓库无绝对路径）又运行时可解析；**不可用占位符**（`<Node目录>` 等占位符在脚本直接运行时不可解析，`Test-Path` 报"路径中具有非法字符"，另一台机器实测；占位符体系只属于 path_convert to_portable/to_local 仓库转换环与 path_map.txt 写入的 `key`，不放进运行时执行的路径）。test_setup_ps1 随之为动态变量断言（`${env:ProgramFiles}\Git\cmd`、`${env:ProgramFiles}\nodejs`）。镜像（repo_face/<源>）与源必须逐字节一致，只可通过"改源→cp 到镜像"维护，禁止单独编辑镜像造成 6d 漂移；**2026-09-17 修正履历**：首版曾将检测路径占位符化（`<LibreOffice目录>` 等）→ 另机运行 Test-Path 报非法字符 → 修订为动态环境变量（commit ae4fcac→a46ff4a）
 
 #### （第五步·推送分支）同步预览 + 弹窗确认脚本化（优化 5）
 
