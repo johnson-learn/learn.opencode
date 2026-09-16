@@ -213,7 +213,7 @@ if (-not $SkipDeploy) {
   }
 
   $loDir = Find-AppDir @(
-    "<LibreOffice目录>",
+    "${env:ProgramFiles}\LibreOffice",
     "${env:ProgramFiles(x86)}\LibreOffice"
   ) "program\soffice.com"
   if (-not $loDir -and (Test-Soffice)) {
@@ -221,7 +221,7 @@ if (-not $SkipDeploy) {
   }
 
   $chromeDir = Find-AppDir @(
-    "<Chrome目录>",
+    "${env:ProgramFiles}\Google\Chrome\Application",
     "${env:ProgramFiles(x86)}\Google\Chrome\Application",
     "${env:LOCALAPPDATA}\Google\Chrome\Application"
   ) "chrome.exe"
@@ -371,7 +371,7 @@ Step "8. 验证汇总"
 # 若 LibreOffice 已安装但 soffice 不在 PATH，自动加入用户 PATH
 if (Test-Soffice -and -not (Test-Cmd "soffice")) {
   $soDir = $null
-  foreach ($p in @("<LibreOffice目录>\program","${env:ProgramFiles(x86)}\LibreOffice\program")) {
+  foreach ($p in @("${env:ProgramFiles}\LibreOffice\program","${env:ProgramFiles(x86)}\LibreOffice\program")) {
     if (Test-Path (Join-Path $p "soffice.exe")) { $soDir = $p; break }
   }
   if ($soDir -and (Add-ToUserPath $soDir)) { Ok "已将 LibreOffice program 目录加入用户 PATH：$soDir（新开终端生效）" }
@@ -385,7 +385,7 @@ $checks = @(
   @{ name = "git";             ok = (Test-Cmd "git") },
   @{ name = "soffice";         ok = (Test-Soffice) },
   @{ name = "Tesseract";       ok = (Test-Tesseract) },
-  @{ name = "Chrome";          ok = (Test-Path "<Chrome目录>\chrome.exe") -or (Test-Path "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe") },
+  @{ name = "Chrome";          ok = (Test-Path "${env:ProgramFiles}\Google\Chrome\Application\chrome.exe") -or (Test-Path "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe") },
   @{ name = "skills 部署";     ok = (Test-Path (Join-Path $ConfigDir "skills\3gpp_skill\SKILL.md")) },
   @{ name = "辅助脚本部署";    ok = (Test-Path (Join-Path $ToolDir "extract-docx.ps1")) }
 )

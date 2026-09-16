@@ -13,8 +13,8 @@ function Warn([string]$msg) { Write-Host "  [跳过/警告] $msg" -ForegroundCol
 function Test-Soffice {
   if (Test-Cmd "soffice") { return $true }
   foreach ($p in @(
-    "<LibreOffice目录>\program\soffice.exe",
-    "<LibreOffice目录>\program\soffice.com",
+    "${env:ProgramFiles}\LibreOffice\program\soffice.exe",
+    "${env:ProgramFiles}\LibreOffice\program\soffice.com",
     "${env:ProgramFiles(x86)}\LibreOffice\program\soffice.exe",
     "${env:ProgramFiles(x86)}\LibreOffice\program\soffice.com"
   )) { if (Test-Path $p) { return $true } }
@@ -76,7 +76,7 @@ $checks1 = @(
   @{ name = "Git for Windows"; tier = "必须"; cmd = "git"; pathDir = "${env:ProgramFiles}\Git\cmd"; wingetId = "Git.Git";
      hint = "winget install Git.Git";
      guide = "安装方法：管理员 PowerShell 执行 winget（推荐）或官网下载安装包；国内 winget 失败可下载 npmmirror 直链 `n完整命令：winget install Git.Git   |   官网 https://git-scm.com/download/win" },
-  @{ name = "Node.js LTS";     tier = "必须"; cmd = "node"; pathDir = "<Node目录>"; wingetId = "OpenJS.NodeJS.LTS";
+  @{ name = "Node.js LTS";     tier = "必须"; cmd = "node"; pathDir = "${env:ProgramFiles}\nodejs"; wingetId = "OpenJS.NodeJS.LTS";
      hint = "winget install OpenJS.NodeJS.LTS";
      guide = "安装方法：管理员 PowerShell 执行 winget（推荐）或官网下载 MSI；国内下载走 npmmirror `n完整命令：winget install OpenJS.NodeJS.LTS   |   官网 https://nodejs.org/zh-cn/download" },
   @{ name = "Python 3.12";     tier = "必须"; cmd = "python"; pathDir = ""; wingetId = "Python.Python.3.12";
@@ -94,7 +94,7 @@ $checks1 = @(
   @{ name = "Google Chrome";   tier = "可选"; cmd = ""; pathDir = ""; wingetId = "Google.Chrome";
      hint = "winget install Google.Chrome";
      guide = "安装方法：winget（推荐）或官网下载安装器`n完整命令：winget install Google.Chrome   |   官网 https://www.google.com/chrome/";
-     pathChecks = @("<Chrome目录>\chrome.exe", "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe") },
+     pathChecks = @("${env:ProgramFiles}\Google\Chrome\Application\chrome.exe", "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe") },
   @{ name = "LibreOffice";     tier = "可选"; cmd = "soffice"; pathDir = ""; wingetId = "TheDocumentFoundation.LibreOffice";
      hint = "winget install TheDocumentFoundation.LibreOffice";
      guide = "安装方法：winget（推荐）或官网下载 MSI；国内下载走清华镜像直链`n完整命令：winget install TheDocumentFoundation.LibreOffice   |   清华镜像 https://mirrors.tuna.tsinghua.edu.cn/libreoffice/libreoffice/stable/";
