@@ -690,3 +690,23 @@
 - 载体：tools/path_convert.py + tests/path_convert.py + scripts/path_convert.py + tests/test_path_convert.py（新增 4 断言，39→43/43）+ skills/update_skill/references/portable-paths.md（登记 6 个约定占位符）
 - 内容：新增 6+1 个自动类约定占位符（<程序文件目录>、<程序文件目录(x86)>、<系统目录>、<系统临时目录>、<msys64目录>、<w64devkit目录>、<用户目录>对 <用户目录>），to_portable 把本机 Program Files/Windows/Temp/msys64/w64devkit 等安装约定位置从"guard 保留字面盘符"改为转无盘符占位符（符合仓库双向可移植铁律）；guard 降级为兜底（无约定映射的自定义 pairs 或缺失映射时防根映射吞成残片）；to_local 还原真实路径（默认系统盘，path_map 可覆盖 D 盘等非默认）；重跑 to_portable 顺带清理仓库 16+ 文件存量字面约定盘符。
 - 验证：test_path_convert 43/43（含 guard 兜底 9b 不变、双向还原断言）；重跑 to_portable 16 文件清理，.py 全语法 OK；抽查 translate_pdf/setup 等运行时脚本转换合理（to_local 后解析）。未实测：其它机器 D 盘 path_map 覆盖场景（路径经 to_local 还原正确）。
+
+
+---
+- 时间/来源：审视 session_compress_skill 生成的 session.md 引发的模板机制完善（用户 question 授权固化第1、3项）
+- 归属：session_compress_skill
+- 状态：active
+- 触发类型：用户指正/机制完善（C 段全量复制导致 session.md 易再膨胀；E 段缺复用资源定位）
+- 载体：skills/session_compress_skill/references/config-template.md（C/E 段分层说明 + 使用规则3/5条）+ skills/session_compress_skill/SKILL.md（处理流程3 + 铁律 C/E 两条 + description 未动）
+- 内容：C 要点分两层【任务状态】(续作必需最小状态) + 【领域结论】(核心结论；细节已落 D 文件产物的只写一句 "详见 D 的 <文件>" 指引，不重复全量复制——防再次膨胀)；E 工具分两块(业务工具名 + 【复用资源】列本任务可复用脚本/中间产物路径+用途，便于新会话直接复用而非重做)。用户明确放弃"档位/层级"与"续作任务线"两改进(旧会话不用、下一步由新会话用户决定)。
+- 验证：test_skill_self.py 21/21 通过；skill_validate.py skills 根 0 错 0 警；两个文件 UTF-8 无 BOM + LF 合规；保留 "opencode 内置工具不写" 连续子串以满足 L1 自测断言。
+
+
+---
+- 时间/来源：对标 Claude Code compaction 摘要保留项(意图/技术概念/文件+片段/错误及修复)审视 session_compress_skill 模板大纲，用户过目后同意固化三处
+- 归属：session_compress_skill
+- 状态：active
+- 触发类型：机制完善/对标业界（Claude Code 官方 memory + context-window/compaction 文档，find_skill 获取）
+- 载体：skills/session_compress_skill/references/config-template.md（标准结构 A/C/D 三处 + 使用规则 3/4）+ skills/session_compress_skill/SKILL.md（流程3 + 铁律 C/D + 自检同步）
+- 内容：A 加【用户核心目标】(让新会话先懂"为什么做")；C 加【业务经验/已踩坑】(可选，只记业务类"问题→解决"，不含框架坑，对齐 Claude 的 errors+how fixed)；D 每文件加【关键内容指向】(指明该产物最重要结论/看哪节，对齐 Claude 的 文件+代码片段 保留，但本机产物多为大文件 docx/html，用"指向"而非全量注入防膨胀)
+- 验证：test_skill_self.py 21/21；skill_validate.py skills 根 0 错 0 警；两文件 UTF-8 无 BOM + LF；模板与 SKILL 三个新关键字均存在
