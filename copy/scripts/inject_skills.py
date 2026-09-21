@@ -5,7 +5,7 @@
 # default 容器：skills/default/<name>（如 evolution_skill）注入时平铺为项目 skills/<name>
 import os, re, shutil, sys
 
-GLOBAL_SKILLS = r"<opencode配置目录>\skills"
+GLOBAL_SKILLS = r"C:\Users\job_p\.config\opencode\skills"
 
 
 def iter_global_skills():

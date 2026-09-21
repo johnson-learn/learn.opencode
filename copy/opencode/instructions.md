@@ -69,7 +69,7 @@
 
 0. **同步边界铁律（最高优先级，见 AGENTS.md 铁律第 1 条）**：只有用户显式调用 update_skill 才允许 git 同步动作（拉取/合入/commit/push）；其它任何场景不得擅动。**补充细则**：直接编辑仓库工作树文件（如用户指定改 copy\ 下文件）时，向仓库写入框架文件一律先 `python tools\path_convert.py to_portable <仓库目录>` 转占位符版，禁止直接 Copy-Item 本机全局目录文件——本机文件是 to_local 本机路径版，直接复制会污染仓库（实测教训：ppt_skill 回滚直接复制致 test_repo_face 检出污染）。
 
-0.5 **字符边界规范细则（细节以 AGENTS.md 铁律第 9 条为准）**：跨工具传数据一律文件化；Python 写文件 `encoding="utf-8", newline="\n"`、读子进程输出 `encoding="utf-8", errors="replace"`；框架文本文件 UTF-8 无 BOM + LF（test_charset.py 防线，health_check 必跑）；临时文件放 `%LOCALAPPDATA%\Temp\opencode\`。
+0.5 **字符边界规范细则（细节以 AGENTS.md 铁律第 9 条为准）**：跨工具传数据一律文件化；Python 写文件 `encoding="utf-8", newline="\n"`、读子进程输出 `encoding="utf-8", errors="replace"`；框架文本文件 UTF-8 无 BOM + LF（test_charset.py 防线，health_check 必跑）；临时文件放 `%LOCALAPPDATA%\Temp\opencode\`。**PowerShell 5.1 执行含中文的 .ps1 必须是 UTF-8 with BOM**（✓ 本机实测）：无 BOM 的 UTF-8 会被 5.1 按 GBK 解码，中文错位 → 解析报错（MissingEndParenthesisInFunctionParameterList 等）；用命令 `[System.IO.File]::WriteAllText($p,$content,[System.Text.UTF8Encoding]::new($true))` 转 BOM 即可。这是 Windows PowerShell 5.1（非 7+）特有限制，core 版默认 UTF-8 无此问题。
 
 1. **语言跟随提问（回答语言硬约束，AGENTS.md 铁律第 3 条）**：中文提问→中文回答（含思考），英文提问→英文回答；协议原文、配置名、代码、命令、报错等必要原文保持原样不翻译
    - **裁定条款（实测修正）**：语言跟随的唯一权威依据 = **当条消息的实际语言**，思考/回答/输出三者一致跟随；平台语言指令只是会话默认基调兜底，与当条消息实际语言不一致或平台检测失效时，一律以当条消息实际语言为准

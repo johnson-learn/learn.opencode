@@ -710,3 +710,15 @@
 - 载体：skills/session_compress_skill/references/config-template.md（标准结构 A/C/D 三处 + 使用规则 3/4）+ skills/session_compress_skill/SKILL.md（流程3 + 铁律 C/D + 自检同步）
 - 内容：A 加【用户核心目标】(让新会话先懂"为什么做")；C 加【业务经验/已踩坑】(可选，只记业务类"问题→解决"，不含框架坑，对齐 Claude 的 errors+how fixed)；D 每文件加【关键内容指向】(指明该产物最重要结论/看哪节，对齐 Claude 的 文件+代码片段 保留，但本机产物多为大文件 docx/html，用"指向"而非全量注入防膨胀)
 - 验证：test_skill_self.py 21/21；skill_validate.py skills 根 0 错 0 警；两文件 UTF-8 无 BOM + LF；模板与 SKILL 三个新关键字均存在
+[2026-09-17] net-diag.ps1 踩坑（\$ 验证 ✓）→ instructions.md 0.5 条补充：Windows PowerShell 5.1 执行含中文 .ps1 必须 UTF-8 with BOM；无 BOM UTF-8 被 5.1 按 GBK 解码致中文错位解析报错（MissingEndParenthesisInFunctionParameterList 等）；转 BOM 命令 [System.IO.File]::WriteAllText(\,\,[System.Text.UTF8Encoding]::new(\True))
+[2026-09-21] files_skill HTML 格式要求补充两处（用户确认后固化；来源：BWP 切换 HTML 修复会话）
+- 更新点：①grid 布局承载侧栏时正文列不可再额外 margin-left（grid 列宽 + margin 双重占位 → 左侧空出双倍空白，本次 600px 踩坑；补充到 SKILL.md 正文贴左与侧栏占位两条）；②目录逐级缩进用行内 style.padding-left 实现（勿用文本空格+嵌套 ul margin 混合，层级会乱；补充到目录栏条目）
+- 判定四条件：场景数≥2（grid/margin 双重占位在 NR-f40 与本文均出现过）/ 可移植：是 / 无重复：与旧条目的 padding 叠加区分开后不重复 / 边界：明确（仅 grid 布局场景）
+- 归属：files_skill SKILL.md（输出文件格式要求 → HTML 格式条目）
+- 状态：active
+[2026-09-21] 3gpp_skill + files_skill：公式强制 LaTeX 呈现铁律升级（用户要求落实"有规定却不执行"，question 弹窗确认后固化）
+- 原因：既有的公式 LaTeX 呈现在 files_skill 藏于 HTML 格式章节（第71行）且 dual-track 的 LaTeX 要求放 references 按需读取，模型常漏读不执行；BWP HTML 一开始用 n_BWP/N_BWP^size/⌈log₂⌉ 伪公式被用户点出。
+- 更新点：①两 skill 的「通用输出规则（全部任务遵守）」各新增一条强制铁律（⭐公式强制 LaTeX 呈现：图片式公式/符号/下标一律 $..$ LaTeX，禁止纯文本伪公式 N_BWP^/n_RB/⌈⌋/log2(/裸μ 等，同一句不得有包有裸）；②交付前强制自检：扫描正文残留伪公式特征（^、_、⌈⌊⌉⌋、log2(、裸 μ、≤≥×· 在正文而非 $..$ 内）全部改写后再交付，与 MathJax 三件套必查并列。
+- 判定四条件：场景≥2（首次 BWP + 多轮协议讲解均踩伪公式）/ 可移植：是 / 无重复：与 dual-track 第11行一致但从未级为必见铁律，不重复 / 边界：明确（含 3GPP/协议数学符号的输出）
+- 归属：3gpp_skill SKILL.md 通用输出规则 + files_skill SKILL.md 通用输出规则
+- 状态：active

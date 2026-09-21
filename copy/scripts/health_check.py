@@ -1,0 +1,215 @@
+# -*- coding: utf-8 -*-
+# 框架健康检查脚本（health_check.py）——一键输出框架健康度报告
+# 检查项：①核心配置齐全 ②skill frontmatter 合法+体积门限 ③插件最近执行 ④测试全部可运行
+#        ⑤门禁最近会话 idle/drain 记录 ⑥evolution_log 待处理项 ⑦平台 API 依赖保障（实验性 hook 可用性）
+#        ⑧字符边界规范（框架文件 CRLF/BOM/编码一致性，铁律第 9 条防线）
+#        ⑨注入量管控（四注入文件合计 ≤70KB，2026-08-28 报告评审后新增；2026-09-04 用户弹窗决策 50→70）
+import os, sys, json, re, subprocess, glob, datetime
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
+CFG = os.path.join(os.path.expanduser("~"), ".config", "opencode")
+TESTS = os.path.join(CFG, "tests")
+ok, warn, fail = [], [], []
+
+def _load_registry():
+    # 加载 tools/tmp_registry.py（纯 stdlib）；失败则返回 None（收口增强失效但不影响健康检查本体）
+    import importlib.util
+    try:
+        p = os.path.join(CFG, "tools", "tmp_registry.py")
+        s = importlib.util.spec_from_file_location("tmp_registry", p)
+        m = importlib.util.module_from_spec(s); s.loader.exec_module(m)
+        return m
+    except Exception:
+        return None
+_reg = _load_registry()
+
+def add_ok(t): ok.append(t)
+def add_warn(t): warn.append(t)
+def add_fail(t): fail.append(t)
+
+# ① 核心配置文件齐全
+core = ["AGENTS.md", "instructions.md", "regedit.md", "docs-sync.md", "tools-manifest.md", "opencode.jsonc"]
+missing = [f for f in core if not os.path.exists(os.path.join(CFG, f))]
+(missing and [add_fail("缺核心文件: " + f) for f in missing]) or add_ok("核心配置 %d 个文件全部存在" % len(core))
+
+# ② 6 个 skill frontmatter 合法 + 体积门限（门限读 skill_validate_config.json 单一权威源，2026-09-04 改：此前硬编码 15KB 与配置不同步）
+skills_root = os.path.join(CFG, "skills")
+skill_dirs = [d for d in os.listdir(skills_root) if os.path.isdir(os.path.join(skills_root, d)) and d != "default"]
+skill_dirs += [d for d in os.listdir(os.path.join(skills_root, "default")) if os.path.isdir(os.path.join(skills_root, "default", d))]
+limit_kb = 8
+try:
+    _cfg = os.path.join(CFG, "tests", "skill_validate_config.json")
+    if os.path.exists(_cfg):
+        limit_kb = int(json.load(open(_cfg, encoding="utf-8")).get("size_limit_kb", 8))
+except Exception:
+    pass
+bad_skills = []
+# default 容器路径解析：先查 skills/<d>/SKILL.md，再查 skills/default/<d>/SKILL.md，按实际存在位置取（2026-09-15 改：原仅硬编码 evolution_skill，新增 default 容器 skill 如 task_tracking_skill 被误判缺 SKILL.md）
+for d in sorted(set(skill_dirs)):
+    p = os.path.join(skills_root, d, "SKILL.md")
+    if not os.path.exists(p):
+        p_def = os.path.join(skills_root, "default", d, "SKILL.md")
+        if os.path.exists(p_def):
+            p = p_def
+    if not os.path.exists(p):
+        bad_skills.append(d + " 缺 SKILL.md")
+        continue
+    c = open(p, encoding="utf-8", errors="replace").read()
+    if not re.match(r"^\ufeff?---\n.*?name:.*?\n---", c, re.S):
+        bad_skills.append(d + " frontmatter 异常")
+    if len(c) > limit_kb * 1024:
+        bad_skills.append(d + " 超 %dKB 门限(%d 字节)" % (limit_kb, len(c)))
+(bad_skills and [add_fail("skill 异常: " + b) for b in bad_skills]) or add_ok("%d 个 skill frontmatter 合法且体积均在门限内" % len(set(skill_dirs)))
+
+# ③ 插件最近执行（24h 内有日志）
+plog = os.path.join(CFG, "plugins", "plugin-evolution.log")
+if os.path.exists(plog):
+    age_h = (datetime.datetime.now() - datetime.datetime.fromtimestamp(os.path.getmtime(plog))).total_seconds() / 3600
+    if age_h <= 24:
+        add_ok("插件最近执行正常（%.1f 小时前有日志）" % age_h)
+    else:
+        add_warn("插件最近 %.1f 小时无日志（可能 opencode 未重启加载新插件）" % age_h)
+else:
+    add_fail("插件日志不存在（skill-banner.js 未运行）")
+
+# ④ 测试全部可运行（python 文件可 ast.parse）+ 最近全绿（可选 --run 才实跑）
+py_tests = [f for f in os.listdir(TESTS) if re.match(r"test_.+\.py$", f)]
+import ast as _ast
+bad_py = []
+for f in py_tests:
+    try:
+        _ast.parse(open(os.path.join(TESTS, f), encoding="utf-8").read())
+    except SyntaxError as e:
+        bad_py.append(f + " 语法错误 L" + str(e.lineno))
+(bad_py and [add_fail("测试不可运行: " + b) for b in bad_py]) or add_ok("%d 个 Python 测试全部可解析" % len(py_tests))
+
+# ④b 可选实跑（--run 全部 / --run-quick 快测试子集；注意：快子集不含 test_health_check 自身，防递归）
+if "--run" in sys.argv or "--run-quick" in sys.argv:
+    quick_only = "--run-quick" in sys.argv
+    targets = ["skill_validate.py", "test_regedit.py", "test_evolution_consistency.py"] if quick_only else py_tests
+    print("  [提示] 实跑模式（%s），预计耗时 %s" % (
+        "快测试子集" if quick_only else "全部测试",
+        "约 30~90 秒" if quick_only else "约 5~10 分钟"))
+    run_fail = []
+    for f in targets:
+        # 第2层收口：测试用例级登记——登记 %TEMP% 下该测试的占位路径（非测试文件本身），跑完 finally 清理+去除登记
+        # 注意：绝不能登记测试文件本身（TESTS/f），否则 cleanup 会误删框架测试文件
+        _probe = None
+        if _reg is not None:
+            try:
+                _probe = os.path.join(_reg._temp_root(), "health_run_" + f)
+                _reg.register(_probe, source="health_run:" + f, phase="pre")
+            except Exception:
+                _probe = None
+        try:
+            r = subprocess.run([sys.executable, os.path.join(TESTS, f), os.path.join(CFG, "skills")] if f == "skill_validate.py" else [sys.executable, os.path.join(TESTS, f)],
+                               capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300, cwd=TESTS)
+            if r.returncode != 0:
+                run_fail.append(f)
+        except Exception as e:
+            run_fail.append(f + "(" + str(e)[:40] + ")")
+        finally:
+            if _reg is not None:
+                try: _reg.cleanup_test("health_run:" + f)
+                except Exception: pass
+    js = os.path.join(TESTS, "test_plugin.js")
+    if not quick_only and os.path.exists(js):
+        if _reg is not None:
+            try: _reg.register(os.path.join(_reg._temp_root(), "health_run_test_plugin.js"), source="health_run:test_plugin.js", phase="pre")
+            except Exception: pass
+        try:
+            r = subprocess.run(["node", js], capture_output=True, text=True,
+                               encoding="utf-8", errors="replace", timeout=300, cwd=TESTS)
+            if r.returncode != 0:
+                run_fail.append("test_plugin.js")
+        except Exception as e:
+            run_fail.append("test_plugin.js(" + str(e)[:40] + ")")
+        finally:
+            if _reg is not None:
+                try: _reg.cleanup_test("health_run:test_plugin.js")
+                except Exception: pass
+    label = "快测试子集（%d 个）" % len(targets) if quick_only else "全部测试（%d py + test_plugin.js）" % len(py_tests)
+    (run_fail and [add_fail("实跑失败: " + f) for f in run_fail]) or add_ok("实跑%s通过" % label)
+
+# ⑤ 门禁最近会话 idle/drain 记录（快照目录 + 插件日志）
+snap_dir = os.path.join(os.environ.get("TEMP", os.path.expanduser("~\\AppData\\Local\\Temp")), "opencode_gate")
+resid = [f for f in glob.glob(os.path.join(snap_dir, "gate_*.json")) if "bare_declare" not in f]
+if resid:
+    add_warn("门禁残留 %d 个快照未消费（下次 session.created 的 --drain 会补跑）" % len(resid))
+else:
+    add_ok("门禁无残留快照（idle 正常或 drain 已补跑）")
+if os.path.exists(plog):
+    tail = open(plog, encoding="utf-8", errors="replace").read()[-4000:]
+    idle_n = tail.count("session.idle 触发")
+    drain_n = tail.count("--drain") + tail.count("drain")
+    add_ok("门禁最近日志：idle 触发 %d 次、drain 相关 %d 次" % (idle_n, drain_n))
+
+# ⑥ evolution_log 待处理项（最近 10 条条目中含"待模型补充"骨架条目数——只监控近期，历史骨架为流水事实不再累积告警）
+elog = os.path.join(CFG, "skills", "default", "evolution_skill", "evolution_log.txt")
+if os.path.exists(elog):
+    c = open(elog, encoding="utf-8", errors="replace").read()
+    entries = re.findall(r"\[[0-9]{4}-[0-9]{2}-[0-9]{2}\][^\[]+", c)
+    recent = entries[-10:]
+    pending = sum(1 for e in recent if "智能归纳待模型补充" in e)
+    if pending > 0:
+        add_warn("evolution_log 最近 10 条中有 %d 条门禁骨架待模型补充智能归纳" % pending)
+    else:
+        add_ok("evolution_log 近期无待处理骨架条目（历史骨架为流水事实，不再累积告警）")
+
+# ⑦ 平台 API 依赖保障（实验性 hook 可用性；opencode 升级移除 API 时此处失败告警）
+api_test = os.path.join(TESTS, "test_platform_api.py")
+try:
+    r = subprocess.run([sys.executable, api_test], capture_output=True, text=True,
+                       encoding="utf-8", errors="replace", timeout=180, cwd=TESTS)
+    if r.returncode == 0:
+        add_ok("平台 API 保障通过（experimental.chat.system.transform 可用）")
+    else:
+        tail = (r.stdout + r.stderr)[-200:].replace("\n", " ")
+        add_fail("平台 API 保障失败（实验性 hook 可能已被移除或二进制变动）：" + tail)
+except Exception as e:
+    add_fail("平台 API 保障无法执行：" + str(e)[:80])
+
+# ⑧ 字符边界规范（铁律第 9 条防线：框架文件 CRLF/BOM/编码一致性）
+charset_test = os.path.join(TESTS, "test_charset.py")
+try:
+    r = subprocess.run([sys.executable, charset_test], capture_output=True, text=True,
+                       encoding="utf-8", errors="replace", timeout=180, cwd=TESTS)
+    if r.returncode == 0:
+        add_ok("字符边界规范通过（框架文件 UTF-8 无 BOM + LF 统一）")
+    else:
+        tail = (r.stdout + r.stderr)[-200:].replace("\n", " ")
+        add_fail("字符边界扫描失败（存在 CRLF/BOM/编码异常文件，需立即归一修复）：" + tail)
+except Exception as e:
+    add_fail("字符边界扫描无法执行：" + str(e)[:80])
+
+# ⑨ 注入量管控（四注入文件合计 ≤70KB，超限告警；2026-08-28 报告评审后新增，V2 修正 30→50KB，2026-09-04 用户弹窗决策改 50→70KB）
+INJECT_FILES = ["instructions.md", "regedit.md", "tools-manifest.md", "docs-sync.md"]
+INJECT_LIMIT_KB = 70
+total_bytes = 0
+missing_inj = []
+for f in INJECT_FILES:
+    p = os.path.join(CFG, f)
+    if os.path.exists(p):
+        total_bytes += os.path.getsize(p)
+    else:
+        missing_inj.append(f)
+if missing_inj:
+    add_warn("注入文件缺失：%s" % "、".join(missing_inj))
+total_kb = total_bytes / 1024.0
+if total_kb > INJECT_LIMIT_KB:
+    detail = "、".join("%s %.1fKB" % (f, os.path.getsize(os.path.join(CFG, f)) / 1024.0) for f in INJECT_FILES if os.path.exists(os.path.join(CFG, f)))
+    add_warn("注入总量 %.1fKB 超过 %dKB 上限（%s）——按门限决策规则：question 弹窗让用户选择「修改门限」或「沿用门限继续精简」；沿用则优先压缩与 AGENTS.md 重复的细则（instructions 通用回答规则）、regedit 各层冗长描述、示例段落；大表保留速览头行；逐项精简后重跑本检查" % (total_kb, INJECT_LIMIT_KB, detail))
+else:
+    add_ok("注入总量 %.1fKB 在上限 %dKB 内（instructions/regedit/tools-manifest/docs-sync）" % (total_kb, INJECT_LIMIT_KB))
+
+print("【框架健康度报告】 %s" % datetime.datetime.now().strftime("%Y-%m-%d %H:%M"))
+print("-" * 60)
+for t in ok:
+    print("  [OK]   " + t)
+for t in warn:
+    print("  [警告] " + t)
+for t in fail:
+    print("  [失败] " + t)
+print("-" * 60)
+print("结论：OK %d 项 / 警告 %d 项 / 失败 %d 项" % (len(ok), len(warn), len(fail)))
+sys.exit(1 if fail else 0)

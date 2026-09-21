@@ -260,8 +260,8 @@ def register_fonts():
         '/System/Library/Fonts/STHeiti Light.ttc',  # macOS 黑体（推荐）
         '/System/Library/Fonts/PingFang.ttc',       # macOS 苹方
         '/System/Library/Fonts/Helvetica.ttc',      # 后备
-        '<系统目录>/Fonts/msyh.ttc',                # Windows 微软雅黑
-        '<系统目录>/Fonts/simhei.ttf',              # Windows 黑体
+        os.path.join(os.environ['SystemRoot'], 'Fonts/msyh.ttc'),                # Windows 微软雅黑
+        os.path.join(os.environ['SystemRoot'], 'Fonts/simhei.ttf'),              # Windows 黑体
         '/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf',  # Linux
     ]
 
