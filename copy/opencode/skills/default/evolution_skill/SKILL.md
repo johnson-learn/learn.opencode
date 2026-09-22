@@ -13,6 +13,8 @@ collaborates_with:
 |---|---|---|
 | skill_validate.py | skill 结构校验（固化流程校验步） | `python <opencode配置目录>\tests\skill_validate.py <opencode配置目录>\skills` |
 | test_regedit.py | 注册表一致性校验 | `python <opencode配置目录>\tests\test_regedit.py` |
+| test_evolution_consistency.py | 进化一致性校验（含 evolution.md 规则定位抽查） | `python <opencode配置目录>\tests\test_evolution_consistency.py` |
+| health_check.py | 一键健康检查（注入量/平台 API/字符边界等） | `python <opencode配置目录>\tools\health_check.py` |
 
 无额外外部依赖；进化固化本身只用 edit/read 工具与上述校验脚本。
 

@@ -33,7 +33,7 @@ collaborates_with:
 | tar / Expand-Archive | 解压 tarball/zip | Windows 自带 | `tar --version` | 自带 |
 | 批量安装脚本 | GitHub skill 仓库批量抓取 | `<opencode配置目录>\tools\fetch_skills.py` | `Test-Path` | 从原机复制（含 PLAN 映射表） |
 | pip 清华源 | Python 包装 | `https://pypi.tuna.tsinghua.edu.cn/simple` | — | 无需装 |
-| GitHub 镜像 | 直连不通时的替代渠道 | ghproxy.net（截断风险）/ gh-proxy.com（大文件首选） | `curl -sL -m 20 -o NUL -w %{http_code} https://gh-proxy.com/` | 无需装（渠道失效换下一个） |
+| GitHub 镜像 | 直连不通时的替代渠道 | ghproxy.net（默认首选，tarball 实测成功；大文件有截断风险）/ gh-proxy.com（大文件首选） | `curl -sL -m 20 -o NUL -w %{http_code} https://gh-proxy.com/` | 无需装（渠道失效换下一个） |
 | winget | Windows 包安装（不稳，GitHub 源常失败） | 自带 | `winget --version` | 自带 |
 
 **移植说明**：本技能核心 = curl + 镜像渠道（无安装要求）+ market-cli（需重新注册凭证）；fetch_skills.py 脚本依赖 gh-proxy.com 可用性。

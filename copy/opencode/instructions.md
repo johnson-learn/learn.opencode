@@ -61,7 +61,7 @@
 - **规则冲突裁决点**：新经验与旧规则矛盾时禁止静默二选一——进化自行整理「冲突裁决建议」（冲突双方、新验证结果、修订方案）后 **question 工具弹窗让用户决策**（选项：按新验证结果修订/保留旧规则/填写修改方案）；用户选"修订"才同步改旧条目，并在响应中显式标注"与旧规则 X 冲突，按新验证结果修订"
 
 ### 应用范围
-- 7 个全局 skill（按领域归档；其中 evolution_skill 与 task_tracking_skill 为 default 容器默认触发的执行器）+ instructions.md（全局规则）+ 后续新增 skill（自动适用编写规范与本协议）
+- 8 个全局 skill（按领域归档；其中 evolution_skill 与 task_tracking_skill 为 default 容器默认触发的执行器）+ instructions.md（全局规则）+ 后续新增 skill（自动适用编写规范与本协议）
 - 新项目注入的项目级副本随全局源同步（重新执行 inject_skills.py 即更新）
 - 项目/文件夹 md（AGENTS.md 等）：项目特定经验写入该项目的 AGENTS.md
 

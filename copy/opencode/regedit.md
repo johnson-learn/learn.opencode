@@ -31,7 +31,7 @@
 
 | 注册项 | 位置 | 生效 | 说明 |
 |---|---|---|---|
-| AGENTS.md（10 条铁律） | `<opencode配置目录>\AGENTS.md` | A | 每会话系统提示必达，最高优先级；0=读注册表、1=每次响应复盘进化、2=同步边界、3=语言、4=输出HTML、5=输出位置、6=注入、7=工具登记、8=测试先行、9=字符边界规范、10=内容产出不限篇幅 |
+| AGENTS.md（10 条铁律） | `<opencode配置目录>\AGENTS.md` | A | 每会话系统提示必达，最高优先级；0=读注册表、1=同步边界、2=每次响应复盘进化、3=语言、4=输出HTML、5=输出位置、6=注入、7=工具登记、8=测试先行、9=字符边界规范、10=内容产出不限篇幅 |
 | regedit.md（本注册表） | `<opencode配置目录>\regedit.md` | E（原 B） | 插件 system.transform 直读注入系统提示；原铁律第 0 条强制 read + 插件提醒保留为双保险；全体系组件加载方式登记 |
 | instructions.md（详版协议） | `<opencode配置目录>\instructions.md` | E（原 F） | 插件 system.transform 直读注入系统提示；六步进化流程（含第三步·确认弹窗）/五大进化能力/skill 编写规范/通用回答规则详版 |
 | docs-sync.md（配套同步映射表） | `<opencode配置目录>\docs-sync.md` | E（原 G） | 插件 system.transform 直读注入系统提示；变更类型→必须同步更新文件清单的权威映射 |
@@ -39,7 +39,7 @@
 | evolution.md（进化规则文件） | `<opencode配置目录>\skills\default\evolution_skill\evolution.md` | H | 规则类经验可执行载体；更新前须结合 evolution_log.txt 核对 + 弹窗确认 |
 | evolution_log.txt（进化历史流水） | `<opencode配置目录>\skills\default\evolution_skill\evolution_log.txt` | H | 历史流水，只增不改 |
 
-## 技能层（全局 7 个）
+## 技能层（全局 8 个）
 
 | 注册项 | 位置 | 生效 | 说明 |
 |---|---|---|---|
@@ -56,7 +56,7 @@
 
 | 注册项 | 位置 | 生效 | 说明 |
 |---|---|---|---|
-| 项目级副本（6 个，含 update_skill） | `<项目目录>\.opencode\skills\` | C | inject_skills.py 生成（description 改默认触发）；**已注入项目随全局进化自动同步**（插件 session.created 检测全局源 SKILL.md 更新→自动重注入；未注入项目无操作，首次注入仍由铁律第 6 条显式调用触发） |
+| 项目级副本（8 个，含 update_skill） | `<项目目录>\.opencode\skills\` | C | inject_skills.py 生成（description 改默认触发）；**已注入项目随全局进化自动同步**（插件 session.created 检测全局源 SKILL.md 更新→自动重注入；未注入项目无操作，首次注入仍由铁律第 6 条显式调用触发） |
 
 ## 插件层
 
@@ -101,12 +101,13 @@
 | test_health_check.py | `tests\test_health_check.py` | G | health_check 改动后强制（可运行/报告结构/九检查项/无失败项/regedit 登记/--run-quick 实跑/注入量管控，✓） |
 | test_sync_push.py | `tests\test_sync_push.py` | G | sync_push 改动后强制（无标记拒绝/非push拒绝/有效推送/标记清除/重推需重确认/WSL 路径判定与转换/自动 to_portable/可移植性阻断/msgfile_exists 双通道，✓） |
 | test_docs_sync.py | `tests\test_docs_sync.py` | G | docs-sync.md 改动后强制（变更类型/校验测试存在/被 regedit+AGENTS 引用，✓） |
+| test_evolution_consistency.py | `tests\test_evolution_consistency.py` | G | 进化和规则一致性与进化一致性（近 5 条「」声明落规则文件/evolution.md 规则定位与弹窗确认抽查，✓ 15/15） |
 | test_audit_references.py | `tests\test_audit_references.py` | G | 框架引用审计（引用存在性/旧术语残留/README 双向一致；运行时产物名豁免——session_compress_skill 的 session.md/txt 等生成物不算框架引用，✓） |
 | test_repo_face.py | `tests\test_repo_face.py` | G | 仓库门面一致性（门面对照+STATE_FILES 残留+本机路径扫描+**仓库内 repo_face 镜像=门面一致性 9 对**，✓；WSL 不可达回退 repo_face 镜像） |
 | test_setup_ps1.py | `tests\test_setup_ps1.py` | G | setup-windows.ps1 自动化测试（检测模式：工具清单必须/可选分类、双通道检测、PATH 修复、未装提示跳过、无自动安装残留、共享模块 setup-check、install-tools 一键安装、tools-manifest 总表对齐、AST，✓；WSL 不可达回退 repo_face 镜像） |
 | test_inject_skills.py | `tests\test_inject_skills.py` | G | inject_skills 改动后强制（default 容器平铺/description 改写/幂等重注入/覆盖同步，✓） |
 | README.md（测试清单） | `tests\README.md` | F | 查测试入口与运行命令（**各测试用例数唯一权威位置**） |
-| L1 领域自测（7 个） | `skills\*\tests\test_skill_self.py`（+program_skill 的 test_compile_template.py） | G | 每个 skill 的领域自测：入口规范/模块引用无悬空/references 无悬空/技能特定断言；evolution_gate 精准触发（改哪个 skill 自动跑哪个）；program_skill 另有 c-project 骨架 WSL 实编译行为自测（WSL 不可达自动跳过） |
+| L1 领域自测（8 个） | `skills\*\tests\test_skill_self.py`（+program_skill 的 test_compile_template.py） | G | 每个 skill 的领域自测：入口规范/模块引用无悬空/references 无悬空/技能特定断言；evolution_gate 精准触发（改哪个 skill 自动跑哪个）；program_skill 另有 c-project 骨架 WSL 实编译行为自测（WSL 不可达自动跳过） |
 
 ## 数据层
 
@@ -126,7 +127,7 @@
 | 注册项 | 位置 | 生效 | 说明 |
 |---|---|---|---|
 | update_skill 双向同步流程 | `skills\update_skill\SKILL.md` | D+G | 用户显式触发；五步框架强制（吸收远端含对端修改评审→修改→自测缺用例先补写→**弹窗确认**（question 工具）→按选择执行）；推送前必须弹窗确认 |
-| GitHub 仓库 / WSL 工作副本 | `github.com/johnson-learn/learn.opencode.git` / `\\wsl.localhost\Ubuntu\home\github\learn.opencode\` | G | 仅 update_skill 允许触碰（铁律第 2 条） |
+| GitHub 仓库 / WSL 工作副本 | `github.com/johnson-learn/learn.opencode.git` / `\\wsl.localhost\Ubuntu\home\github\learn.opencode\` | G | 仅 update_skill 允许触碰（铁律第 1 条） |
 | 占位符体系 | path_map.txt + path_convert.py | G | 三级占位符（自动/工具/数据），双向转换 |
 | 同步过滤规则 | update_skill SKILL.md「同步过滤规则」+ 仓库 .gitignore | G | 其它机器使用框架需要的才同步；临时文件（产物/样本/日志/状态文件/大资产）由 .gitignore 过滤 |
 | 可移植性校验 | update_skill SKILL.md「第五步·推送前强制」+ test_update_skill.py 用例 8 | G | 提交远端前强制：待提交内容不得含本机特征（真实路径/用户名/本机特有绝对路径） |
