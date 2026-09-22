@@ -389,17 +389,17 @@ def do_check(sid):
         return 0
     print("[gate] 检测到 %d 个规则文件改动：" % len(changed))
     for fp in changed:
-        print("  -", fp.replace(CFG, r"C:\Users\job_p\.config\opencode"))
+        print("  -", fp.replace(CFG, r"<opencode配置目录>"))
     if new_files:
         print("[gate] 【新增文件】%d 个（待适配决策：按四问分析→弹窗用户决定 适配/忽略/存档；纳入验收=test_regedit+skill_validate+test_instructions 全绿）：" % len(new_files))
         for fp in new_files:
-            print("  [+%s] %s" % (classify_new(fp).split("（")[0], fp.replace(CFG, r"C:\Users\job_p\.config\opencode")))
+            print("  [+%s] %s" % (classify_new(fp).split("（")[0], fp.replace(CFG, r"<opencode配置目录>")))
         for fp in new_files:
             print("    → %s" % classify_new(fp))
     if deleted:
         print("[gate] 【删除文件】%d 个（若为框架组件需在 regedit 撤销登记并跑 test_regedit）：" % len(deleted))
         for fp in deleted:
-            print("  [-]", fp.replace(CFG, r"C:\Users\job_p\.config\opencode"))
+            print("  [-]", fp.replace(CFG, r"<opencode配置目录>"))
     if not changed:
         # 仅新增/删除（本会话无既有文件改动）：不跑流水兜底与测试，直接清理快照
         print("[gate] 无既有规则文件改动，仅新增/删除检测（适配决策由进化检查任务执行）")
@@ -413,7 +413,7 @@ def do_check(sid):
     if log_size_now == snap["log_size"]:
         entry = ("[%s] 会话自动门禁（%s） → 机制步骤已由 evolution_gate 脚本确定性执行：本会话改动 %d 个规则文件（清单见下）；"
                  "智能归纳待模型补充\n" % (datetime.date.today().isoformat(), sid, len(changed)))
-        entry += "".join("- " + fp.replace(CFG, r"C:\Users\job_p\.config\opencode") + "\n" for fp in changed)
+        entry += "".join("- " + fp.replace(CFG, r"<opencode配置目录>") + "\n" for fp in changed)
         with open(LOG, "a", encoding="utf-8") as f:
             f.write(entry + "\n")
         appended = True

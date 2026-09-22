@@ -3,7 +3,7 @@
 import sys
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-BASE = r"C:\Users\job_p\.config\opencode\skills\files_skill"
+BASE = r"<opencode配置目录>\skills\files_skill"
 
 # 1. dual-track-extraction.md 通用化
 p1 = BASE + r"\references\dual-track-extraction.md"

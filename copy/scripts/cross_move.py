@@ -6,7 +6,7 @@
 import os, re, sys
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-BASE = r"C:\Users\job_p\.config\opencode\skills"
+BASE = r"<opencode配置目录>\skills"
 FILES = os.path.join(BASE, "files_skill")
 G3PP = os.path.join(BASE, "3gpp_skill")
 

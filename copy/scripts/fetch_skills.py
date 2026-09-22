@@ -2,8 +2,8 @@
 # 批量从 GitHub（经 ghproxy 镜像）下载 skill 仓库并安装到全局 skill modules
 import io, os, re, shutil, subprocess, sys, tarfile, zipfile
 
-SKILLS_ROOT = r"C:\Users\job_p\.config\opencode\skills"
-TMP = r"C:\Users\job_p\AppData\Local\Temp\opencode\skill-fetch"
+SKILLS_ROOT = r"<opencode配置目录>\skills"
+TMP = r"<用户临时目录>\opencode\skill-fetch"
 os.makedirs(TMP, exist_ok=True)
 
 # (github repo, 目标全局 skill 名, 提取过滤词列表[可为空=全量])

@@ -3,7 +3,7 @@
 import os, re, sys
 
 def slim(skill_name, move_map):
-    base = os.path.join(r"C:\Users\job_p\.config\opencode\skills", skill_name)
+    base = os.path.join(r"<opencode配置目录>\skills", skill_name)
     p = os.path.join(base, "SKILL.md")
     with open(p, encoding="utf-8") as f:
         c = f.read()
